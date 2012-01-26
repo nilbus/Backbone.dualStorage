@@ -142,12 +142,9 @@ onlineSync = (method, model, options) ->
   # Make the request.
   $.ajax params
 
-urlify = (model) ->
-  if _.isFunction(model.url) then model.url() else model.url
-
 dualsync = (method, model, options) ->
   console.log 'dualsync', method, model, options
-  store = new Store urlify(model)
+  store = new Store getUrl(model)
 
   switch method
     when 'read'
