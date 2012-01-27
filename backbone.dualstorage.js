@@ -1,7 +1,7 @@
 (function() {
   'use strict';
-  var S4, dualsync, getUrl, guid, localsync, methodMap, onlineSync, urlError;
 
+  var S4, dualsync, getUrl, guid, localsync, methodMap, onlineSync, parseRemoteResponse, urlError;
   S4 = function() {
     return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
   };
@@ -119,6 +119,14 @@
     }
   };
 
+  parseRemoteResponse = function(object, response) {
+    if (!(object && object.parseBeforeLocalSave)) {
+      return null;
+    }
+    if (_.isFunction(object.parseBeforeLocalSave)) {
+      return object.parseBeforeLocalSave(response);
+    }
+  };
   urlError = function() {
     throw new Error('A "url" property or function must be specified');
   };
@@ -152,6 +160,7 @@
             if (_.isArray(resp)) {
               for (_i = 0, _len = resp.length; _i < _len; _i++) {
                 i = resp[_i];
+                resp = parseRemoteResponse(model, resp);
                 console.log('trying to store', i);
                 store.create(i);
               }

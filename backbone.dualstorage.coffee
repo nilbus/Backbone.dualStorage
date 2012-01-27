@@ -101,6 +101,12 @@ getUrl = (object) ->
   if not (object and object.url) then return null
   if _.isFunction(object.url) then object.url() else object.url
 
+# Helper function to run parseBeforeLocalSave() in order to
+# parse a remote JSON response before caching locally
+parseRemoteResponse = (object, response) ->
+  if not (object and object.parseBeforeLocalSave) then return null
+  if _.isFunction(object.parseBeforeLocalSave) then object.parseBeforeLocalSave(response)
+
 # Throw an error when a URL is needed, and none is supplied.
 urlError = ->
   throw new Error 'A "url" property or function must be specified'
@@ -133,6 +139,7 @@ dualsync = (method, model, options) ->
           console.log 'got remote', resp, 'putting into', store
           if _.isArray resp
             for i in resp
+              resp = parseRemoteResponse(model, resp)
               console.log 'trying to store', i
               store.create i
           else
