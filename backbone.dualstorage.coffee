@@ -128,7 +128,7 @@ onlineSync = (method, model, options) ->
     params.url = getUrl(model) or urlError()
 
   # Make the url absolute
-  params.url = URLs.server + params.url
+  //params.url = URLs.server + params.url
 
   # Ensure that we have the appropriate request data.
   if not params.data and model and (method == 'create' or method == 'update')
@@ -142,12 +142,9 @@ onlineSync = (method, model, options) ->
   # Make the request.
   $.ajax params
 
-urlify = (url) ->
-  if _.isFunction(url) then url() else url
-
 dualsync = (method, model, options) ->
   console.log 'dualsync', method, model, options
-  store = new Store urlify(model.url)
+  store = new Store getUrl(model)
 
   switch method
     when 'read'
