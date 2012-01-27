@@ -7,17 +7,18 @@ A dualStorage adapter for Backbone. It's a drop-in replacement for Backbone.Sync
 Include Backbone.dualStorage after having included Backbone.js:
 
     <script type="text/javascript" src="backbone.js"></script>
-    <script type="text/javascript" src="backbone.dualStorage.js"></script>
+    <script type="text/javascript" src="backbone.dualstorage.js"></script>
 
-Create your collections in the usual way:
-
-    window.SomeCollection = Backbone.Collection.extend({
-
-      // ... everything is normal.
-
-    });
-
+Create your models and collections in the usual way. 
 Feel free to use Backbone as you usually would, this is a drop-in replacement.
+
+    
+Keep in mind that Backbone.dualStorage really loves your models. By default it will cache everything that passes through Backbone.sync. You can override this behaviour with the booleans ```remote``` and ```local``` on models:
+    
+    SomeModel = Backbone.Collection.extend({
+        this.local = true  // always fetched and saved locally
+        this.remote = true // never cached, dualStorage is bypassed entirely
+    });
 
 ## Credits
 
