@@ -112,35 +112,7 @@ methodMap =
   'delete': 'DELETE'
   'read'  : 'GET'
 
-# Backbone.sync
-onlineSync = (method, model, options) ->
-  console.log 'onlineSync', method, model, options
-
-  type = methodMap[method]
-
-  # Default JSON-request options.
-  params = _.extend options,
-    type:         type
-    dataType:     'json'
-
-  # Ensure that we have a URL.
-  if not params.url
-    params.url = getUrl(model) or urlError()
-
-  # Make the url absolute
-  //params.url = URLs.server + params.url
-
-  # Ensure that we have the appropriate request data.
-  if not params.data and model and (method == 'create' or method == 'update')
-      params.contentType = 'application/json'
-      params.data = JSON.stringify model.toJSON()
-
-  # Don't process data on a non-GET request.
-  if params.type != 'GET' and !Backbone.emulateJSON
-    params.processData = false
-
-  # Make the request.
-  $.ajax params
+onlineSync = Backbone.sync
 
 dualsync = (method, model, options) ->
   console.log 'dualsync', method, model, options

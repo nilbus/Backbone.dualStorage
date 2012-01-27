@@ -1,6 +1,6 @@
 (function() {
   'use strict';
-  var S4, dualsync, getUrl, guid, localsync, methodMap, onlineSync, urlError, urlify;
+  var S4, dualsync, getUrl, guid, localsync, methodMap, onlineSync, urlError;
 
   S4 = function() {
     return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
@@ -130,36 +130,12 @@
     'read': 'GET'
   };
 
-  onlineSync = function(method, model, options) {
-    var params, type;
-    console.log('onlineSync', method, model, options);
-    type = methodMap[method];
-    params = _.extend(options, {
-      type: type,
-      dataType: 'json'
-    });
-    if (!params.url) params.url = getUrl(model) || urlError();
-    params.url = URLs.server + params.url;
-    if (!params.data && model && (method === 'create' || method === 'update')) {
-      params.contentType = 'application/json';
-      params.data = JSON.stringify(model.toJSON());
-    }
-    if (params.type !== 'GET' && !Backbone.emulateJSON) params.processData = false;
-    return $.ajax(params);
-  };
-
-  urlify = function(url) {
-    if (_.isFunction(url)) {
-      return url();
-    } else {
-      return url;
-    }
-  };
+  onlineSync = Backbone.sync;
 
   dualsync = function(method, model, options) {
     var response, store, success;
     console.log('dualsync', method, model, options);
-    store = new Store(urlify(model.url));
+    store = new Store(getUrl(model));
     switch (method) {
       case 'read':
         if (store) {
