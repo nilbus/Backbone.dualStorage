@@ -104,7 +104,7 @@ getUrl = (object) ->
 # Helper function to run parseBeforeLocalSave() in order to
 # parse a remote JSON response before caching locally
 parseRemoteResponse = (object, response) ->
-  if not (object and object.parseBeforeLocalSave) then return null
+  if not (object and object.parseBeforeLocalSave) then return response
   if _.isFunction(object.parseBeforeLocalSave) then object.parseBeforeLocalSave(response)
 
 # Throw an error when a URL is needed, and none is supplied.
