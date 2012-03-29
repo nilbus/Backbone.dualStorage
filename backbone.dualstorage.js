@@ -1,6 +1,8 @@
 (function() {
+
   'use strict';
-  var S4, dualsync, getUrl, guid, localsync, methodMap, onlineSync, urlError;
+
+  var S4, dualsync, guid, localsync, methodMap, onlineSync, result, urlError;
 
   S4 = function() {
     return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
@@ -110,12 +112,14 @@
     }
   };
 
-  getUrl = function(object) {
-    if (!(object && object.url)) return null;
-    if (_.isFunction(object.url)) {
-      return object.url();
+  result = function(object, property) {
+    var value;
+    if (!object) return null;
+    value = object[property];
+    if (_.isFunction(value)) {
+      return value.call(object);
     } else {
-      return object.url;
+      return value;
     }
   };
 
@@ -135,7 +139,10 @@
   dualsync = function(method, model, options) {
     var response, store, success;
     console.log('dualsync', method, model, options);
-    store = new Store(getUrl(model));
+    if (result(model, 'remote') || result(model.collection, 'remote')) {
+      return onlineSync(method, model, options);
+    }
+    store = new Store(result(model, 'url'));
     switch (method) {
       case 'read':
         if (store) {
