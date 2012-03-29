@@ -13,12 +13,16 @@ Create your models and collections in the usual way.
 Feel free to use Backbone as you usually would, this is a drop-in replacement.
 
     
-Keep in mind that Backbone.dualStorage really loves your models. By default it will cache everything that passes through Backbone.sync. You can override this behaviour with the booleans ```remote``` and ```local``` on models:
+Keep in mind that Backbone.dualStorage really loves your models. By default it will cache everything that passes through Backbone.sync. You can override this behaviour with the booleans ```remote``` or ```local``` on models and collections:
     
-    SomeModel = Backbone.Collection.extend({
-        local: true  // always fetched and saved locally
+    SomeCollection = Backbone.Collection.extend({
+        local: true  // always fetched and saved only locally, never saves on remote
         remote: true // never cached, dualStorage is bypassed entirely
     });
+
+You can also deactivate dualsync to some requests, when you want to sync with the server only later.
+
+    SomeCollection.create({name: "someone"}, {remote: false});
 
 ## Credits
 

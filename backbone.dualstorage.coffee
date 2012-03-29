@@ -94,12 +94,13 @@ localsync = (method, model, options, error) ->
   else
     options.error 'Record not found'
 
-
-# Helper function to get a URL from a Model or Collection as a property
-# or as a function.
-getUrl = (object) ->
-  if not (object and object.url) then return null
-  if _.isFunction(object.url) then object.url() else object.url
+# If the value of the named property is a function then invoke it;
+# otherwise, return it.
+# based on _.result from underscore github
+result = (object, property) ->
+  return null unless object
+  value = object[property]
+  if _.isFunction(value) then value.call(object) else value
 
 # Throw an error when a URL is needed, and none is supplied.
 urlError = ->
@@ -116,7 +117,10 @@ onlineSync = Backbone.sync
 
 dualsync = (method, model, options) ->
   console.log 'dualsync', method, model, options
-  store = new Store getUrl(model)
+  
+  return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')
+  
+  store = new Store result(model, 'url')
 
   switch method
     when 'read'
