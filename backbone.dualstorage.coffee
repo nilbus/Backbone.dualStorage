@@ -8,10 +8,6 @@
 S4 = ->
   (((1 + Math.random()) * 0x10000) | 0).toString(16).substring 1
 
-# Generate a pseudo-GUID by concatenating random hexadecimal.
-guid = ->
-  S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4()
-
 # Our Store is represented by a single JS object in *localStorage*. Create it
 # with a meaningful name, like the name you'd give a table.
 class window.Store
@@ -22,6 +18,12 @@ class window.Store
     store = localStorage.getItem(@name)
     @records = (store and store.split(',')) or []
 
+  # Generates an unique id to use when saving new instances into localstorage
+  # by default generates a pseudo-GUID by concatenating random hexadecimal.
+  # you can overwrite this function to use another strategy
+  generateId: ->
+    S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4()
+  
   # Save the current state of the **Store** to *localStorage*.
   save: ->
     localStorage.setItem @name, @records.join(',')
@@ -32,7 +34,7 @@ class window.Store
     console.log 'creating', model, 'in', @name
     if not _.isObject(model) then return model
     if model.attributes? then model = model.attributes
-    if not model.id then model.id = guid()
+    if not model.id then model.id = @generateId()
     localStorage.setItem @name + @sep + model.id, JSON.stringify(model)
     @records.push model.id.toString()
     @save()
@@ -70,16 +72,10 @@ class window.Store
 
 # Override `Backbone.sync` to use delegate to the model or collection's
 # *localStorage* property, which should be an instance of `Store`.
-localsync = (method, model, options, error) ->
-  # Backwards compatibility with Backbone <= 0.3.3
-  if typeof options is 'function'
-    options =
-      success: options
-      error: error
+localsync = (method, model, options) ->
+  store = new Store options.storeName
 
-  store = model.localStorage or model.collection.localStorage
-
-  resp = switch method
+  response = switch method
     when 'read'
       if model.id then store.find(model) else store.findAll()
     when 'create'
@@ -89,10 +85,13 @@ localsync = (method, model, options, error) ->
     when 'delete'
       store.destroy(model)
 
-  if resp
-    options.success resp
-  else
-    options.error 'Record not found'
+  unless options.ignoreCallbacks
+    if response
+      options.success response
+    else
+      options.error 'Record not found'
+  
+  response
 
 # If the value of the named property is a function then invoke it;
 # otherwise, return it.
@@ -102,64 +101,50 @@ result = (object, property) ->
   value = object[property]
   if _.isFunction(value) then value.call(object) else value
 
-# Throw an error when a URL is needed, and none is supplied.
-urlError = ->
-  throw new Error 'A "url" property or function must be specified'
-
-# Map from CRUD to HTTP for our default `Backbone.sync` implementation.
-methodMap =
-  'create': 'POST'
-  'update': 'PUT'
-  'delete': 'DELETE'
-  'read'  : 'GET'
-
 onlineSync = Backbone.sync
 
 dualsync = (method, model, options) ->
   console.log 'dualsync', method, model, options
   
-  return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')
+  options.storeName = result(model.collection, 'url') || result(model, 'url')
   
-  store = new Store result(model, 'url')
-
+  return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')
+  return localsync(method, model, options) if (options.remote == false) or result(model, 'local') or result(model.collection, 'local')
+  
+  options.ignoreCallbacks = true
+  
   switch method
     when 'read'
-      if store
-        response = if model.id then store.find(model) else store.findAll()
+      response = localsync(method, model, options)
 
-        if not _.isEmpty(response)
-          console.log 'getting local', response, 'from', store
-          options.success response
-          return
-
+      if not _.isEmpty(response)
+        console.log 'getting local', response, 'from', options.storeName
+        options.success response
+      else
         success = options.success
         options.success = (resp, status, xhr) ->
-          console.log 'got remote', resp, 'putting into', store
+          console.log 'got remote', resp, 'putting into', options.storeName
           if _.isArray resp
             for i in resp
               console.log 'trying to store', i
-              store.create i
+              localsync('create', i, options)
           else
-            store.create resp
+            localsync('create', model, options)
 
           success resp
 
-      if not model.local
         onlineSync(method, model, options)
 
     when 'create'
-      if not model.local and options.remote != false
-        onlineSync(method, model, options)
-      store.create(model)
+      onlineSync(method, model, options)
+      localsync(method, model, options)
 
     when 'update'
-      if not model.local and options.remote != false
-        onlineSync(method, model, options)
-      store.update(model)
+      onlineSync(method, model, options)
+      localsync(method, model, options)
 
     when 'delete'
-      if not model.local and options.remote != false
-        onlineSync(method, model, options)
-      store.destroy(model)
+      onlineSync(method, model, options)
+      localsync(method, model, options)
 
 Backbone.sync = dualsync
