@@ -2,14 +2,10 @@
 
   'use strict';
 
-  var S4, dualsync, guid, localsync, methodMap, onlineSync, result, urlError;
+  var S4, dualsync, localsync, onlineSync, result;
 
   S4 = function() {
     return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-  };
-
-  guid = function() {
-    return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
   };
 
   window.Store = (function() {
@@ -23,6 +19,10 @@
       this.records = (store && store.split(',')) || [];
     }
 
+    Store.prototype.generateId = function() {
+      return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
+    };
+
     Store.prototype.save = function() {
       return localStorage.setItem(this.name, this.records.join(','));
     };
@@ -31,7 +31,7 @@
       console.log('creating', model, 'in', this.name);
       if (!_.isObject(model)) return model;
       if (model.attributes != null) model = model.attributes;
-      if (!model.id) model.id = guid();
+      if (!model.id) model.id = this.generateId();
       localStorage.setItem(this.name + this.sep + model.id, JSON.stringify(model));
       this.records.push(model.id.toString());
       this.save();
@@ -121,17 +121,6 @@
     } else {
       return value;
     }
-  };
-
-  urlError = function() {
-    throw new Error('A "url" property or function must be specified');
-  };
-
-  methodMap = {
-    'create': 'POST',
-    'update': 'PUT',
-    'delete': 'DELETE',
-    'read': 'GET'
   };
 
   onlineSync = Backbone.sync;

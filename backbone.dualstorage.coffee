@@ -8,10 +8,6 @@
 S4 = ->
   (((1 + Math.random()) * 0x10000) | 0).toString(16).substring 1
 
-# Generate a pseudo-GUID by concatenating random hexadecimal.
-guid = ->
-  S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4()
-
 # Our Store is represented by a single JS object in *localStorage*. Create it
 # with a meaningful name, like the name you'd give a table.
 class window.Store
@@ -22,6 +18,12 @@ class window.Store
     store = localStorage.getItem(@name)
     @records = (store and store.split(',')) or []
 
+  # Generates an unique id to use when saving new instances into localstorage
+  # by default generates a pseudo-GUID by concatenating random hexadecimal.
+  # you can overwrite this function to use another strategy
+  generateId: ->
+    S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4()
+  
   # Save the current state of the **Store** to *localStorage*.
   save: ->
     localStorage.setItem @name, @records.join(',')
@@ -32,7 +34,7 @@ class window.Store
     console.log 'creating', model, 'in', @name
     if not _.isObject(model) then return model
     if model.attributes? then model = model.attributes
-    if not model.id then model.id = guid()
+    if not model.id then model.id = @generateId()
     localStorage.setItem @name + @sep + model.id, JSON.stringify(model)
     @records.push model.id.toString()
     @save()
@@ -101,17 +103,6 @@ result = (object, property) ->
   return null unless object
   value = object[property]
   if _.isFunction(value) then value.call(object) else value
-
-# Throw an error when a URL is needed, and none is supplied.
-urlError = ->
-  throw new Error 'A "url" property or function must be specified'
-
-# Map from CRUD to HTTP for our default `Backbone.sync` implementation.
-methodMap =
-  'create': 'POST'
-  'update': 'PUT'
-  'delete': 'DELETE'
-  'read'  : 'GET'
 
 onlineSync = Backbone.sync
 
