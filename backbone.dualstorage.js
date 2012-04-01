@@ -13,10 +13,8 @@
     Store.prototype.sep = '';
 
     function Store(name) {
-      var store;
       this.name = name;
-      store = localStorage.getItem(this.name);
-      this.records = (store && store.split(',')) || [];
+      this.records = this.recordsOn(this.name);
     }
 
     Store.prototype.generateId = function() {
@@ -25,6 +23,41 @@
 
     Store.prototype.save = function() {
       return localStorage.setItem(this.name, this.records.join(','));
+    };
+
+    Store.prototype.recordsOn = function(key) {
+      var store;
+      store = localStorage.getItem(key);
+      return (store && store.split(',')) || [];
+    };
+
+    Store.prototype.dirty = function(model) {
+      var dirtyRecords;
+      dirtyRecords = this.recordsOn(this.name + '_dirty');
+      if (!_.include(dirtyRecords, model.id.toString())) {
+        console.log('dirtying', model);
+        dirtyRecords.push(model.id);
+        localStorage.setItem(this.name + '_dirty', dirtyRecords.join(','));
+      }
+      return model;
+    };
+
+    Store.prototype.clean = function(model) {
+      var dirtyRecords;
+      dirtyRecords = this.recordsOn(this.name + '_dirty');
+      if (_.include(dirtyRecords, model.id.toString())) {
+        console.log('cleaning', model.id);
+        localStorage.setItem(this.name + '_dirty', _.without(dirtyRecords, model.id.toString()).join(','));
+      }
+      return model;
+    };
+
+    Store.prototype.destroyed = function(model) {
+      var destroyedRecords;
+      destroyedRecords = this.recordsOn(this.name + '_destroyed');
+      destroyedRecords.push(model.id);
+      localStorage.setItem(this.name + '_destroyed', destroyedRecords.join(','));
+      return model;
     };
 
     Store.prototype.create = function(model) {
@@ -46,6 +79,21 @@
       }
       this.save();
       return model;
+    };
+
+    Store.prototype.clear = function() {
+      var id, _i, _len, _ref;
+      _ref = this.records;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        id = _ref[_i];
+        localStorage.removeItem(this.name + this.sep + id);
+      }
+      this.records = [];
+      return this.save();
+    };
+
+    Store.prototype.hasDirtyOrDestroyed = function() {
+      return !_.isEmpty(localStorage.getItem(this.name + '_dirty')) || !_.isEmpty(localStorage.getItem(this.name + '_destroyed'));
     };
 
     Store.prototype.find = function(model) {
@@ -91,12 +139,29 @@
             return store.findAll();
           }
           break;
+        case 'hasDirtyOrDestroyed':
+          return store.hasDirtyOrDestroyed();
+        case 'clear':
+          return store.clear();
         case 'create':
-          return store.create(model);
+          model = store.create(model);
+          if (options.dirty) return store.dirty(model);
+          break;
         case 'update':
-          return store.update(model);
+          store.update(model);
+          if (options.dirty) {
+            return store.dirty(model);
+          } else {
+            return store.clean(model);
+          }
+          break;
         case 'delete':
-          return store.destroy(model);
+          store.destroy(model);
+          if (options.dirty) {
+            return store.destroyed(model);
+          } else {
+            return store.clean(model);
+          }
       }
     })();
     if (!options.ignoreCallbacks) {
@@ -123,27 +188,30 @@
   onlineSync = Backbone.sync;
 
   dualsync = function(method, model, options) {
-    var response, success;
+    var error, local, originalModel, success;
     console.log('dualsync', method, model, options);
     options.storeName = result(model.collection, 'url') || result(model, 'url');
     if (result(model, 'remote') || result(model.collection, 'remote')) {
       return onlineSync(method, model, options);
     }
-    if ((options.remote === false) || result(model, 'local') || result(model.collection, 'local')) {
+    local = result(model, 'local') || result(model.collection, 'local');
+    options.dirty = options.remote === false && !local;
+    if (options.remote === false || local) {
       return localsync(method, model, options);
     }
     options.ignoreCallbacks = true;
+    success = options.success;
+    error = options.error;
     switch (method) {
       case 'read':
-        response = localsync(method, model, options);
-        if (!_.isEmpty(response)) {
-          console.log('getting local', response, 'from', options.storeName);
-          return options.success(response);
+        if (localsync('hasDirtyOrDestroyed', model, options)) {
+          console.log("can't clear", options.storeName, "require sync dirty data first");
+          return success(localsync(method, model, options));
         } else {
-          success = options.success;
           options.success = function(resp, status, xhr) {
             var i, _i, _len;
             console.log('got remote', resp, 'putting into', options.storeName);
+            localsync('clear', model, options);
             if (_.isArray(resp)) {
               for (_i = 0, _len = resp.length; _i < _len; _i++) {
                 i = resp[_i];
@@ -151,22 +219,66 @@
                 localsync('create', i, options);
               }
             } else {
-              localsync('create', model, options);
+              localsync('create', resp, options);
             }
-            return success(resp);
+            return success(resp, status, xhr);
+          };
+          options.error = function(resp) {
+            console.log('getting local from', options.storeName);
+            return success(localsync(method, model, options));
           };
           return onlineSync(method, model, options);
         }
         break;
       case 'create':
-        onlineSync(method, model, options);
-        return localsync(method, model, options);
+        options.success = function(resp, status, xhr) {
+          localsync(method, resp, options);
+          return success(resp, status, xhr);
+        };
+        options.error = function(resp) {
+          options.dirty = true;
+          return success(localsync(method, model, options));
+        };
+        return onlineSync(method, model, options);
       case 'update':
-        onlineSync(method, model, options);
-        return localsync(method, model, options);
+        if (_.isString(model.id) && model.id.length === 36) {
+          originalModel = model.clone();
+          options.success = function(resp, status, xhr) {
+            localsync('delete', originalModel, options);
+            localsync('create', resp, options);
+            return success(resp, status, xhr);
+          };
+          options.error = function(resp) {
+            options.dirty = true;
+            return success(localsync(method, originalModel, options));
+          };
+          model.id = null;
+          return onlineSync('create', model, options);
+        } else {
+          options.success = function(resp, status, xhr) {
+            return success(localsync(method, model, options));
+          };
+          options.error = function(resp) {
+            options.dirty = true;
+            return success(localsync(method, model, options));
+          };
+          return onlineSync(method, model, options);
+        }
+        break;
       case 'delete':
-        onlineSync(method, model, options);
-        return localsync(method, model, options);
+        if (_.isString(model.id) && model.id.length === 36) {
+          return localsync(method, model, options);
+        } else {
+          options.success = function(resp, status, xhr) {
+            localsync(method, model, options);
+            return success(resp, status, xhr);
+          };
+          options.error = function(resp) {
+            options.dirty = true;
+            return success(localsync(method, model, options));
+          };
+          return onlineSync(method, model, options);
+        }
     }
   };
 
