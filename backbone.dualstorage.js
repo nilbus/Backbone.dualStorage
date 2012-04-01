@@ -2,14 +2,10 @@
 
   'use strict';
 
-  var S4, dualsync, guid, localsync, methodMap, onlineSync, result, urlError;
+  var S4, dualsync, localsync, onlineSync, result;
 
   S4 = function() {
     return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-  };
-
-  guid = function() {
-    return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
   };
 
   window.Store = (function() {
@@ -23,6 +19,10 @@
       this.records = (store && store.split(',')) || [];
     }
 
+    Store.prototype.generateId = function() {
+      return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
+    };
+
     Store.prototype.save = function() {
       return localStorage.setItem(this.name, this.records.join(','));
     };
@@ -31,7 +31,7 @@
       console.log('creating', model, 'in', this.name);
       if (!_.isObject(model)) return model;
       if (model.attributes != null) model = model.attributes;
-      if (!model.id) model.id = guid();
+      if (!model.id) model.id = this.generateId();
       localStorage.setItem(this.name + this.sep + model.id, JSON.stringify(model));
       this.records.push(model.id.toString());
       this.save();
@@ -79,16 +79,10 @@
 
   })();
 
-  localsync = function(method, model, options, error) {
-    var resp, store;
-    if (typeof options === 'function') {
-      options = {
-        success: options,
-        error: error
-      };
-    }
-    store = model.localStorage || model.collection.localStorage;
-    resp = (function() {
+  localsync = function(method, model, options) {
+    var response, store;
+    store = new Store(options.storeName);
+    response = (function() {
       switch (method) {
         case 'read':
           if (model.id) {
@@ -105,11 +99,14 @@
           return store.destroy(model);
       }
     })();
-    if (resp) {
-      return options.success(resp);
-    } else {
-      return options.error('Record not found');
+    if (!options.ignoreCallbacks) {
+      if (response) {
+        options.success(response);
+      } else {
+        options.error('Record not found');
+      }
     }
+    return response;
   };
 
   result = function(object, property) {
@@ -123,68 +120,53 @@
     }
   };
 
-  urlError = function() {
-    throw new Error('A "url" property or function must be specified');
-  };
-
-  methodMap = {
-    'create': 'POST',
-    'update': 'PUT',
-    'delete': 'DELETE',
-    'read': 'GET'
-  };
-
   onlineSync = Backbone.sync;
 
   dualsync = function(method, model, options) {
-    var response, store, success;
+    var response, success;
     console.log('dualsync', method, model, options);
+    options.storeName = result(model.collection, 'url') || result(model, 'url');
     if (result(model, 'remote') || result(model.collection, 'remote')) {
       return onlineSync(method, model, options);
     }
-    store = new Store(result(model, 'url'));
+    if ((options.remote === false) || result(model, 'local') || result(model.collection, 'local')) {
+      return localsync(method, model, options);
+    }
+    options.ignoreCallbacks = true;
     switch (method) {
       case 'read':
-        if (store) {
-          response = model.id ? store.find(model) : store.findAll();
-          if (!_.isEmpty(response)) {
-            console.log('getting local', response, 'from', store);
-            options.success(response);
-            return;
-          }
+        response = localsync(method, model, options);
+        if (!_.isEmpty(response)) {
+          console.log('getting local', response, 'from', options.storeName);
+          return options.success(response);
+        } else {
           success = options.success;
           options.success = function(resp, status, xhr) {
             var i, _i, _len;
-            console.log('got remote', resp, 'putting into', store);
+            console.log('got remote', resp, 'putting into', options.storeName);
             if (_.isArray(resp)) {
               for (_i = 0, _len = resp.length; _i < _len; _i++) {
                 i = resp[_i];
                 console.log('trying to store', i);
-                store.create(i);
+                localsync('create', i, options);
               }
             } else {
-              store.create(resp);
+              localsync('create', model, options);
             }
             return success(resp);
           };
+          return onlineSync(method, model, options);
         }
-        if (!model.local) return onlineSync(method, model, options);
         break;
       case 'create':
-        if (!model.local && options.remote !== false) {
-          onlineSync(method, model, options);
-        }
-        return store.create(model);
+        onlineSync(method, model, options);
+        return localsync(method, model, options);
       case 'update':
-        if (!model.local && options.remote !== false) {
-          onlineSync(method, model, options);
-        }
-        return store.update(model);
+        onlineSync(method, model, options);
+        return localsync(method, model, options);
       case 'delete':
-        if (!model.local && options.remote !== false) {
-          onlineSync(method, model, options);
-        }
-        return store.destroy(model);
+        onlineSync(method, model, options);
+        return localsync(method, model, options);
     }
   };
 
