@@ -4,6 +4,35 @@
 # persistence. Models are given GUIDS, and saved into a JSON object. Simple
 # as that.
 
+# Make it easy for collections to sync dirty and destroyed records
+# Simply call collection.syncDirtyAndDestroyed()
+Backbone.Collection.prototype.syncDirty = ->
+  store = localStorage.getItem "#{@url}_dirty"
+  ids = (store and store.split(',')) or []
+  
+  for id in ids
+    id = if id.length == 36 then id else parseInt(id)
+    model = @get id
+    model.save()
+
+Backbone.Collection.prototype.syncDestroyed = ->
+  store = localStorage.getItem "#{@url}_destroyed"
+  ids = (store and store.split(',')) or []
+  
+  for id in ids
+    model = new @model({id: id})
+    model.collection = @
+    model.destroy()
+
+Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
+  # need to fetch again to make sure _byId is updated with recently created data
+  # this is needed for collection.get() to work properly
+  # related to https://github.com/jeromegn/Backbone.localStorage/issues/27
+  if localStorage.getItem("#{@url}_dirty")
+    @fetch()
+  @syncDirty()
+  @syncDestroyed()
+
 # Generate four random hex digits.
 S4 = ->
   (((1 + Math.random()) * 0x10000) | 0).toString(16).substring 1
@@ -39,17 +68,19 @@ class window.Store
       localStorage.setItem @name + '_dirty', dirtyRecords.join(',')
     model
   
-  clean: (model) ->
-    dirtyRecords = @recordsOn @name + '_dirty'
+  clean: (model, from) ->
+    store = "#{@name}_#{from}"
+    dirtyRecords = @recordsOn store
     if _.include dirtyRecords, model.id.toString()
       console.log 'cleaning', model.id
-      localStorage.setItem @name + '_dirty', _.without(dirtyRecords, model.id.toString()).join(',')
+      localStorage.setItem store, _.without(dirtyRecords, model.id.toString()).join(',')
     model
     
   destroyed: (model) ->
     destroyedRecords = @recordsOn @name + '_destroyed'
-    destroyedRecords.push model.id
-    localStorage.setItem @name + '_destroyed', destroyedRecords.join(',')
+    if not _.include destroyedRecords, model.id.toString()
+      destroyedRecords.push model.id
+      localStorage.setItem @name + '_destroyed', destroyedRecords.join(',')
     model
     
   # Add a model, giving it a (hopefully)-unique GUID, if it doesn't already
@@ -120,10 +151,16 @@ localsync = (method, model, options) ->
       store.dirty(model) if options.dirty
     when 'update'
       store.update(model)
-      if options.dirty then store.dirty(model) else store.clean(model)
+      if options.dirty then store.dirty(model) else store.clean(model, 'dirty')
     when 'delete'
       store.destroy(model)
-      if options.dirty then store.destroyed(model) else store.clean(model)
+      if options.dirty
+        store.destroyed(model)
+      else
+        if model.id.toString().length == 36 
+          store.clean(model, 'dirty')
+        else
+          store.clean(model, 'destroyed')
   
   unless options.ignoreCallbacks
     if response

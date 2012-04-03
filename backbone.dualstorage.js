@@ -4,6 +4,42 @@
 
   var S4, dualsync, localsync, onlineSync, result;
 
+  Backbone.Collection.prototype.syncDirty = function() {
+    var id, ids, model, store, _i, _len, _results;
+    store = localStorage.getItem("" + this.url + "_dirty");
+    ids = (store && store.split(',')) || [];
+    _results = [];
+    for (_i = 0, _len = ids.length; _i < _len; _i++) {
+      id = ids[_i];
+      id = id.length === 36 ? id : parseInt(id);
+      model = this.get(id);
+      _results.push(model.save());
+    }
+    return _results;
+  };
+
+  Backbone.Collection.prototype.syncDestroyed = function() {
+    var id, ids, model, store, _i, _len, _results;
+    store = localStorage.getItem("" + this.url + "_destroyed");
+    ids = (store && store.split(',')) || [];
+    _results = [];
+    for (_i = 0, _len = ids.length; _i < _len; _i++) {
+      id = ids[_i];
+      model = new this.model({
+        id: id
+      });
+      model.collection = this;
+      _results.push(model.destroy());
+    }
+    return _results;
+  };
+
+  Backbone.Collection.prototype.syncDirtyAndDestroyed = function() {
+    if (localStorage.getItem("" + this.url + "_dirty")) this.fetch();
+    this.syncDirty();
+    return this.syncDestroyed();
+  };
+
   S4 = function() {
     return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
   };
@@ -42,12 +78,13 @@
       return model;
     };
 
-    Store.prototype.clean = function(model) {
-      var dirtyRecords;
-      dirtyRecords = this.recordsOn(this.name + '_dirty');
+    Store.prototype.clean = function(model, from) {
+      var dirtyRecords, store;
+      store = "" + this.name + "_" + from;
+      dirtyRecords = this.recordsOn(store);
       if (_.include(dirtyRecords, model.id.toString())) {
         console.log('cleaning', model.id);
-        localStorage.setItem(this.name + '_dirty', _.without(dirtyRecords, model.id.toString()).join(','));
+        localStorage.setItem(store, _.without(dirtyRecords, model.id.toString()).join(','));
       }
       return model;
     };
@@ -55,8 +92,10 @@
     Store.prototype.destroyed = function(model) {
       var destroyedRecords;
       destroyedRecords = this.recordsOn(this.name + '_destroyed');
-      destroyedRecords.push(model.id);
-      localStorage.setItem(this.name + '_destroyed', destroyedRecords.join(','));
+      if (!_.include(destroyedRecords, model.id.toString())) {
+        destroyedRecords.push(model.id);
+        localStorage.setItem(this.name + '_destroyed', destroyedRecords.join(','));
+      }
       return model;
     };
 
@@ -152,7 +191,7 @@
           if (options.dirty) {
             return store.dirty(model);
           } else {
-            return store.clean(model);
+            return store.clean(model, 'dirty');
           }
           break;
         case 'delete':
@@ -160,7 +199,11 @@
           if (options.dirty) {
             return store.destroyed(model);
           } else {
-            return store.clean(model);
+            if (model.id.toString().length === 36) {
+              return store.clean(model, 'dirty');
+            } else {
+              return store.clean(model, 'destroyed');
+            }
           }
       }
     })();
