@@ -24,6 +24,23 @@ You can also deactivate dualsync to some requests, when you want to sync with th
 
     SomeCollection.create({name: "someone"}, {remote: false});
 
+## Data synchronization
+
+When the client goes offline, dualStorage allows you to keep changing and destroying records. All changes will be send when the client goes online again.
+
+    // server online. Go!
+    People.fetch();       // load cars models and save them into localstorage
+	
+	// server offline!
+	People.create({name: "Turing"});   // you still can create new cars...
+	People.models[0].save({age: 41});  // update existing ones...
+	People.models[1].destroy();        // and destroy as well
+	
+	// server online again!
+	People.syncDirtyAndDestroyed();    // all changes are sent to the server and localStorage is updated
+
+Keep in mind that if you try to fetch() a collection that has dirty data, only data currently in the localStorage will be loaded. collection.syncDirtyAndDestroyed() needs to be executed before trying to download new data from the server.
+
 ## Credits
 
 Thanks to [Mark Woodall](https://github.com/llad) for the QUnit tests.

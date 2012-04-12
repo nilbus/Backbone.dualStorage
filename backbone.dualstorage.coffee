@@ -4,6 +4,29 @@
 # persistence. Models are given GUIDS, and saved into a JSON object. Simple
 # as that.
 
+# Make it easy for collections to sync dirty and destroyed records
+# Simply call collection.syncDirtyAndDestroyed()
+Backbone.Collection.prototype.syncDirty = ->
+  store = localStorage.getItem "#{@url}_dirty"
+  ids = (store and store.split(',')) or []
+  
+  for id in ids
+    model = if id.length == 36 then @where(id: id)[0] else @get(parseInt(id))
+    model.save()
+
+Backbone.Collection.prototype.syncDestroyed = ->
+  store = localStorage.getItem "#{@url}_destroyed"
+  ids = (store and store.split(',')) or []
+  
+  for id in ids
+    model = new @model({id: id})
+    model.collection = @
+    model.destroy()
+
+Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
+  @syncDirty()
+  @syncDestroyed()
+
 # Generate four random hex digits.
 S4 = ->
   (((1 + Math.random()) * 0x10000) | 0).toString(16).substring 1
@@ -15,8 +38,7 @@ class window.Store
 
   constructor: (name) ->
     @name = name
-    store = localStorage.getItem(@name)
-    @records = (store and store.split(',')) or []
+    @records = @recordsOn @name
 
   # Generates an unique id to use when saving new instances into localstorage
   # by default generates a pseudo-GUID by concatenating random hexadecimal.
@@ -27,7 +49,34 @@ class window.Store
   # Save the current state of the **Store** to *localStorage*.
   save: ->
     localStorage.setItem @name, @records.join(',')
-
+  
+  recordsOn: (key) ->
+    store = localStorage.getItem(key)
+    (store and store.split(',')) or []
+  
+  dirty: (model) ->
+    dirtyRecords = @recordsOn @name + '_dirty'
+    if not _.include(dirtyRecords, model.id.toString())
+      console.log 'dirtying', model
+      dirtyRecords.push model.id
+      localStorage.setItem @name + '_dirty', dirtyRecords.join(',')
+    model
+  
+  clean: (model, from) ->
+    store = "#{@name}_#{from}"
+    dirtyRecords = @recordsOn store
+    if _.include dirtyRecords, model.id.toString()
+      console.log 'cleaning', model.id
+      localStorage.setItem store, _.without(dirtyRecords, model.id.toString()).join(',')
+    model
+    
+  destroyed: (model) ->
+    destroyedRecords = @recordsOn @name + '_destroyed'
+    if not _.include destroyedRecords, model.id.toString()
+      destroyedRecords.push model.id
+      localStorage.setItem @name + '_destroyed', destroyedRecords.join(',')
+    model
+    
   # Add a model, giving it a (hopefully)-unique GUID, if it doesn't already
   # have an id of it's own.
   create: (model) ->
@@ -48,6 +97,15 @@ class window.Store
       @records.push model.id.toString()
     @save()
     model
+  
+  clear: ->
+    for id in @records
+      localStorage.removeItem @name + @sep + id
+    @records = []
+    @save()
+  
+  hasDirtyOrDestroyed: ->
+    not _.isEmpty(localStorage.getItem(@name + '_dirty')) or not _.isEmpty(localStorage.getItem(@name + '_destroyed'))
 
   # Retrieve a model from `this.data` by id.
   find: (model) ->
@@ -78,13 +136,26 @@ localsync = (method, model, options) ->
   response = switch method
     when 'read'
       if model.id then store.find(model) else store.findAll()
+    when 'hasDirtyOrDestroyed'
+      store.hasDirtyOrDestroyed()
+    when 'clear'
+      store.clear()
     when 'create'
-      store.create(model)
+      model = store.create(model)
+      store.dirty(model) if options.dirty
     when 'update'
       store.update(model)
+      if options.dirty then store.dirty(model) else store.clean(model, 'dirty')
     when 'delete'
       store.destroy(model)
-
+      if options.dirty
+        store.destroyed(model)
+      else
+        if model.id.toString().length == 36 
+          store.clean(model, 'dirty')
+        else
+          store.clean(model, 'destroyed')
+  
   unless options.ignoreCallbacks
     if response
       options.success response
@@ -108,43 +179,90 @@ dualsync = (method, model, options) ->
   
   options.storeName = result(model.collection, 'url') || result(model, 'url')
   
+  # execute only online sync
   return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')
-  return localsync(method, model, options) if (options.remote == false) or result(model, 'local') or result(model.collection, 'local')
   
+  # execute only local sync
+  local = result(model, 'local') or result(model.collection, 'local')
+  options.dirty = options.remote is false and not local
+  return localsync(method, model, options) if options.remote is false or local
+  
+  # execute dual sync
   options.ignoreCallbacks = true
+  
+  success = options.success
+  error = options.error
   
   switch method
     when 'read'
-      response = localsync(method, model, options)
-
-      if not _.isEmpty(response)
-        console.log 'getting local', response, 'from', options.storeName
-        options.success response
+      if localsync('hasDirtyOrDestroyed', model, options)
+        console.log "can't clear", options.storeName, "require sync dirty data first"
+        success localsync(method, model, options)
       else
-        success = options.success
         options.success = (resp, status, xhr) ->
           console.log 'got remote', resp, 'putting into', options.storeName
+          
+          localsync('clear', model, options)
+          
           if _.isArray resp
             for i in resp
               console.log 'trying to store', i
               localsync('create', i, options)
           else
-            localsync('create', model, options)
-
-          success resp
+            localsync('create', resp, options)
+          
+          success(resp, status, xhr)
+        
+        options.error = (resp) ->
+          console.log 'getting local from', options.storeName
+          success localsync(method, model, options)
 
         onlineSync(method, model, options)
 
     when 'create'
+      options.success = (resp, status, xhr) ->
+        localsync(method, resp, options)
+        success(resp, status, xhr)
+      options.error = (resp) ->
+        options.dirty = true
+        success localsync(method, model, options)
+      
       onlineSync(method, model, options)
-      localsync(method, model, options)
 
     when 'update'
-      onlineSync(method, model, options)
-      localsync(method, model, options)
+      if _.isString(model.id) and model.id.length == 36
+        originalModel = model.clone()
+        
+        options.success = (resp, status, xhr) ->
+          localsync('delete', originalModel, options)
+          localsync('create', resp, options)
+          success(resp, status, xhr)
+        options.error = (resp) ->
+          options.dirty = true
+          success localsync(method, originalModel, options)
+        
+        model.set id: null
+        onlineSync('create', model, options)
+      else
+        options.success = (resp, status, xhr) ->
+          success localsync(method, model, options)
+        options.error = (resp) ->
+          options.dirty = true
+          success localsync(method, model, options)
+        
+        onlineSync(method, model, options)
 
     when 'delete'
-      onlineSync(method, model, options)
-      localsync(method, model, options)
-
+      if _.isString(model.id) and model.id.length == 36
+        localsync(method, model, options)
+      else
+        options.success = (resp, status, xhr) ->
+          localsync(method, model, options)
+          success(resp, status, xhr)
+        options.error = (resp) ->
+          options.dirty = true
+          success localsync(method, model, options)
+        
+        onlineSync(method, model, options)
+    
 Backbone.sync = dualsync
