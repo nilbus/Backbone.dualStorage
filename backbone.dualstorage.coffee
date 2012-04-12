@@ -11,8 +11,7 @@ Backbone.Collection.prototype.syncDirty = ->
   ids = (store and store.split(',')) or []
   
   for id in ids
-    id = if id.length == 36 then id else parseInt(id)
-    model = @get id
+    model = if id.length == 36 then @where(id: id)[0] else @get(parseInt(id))
     model.save()
 
 Backbone.Collection.prototype.syncDestroyed = ->
@@ -25,11 +24,6 @@ Backbone.Collection.prototype.syncDestroyed = ->
     model.destroy()
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
-  # need to fetch again to make sure _byId is updated with recently created data
-  # this is needed for collection.get() to work properly
-  # related to https://github.com/jeromegn/Backbone.localStorage/issues/27
-  if localStorage.getItem("#{@url}_dirty")
-    @fetch()
   @syncDirty()
   @syncDestroyed()
 
@@ -247,7 +241,7 @@ dualsync = (method, model, options) ->
           options.dirty = true
           success localsync(method, originalModel, options)
         
-        model.id = null
+        model.set id: null
         onlineSync('create', model, options)
       else
         options.success = (resp, status, xhr) ->

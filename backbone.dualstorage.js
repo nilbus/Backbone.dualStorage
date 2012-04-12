@@ -11,8 +11,9 @@
     _results = [];
     for (_i = 0, _len = ids.length; _i < _len; _i++) {
       id = ids[_i];
-      id = id.length === 36 ? id : parseInt(id);
-      model = this.get(id);
+      model = id.length === 36 ? this.where({
+        id: id
+      })[0] : this.get(parseInt(id));
       _results.push(model.save());
     }
     return _results;
@@ -35,7 +36,6 @@
   };
 
   Backbone.Collection.prototype.syncDirtyAndDestroyed = function() {
-    if (localStorage.getItem("" + this.url + "_dirty")) this.fetch();
     this.syncDirty();
     return this.syncDestroyed();
   };
@@ -295,7 +295,9 @@
             options.dirty = true;
             return success(localsync(method, originalModel, options));
           };
-          model.id = null;
+          model.set({
+            id: null
+          });
           return onlineSync('create', model, options);
         } else {
           options.success = function(resp, status, xhr) {
