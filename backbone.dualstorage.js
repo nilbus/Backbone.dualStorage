@@ -155,10 +155,10 @@
           options.success = function(resp, status, xhr) {
             var i, _i, _len;
             console.log('got remote', resp, 'putting into', store);
+            resp = parseRemoteResponse(model, resp);
             if (_.isArray(resp)) {
               for (_i = 0, _len = resp.length; _i < _len; _i++) {
                 i = resp[_i];
-                resp = parseRemoteResponse(model, resp);
                 console.log('trying to store', i);
                 store.create(i);
               }

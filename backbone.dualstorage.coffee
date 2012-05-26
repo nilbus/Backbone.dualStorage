@@ -137,9 +137,9 @@ dualsync = (method, model, options) ->
         success = options.success
         options.success = (resp, status, xhr) ->
           console.log 'got remote', resp, 'putting into', store
+          resp = parseRemoteResponse(model, resp)
           if _.isArray resp
             for i in resp
-              resp = parseRemoteResponse(model, resp)
               console.log 'trying to store', i
               store.create i
           else
