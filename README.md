@@ -22,5 +22,4 @@ Keep in mind that Backbone.dualStorage really loves your models. By default it w
 
 ## Credits
 
-Thanks to [Mark Woodall](https://github.com/llad) for the QUnit tests.
 Thanks to [Jerome Gravel-Niquet](https://github.com/jeromegn) for Backbone.dualStorage
