@@ -172,6 +172,12 @@ result = (object, property) ->
   value = object[property]
   if _.isFunction(value) then value.call(object) else value
 
+# Helper function to run parseBeforeLocalSave() in order to
+# parse a remote JSON response before caching locally
+parseRemoteResponse = (object, response) ->
+  if not (object and object.parseBeforeLocalSave) then return response
+  if _.isFunction(object.parseBeforeLocalSave) then object.parseBeforeLocalSave(response)
+
 onlineSync = Backbone.sync
 
 dualsync = (method, model, options) ->
@@ -201,6 +207,7 @@ dualsync = (method, model, options) ->
       else
         options.success = (resp, status, xhr) ->
           console.log 'got remote', resp, 'putting into', options.storeName
+          resp = parseRemoteResponse(model, resp)
           
           localsync('clear', model, options)
           
