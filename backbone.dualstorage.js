@@ -1,8 +1,7 @@
 (function() {
-
   'use strict';
 
-  var S4, dualsync, localsync, onlineSync, result;
+  var S4, dualsync, localsync, onlineSync, parseRemoteResponse, result;
 
   Backbone.Collection.prototype.syncDirty = function() {
     var id, ids, model, store, _i, _len, _results;
@@ -101,9 +100,15 @@
 
     Store.prototype.create = function(model) {
       console.log('creating', model, 'in', this.name);
-      if (!_.isObject(model)) return model;
-      if (model.attributes != null) model = model.attributes;
-      if (!model.id) model.id = this.generateId();
+      if (!_.isObject(model)) {
+        return model;
+      }
+      if (model.attributes != null) {
+        model = model.attributes;
+      }
+      if (!model.id) {
+        model.id = this.generateId();
+      }
       localStorage.setItem(this.name + this.sep + model.id, JSON.stringify(model));
       this.records.push(model.id.toString());
       this.save();
@@ -184,7 +189,9 @@
           return store.clear();
         case 'create':
           model = store.create(model);
-          if (options.dirty) return store.dirty(model);
+          if (options.dirty) {
+            return store.dirty(model);
+          }
           break;
         case 'update':
           store.update(model);
@@ -219,12 +226,23 @@
 
   result = function(object, property) {
     var value;
-    if (!object) return null;
+    if (!object) {
+      return null;
+    }
     value = object[property];
     if (_.isFunction(value)) {
       return value.call(object);
     } else {
       return value;
+    }
+  };
+
+  parseRemoteResponse = function(object, response) {
+    if (!(object && object.parseBeforeLocalSave)) {
+      return response;
+    }
+    if (_.isFunction(object.parseBeforeLocalSave)) {
+      return object.parseBeforeLocalSave(response);
     }
   };
 
@@ -254,6 +272,7 @@
           options.success = function(resp, status, xhr) {
             var i, _i, _len;
             console.log('got remote', resp, 'putting into', options.storeName);
+            resp = parseRemoteResponse(model, resp);
             localsync('clear', model, options);
             if (_.isArray(resp)) {
               for (_i = 0, _len = resp.length; _i < _len; _i++) {

@@ -1,8 +1,10 @@
-# Backbone dualStorage Adapter v1.0
+Backbone dualStorage Adapter v1.0
+=================================
 
 A dualStorage adapter for Backbone. It's a drop-in replacement for Backbone.Sync() to handle saving to a localStorage database as a cache for the remote models.
 
-## Usage
+Usage
+-----
 
 Include Backbone.dualStorage after having included Backbone.js:
 
@@ -24,7 +26,8 @@ You can also deactivate dualsync to some requests, when you want to sync with th
 
     SomeCollection.create({name: "someone"}, {remote: false});
 
-## Data synchronization
+Data synchronization
+--------------------
 
 When the client goes offline, dualStorage allows you to keep changing and destroying records. All changes will be send when the client goes online again.
 
@@ -41,7 +44,19 @@ When the client goes offline, dualStorage allows you to keep changing and destro
 
 Keep in mind that if you try to fetch() a collection that has dirty data, only data currently in the localStorage will be loaded. collection.syncDirtyAndDestroyed() needs to be executed before trying to download new data from the server.
 
-## Credits
+Data parsing
+------------
 
-Thanks to [Mark Woodall](https://github.com/llad) for the QUnit tests.
+Sometimes you may want to customize how data from the remote server is parsed before it's saved to localStorage.
+Typically your model's `parse` method takes care of this.
+Since dualStorage provides two layers of backend, we need a second parse method.
+For example, if your remote API returns data in a way that the default `parse` method interprets the result as a single record,
+use `parseBeforeLocalSave` to break up the data into an array of records like you would with [parse](http://backbonejs.org/#Model-parse).
+
+* The model's `parse` method still parses data read from localStorage.
+* The model's `parseBeforeLocalSave` method parses data read from the remote _before_ it is saved to localStorage on read.
+
+Credits
+-------
+
 Thanks to [Jerome Gravel-Niquet](https://github.com/jeromegn) for Backbone.dualStorage
