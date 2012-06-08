@@ -1,8 +1,10 @@
-# Backbone dualStorage Adapter v1.0
+Backbone dualStorage Adapter v1.0
+=================================
 
 A dualStorage adapter for Backbone. It's a drop-in replacement for Backbone.Sync() to handle saving to a localStorage database as a cache for the remote models.
 
-## Usage
+Usage
+-----
 
 Include Backbone.dualStorage after having included Backbone.js:
 
@@ -20,6 +22,18 @@ Keep in mind that Backbone.dualStorage really loves your models. By default it w
         remote: true // never cached, dualStorage is bypassed entirely
     });
 
-## Credits
+### parseBeforeLocalSave
+
+Sometimes you may want to customize how data from the remote server is parsed before it's saved to localStorage.
+Typically your model's `parse` method takes care of this.
+Since dualStorage provides two layers of backend, we need a second parse method.
+For example, if your remote API returns data in a way that the default `parse` method interprets the result as a single record,
+use `parseBeforeLocalSave` to break up the data into an array of records like you would with [parse](http://backbonejs.org/#Model-parse).
+
+* The model's `parse` method still parses data read from localStorage.
+* The model's `parseBeforeLocalSave` method parses data read from the remote _before_ it is saved to localStorage on read.
+
+Credits
+-------
 
 Thanks to [Jerome Gravel-Niquet](https://github.com/jeromegn) for Backbone.dualStorage
