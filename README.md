@@ -15,14 +15,37 @@ Create your models and collections in the usual way.
 Feel free to use Backbone as you usually would, this is a drop-in replacement.
 
     
-Keep in mind that Backbone.dualStorage really loves your models. By default it will cache everything that passes through Backbone.sync. You can override this behaviour with the booleans ```remote``` and ```local``` on models:
+Keep in mind that Backbone.dualStorage really loves your models. By default it will cache everything that passes through Backbone.sync. You can override this behaviour with the booleans ```remote``` or ```local``` on models and collections:
     
-    SomeModel = Backbone.Collection.extend({
-        local: true  // always fetched and saved locally
+    SomeCollection = Backbone.Collection.extend({
+        local: true  // always fetched and saved only locally, never saves on remote
         remote: true // never cached, dualStorage is bypassed entirely
     });
 
-### parseBeforeLocalSave
+You can also deactivate dualsync to some requests, when you want to sync with the server only later.
+
+    SomeCollection.create({name: "someone"}, {remote: false});
+
+Data synchronization
+--------------------
+
+When the client goes offline, dualStorage allows you to keep changing and destroying records. All changes will be send when the client goes online again.
+
+    // server online. Go!
+    People.fetch();       // load cars models and save them into localstorage
+	
+	// server offline!
+	People.create({name: "Turing"});   // you still can create new cars...
+	People.models[0].save({age: 41});  // update existing ones...
+	People.models[1].destroy();        // and destroy as well
+	
+	// server online again!
+	People.syncDirtyAndDestroyed();    // all changes are sent to the server and localStorage is updated
+
+Keep in mind that if you try to fetch() a collection that has dirty data, only data currently in the localStorage will be loaded. collection.syncDirtyAndDestroyed() needs to be executed before trying to download new data from the server.
+
+Data parsing
+------------
 
 Sometimes you may want to customize how data from the remote server is parsed before it's saved to localStorage.
 Typically your model's `parse` method takes care of this.
