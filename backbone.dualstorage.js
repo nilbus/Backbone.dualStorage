@@ -240,7 +240,7 @@
   dualsync = function(method, model, options) {
     var error, local, originalModel, success;
     console.log('dualsync', method, model, options);
-    options.storeName = result(model.collection, 'url') || result(model, 'url');
+    options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') || result(model.collection, 'url') || result(model, 'url');
     if (result(model, 'remote') || result(model.collection, 'remote')) {
       return onlineSync(method, model, options);
     }

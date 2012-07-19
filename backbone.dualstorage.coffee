@@ -185,7 +185,8 @@ onlineSync = Backbone.sync
 dualsync = (method, model, options) ->
   console.log 'dualsync', method, model, options
   
-  options.storeName = result(model.collection, 'url') || result(model, 'url')
+  options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') || 
+                      result(model.collection, 'url') || result(model, 'url')
   
   # execute only online sync
   return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')
