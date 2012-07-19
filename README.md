@@ -1,3 +1,5 @@
+This project is now dormant, as I no longer work on any project that needs it.
+
 Backbone dualStorage Adapter v1.0
 =================================
 
