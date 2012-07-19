@@ -82,8 +82,10 @@ class window.Store
   create: (model) ->
     console.log 'creating', model, 'in', @name
     if not _.isObject(model) then return model
-    if model.attributes? then model = model.attributes
-    if not model.id then model.id = @generateId()
+    #if model.attributes? then model = model.attributes #removed to fix issue 14
+    if not model.id
+      model.id = @generateId()
+      model.set model.idAttribute, model.id
     localStorage.setItem @name + @sep + model.id, JSON.stringify(model)
     @records.push model.id.toString()
     @save()
