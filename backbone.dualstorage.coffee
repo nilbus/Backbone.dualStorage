@@ -211,7 +211,7 @@ dualsync = (method, model, options) ->
           console.log 'got remote', resp, 'putting into', options.storeName
           resp = parseRemoteResponse(model, resp)
           
-          localsync('clear', model, options)
+          localsync('clear', model, options) unless options.add
           
           if _.isArray resp
             for i in resp
