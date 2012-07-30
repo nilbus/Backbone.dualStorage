@@ -143,8 +143,9 @@ localsync = (method, model, options) ->
     when 'clear'
       store.clear()
     when 'create'
-      model = store.create(model)
-      store.dirty(model) if options.dirty
+      unless options.add and not options.merge and store.find(model)
+        model = store.create(model)
+        store.dirty(model) if options.dirty
     when 'update'
       store.update(model)
       if options.dirty then store.dirty(model) else store.clean(model, 'dirty')
@@ -211,7 +212,7 @@ dualsync = (method, model, options) ->
           console.log 'got remote', resp, 'putting into', options.storeName
           resp = parseRemoteResponse(model, resp)
           
-          localsync('clear', model, options)
+          localsync('clear', model, options) unless options.add
           
           if _.isArray resp
             for i in resp
