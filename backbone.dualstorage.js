@@ -183,8 +183,12 @@
         case 'clear':
           return store.clear();
         case 'create':
-          model = store.create(model);
-          if (options.dirty) return store.dirty(model);
+          if (!(options.add && !options.merge && store.find(model))) {
+            model = store.create(model);
+            if (options.dirty) {
+              return store.dirty(model);
+            }
+          }
           break;
         case 'update':
           store.update(model);
@@ -262,7 +266,9 @@
             var i, _i, _len;
             console.log('got remote', resp, 'putting into', options.storeName);
             resp = parseRemoteResponse(model, resp);
-            localsync('clear', model, options);
+            if (!options.add) {
+              localsync('clear', model, options);
+            }
             if (_.isArray(resp)) {
               for (_i = 0, _len = resp.length; _i < _len; _i++) {
                 i = resp[_i];
