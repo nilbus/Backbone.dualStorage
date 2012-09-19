@@ -1,0 +1,13 @@
+{
+  "name": "Backbone.dualStorage"
+, "version": "1.0.0"
+, "dependencies": {
+    "coffee-script": "~1.3"
+  , "jake": "~0.3"
+  , "jasmine-node": "~1.0"
+  , "underscore": "~1"
+  }
+, "scripts": {
+    "test": "jake test"
+  }
+}

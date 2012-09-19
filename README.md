@@ -58,6 +58,22 @@ use `parseBeforeLocalSave` to break up the data into an array of records like yo
 * The model's `parse` method still parses data read from localStorage.
 * The model's `parseBeforeLocalSave` method parses data read from the remote _before_ it is saved to localStorage on read.
 
+Testing
+-------
+
+Running the test suite requires [node.js](http://nodejs.org).
+Inside the project directory, use npm to install the required dependencies:
+
+    npm install -g
+
+Now just run the tests with jake:
+
+    jake test
+
+You can also run the tests continually as changes are made with jasmine-node:
+
+    jasmine-node --autotest --coffee spec
+
 Credits
 -------
 
