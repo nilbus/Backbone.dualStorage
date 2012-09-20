@@ -6,6 +6,7 @@
   , "jake": "~0.3"
   , "jasmine-node": "~1.0"
   , "underscore": "~1"
+  , "backbone": "~0.9.2"
   }
 , "scripts": {
     "test": "jake test"

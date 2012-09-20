@@ -2,14 +2,15 @@ helper = require('./spec_helper')
 window = helper.window
 
 describe 'the spec_helper context', ->
-  it 'defines Backbone.Collection.prototype.syncDirty', ->
-    expect(window).toBeDefined()
-    expect(window.Backbone.Collection.prototype.syncDirty).toBeDefined()
+  describe 'loading backbone.dualstorage.coffee', ->
+    it 'defines Backbone.Collection.prototype.syncDirty', ->
+      expect(window).toBeDefined()
+      expect(window.Backbone.Collection.prototype.syncDirty).toBeDefined()
 
   describe 'the localStorage mock', ->
     localStorage = window.localStorage
 
-    afterEach ->
+    beforeEach ->
       localStorage.clear()
 
     it 'implements setItem', ->
@@ -33,3 +34,8 @@ describe 'the spec_helper context', ->
       expect(Object.keys(localStorage.values).length).toEqual(1)
       localStorage.clear()
       expect(Object.keys(localStorage.values).length).toEqual(0)
+
+  describe 'result behaves like _.result', ->
+    it 'returns values from properties', ->
+      expect(window.result {color: 'red'}, 'color').toEqual('red')
+      expect(window.result {music: -> 'banjo'}, 'music').toEqual('banjo')

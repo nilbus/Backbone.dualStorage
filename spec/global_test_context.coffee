@@ -14,13 +14,11 @@ localStorageMock = ->
   return localStorage
 
 window =
-  Backbone:
-    Collection:
-      prototype: {}
-    sync: ->
+  Backbone: require('backbone')
   localStorage: localStorageMock()
   console:
-    log: ->
+    log: (args...) -> # console.log(args...)
   _: require('underscore')
+window.Backbone.sync = jasmine.createSpy('sync').andCallFake (method, model, options) -> options.success(model)
 window.window = window
 exports.window = window
