@@ -64,7 +64,7 @@ Testing
 Running the test suite requires [node.js](http://nodejs.org).
 Inside the project directory, use npm to install the required dependencies:
 
-    npm install -g
+    npm install -g jasmine-node coffee-script jake backbone underscore
 
 Now just run the tests with jake:
 
