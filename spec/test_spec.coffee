@@ -1,5 +1,4 @@
-helper = require('./spec_helper')
-window = helper.window
+window = require('./spec_helper').window
 
 describe 'the spec_helper context', ->
   describe 'loading backbone.dualstorage.coffee', ->
