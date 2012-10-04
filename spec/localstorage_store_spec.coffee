@@ -1,19 +1,19 @@
 window = require('./spec_helper').window
 
 describe 'window.Store', ->
+  {store, model} = {}
+  beforeEach ->
+    window.localStorage.clear()
+    window.localStorage.setItem 'cats', '3'
+    window.localStorage.setItem 'cats3', '{"id": "3", "color": "burgundy"}'
+    store = new window.Store 'cats'
+
   describe 'creation', ->
     it 'takes a name in its constructor', ->
       store = new window.Store 'convenience store'
       expect(store.name).toBe 'convenience store'
 
   describe 'persistence', ->
-    {store, model} = {}
-    beforeEach ->
-      window.localStorage.clear()
-      window.localStorage.setItem 'cats', '3'
-      window.localStorage.setItem 'cats3', '{"id": "3", "color": "burgundy"}'
-      store = new window.Store 'cats'
-
     it 'fetches records by id with find', ->
       expect(store.find(id: 3)).toEqual id: '3', color: 'burgundy'
 
@@ -49,6 +49,29 @@ describe 'window.Store', ->
       expect(window.localStorage.getItem 'cats3').toBeUndefined()
 
   describe 'offline', ->
-    xit 'marks records dirty and clean', ->
-    xit 'marks records destroyed', ->
-    xit 'reports if it hasDirtyOrDestroyed records', ->
+    it 'on a clean slate, hasDirtyOrDestroyed returns false', ->
+      expect(store.hasDirtyOrDestroyed()).toBeFalsy()
+
+    it 'marks records dirty and clean, and reports if it hasDirtyOrDestroyed records', ->
+      store.dirty id: 3
+      expect(store.hasDirtyOrDestroyed()).toBeTruthy()
+      store.clean id: 3, 'dirty'
+      expect(store.hasDirtyOrDestroyed()).toBeFalsy()
+
+    it 'marks records destroyed and clean from destruction, and reports if it hasDirtyOrDestroyed records', ->
+      store.destroyed id: 3
+      expect(store.hasDirtyOrDestroyed()).toBeTruthy()
+      store.clean id: 3, 'destroyed'
+      expect(store.hasDirtyOrDestroyed()).toBeFalsy()
+
+    it 'cleans the list of dirty or destroyed models out of localStorage after saving or destroying', ->
+      collection = new window.Backbone.Collection [{id: 2, color: 'auburn'}, {id: 3, color: 'burgundy'}]
+      collection.url = 'cats'
+      store.dirty id: 2
+      store.destroyed id: 3
+      expect(store.hasDirtyOrDestroyed()).toBeTruthy()
+      collection.get(2).save()
+      collection.get(3).destroy()
+      expect(store.hasDirtyOrDestroyed()).toBeFalsy()
+      expect(window.localStorage.getItem('cats_dirty').length).toBe 0
+      expect(window.localStorage.getItem('cats_destroyed').length).toBe 0
