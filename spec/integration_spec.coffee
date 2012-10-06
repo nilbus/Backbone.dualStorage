@@ -3,6 +3,7 @@ Backbone = window.Backbone
 collection = model = null
 
 beforeEach ->
+  window.onlineSync.calls = []
   window.localStorage.clear()
   collection = new Backbone.Collection
     id: 123
@@ -15,7 +16,7 @@ describe 'using Backbone.sync directly', ->
     successCallback = jasmine.createSpy('success')
     errorCallback = jasmine.createSpy('error')
     window.dualsync 'create', model, success: successCallback, error: errorCallback
-    expect(window.onlineSync).toHaveBeenCalled()
+    expect(window.onlineSync.calls.length).toEqual(1)
     expect(successCallback).toHaveBeenCalled()
     expect(errorCallback).not.toHaveBeenCalled()
     expect(Object.keys(window.localStorage.values).length).toBeGreaterThan(0)
