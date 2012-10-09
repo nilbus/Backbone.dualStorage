@@ -4,7 +4,7 @@ Backbone = window.Backbone
 
 beforeEach ->
   window.onlineSync.calls = []
-  window.localStorage.clear()
+  window.localsync 'clear', {}, ignoreCallbacks: true, storeName: 'eyes/'
   collection = new Backbone.Collection
     id: 123
     vision: 'crystal'
