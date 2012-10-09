@@ -31,6 +31,11 @@ describe 'window.Store', ->
       expect(window.localStorage.getItem 'cats').toBe '3,2'
       expect(JSON.parse(window.localStorage.getItem 'cats2')).toEqual id: 2, color: 'blue'
 
+    it 'overwrites existing records with the same id on create', ->
+      model = id: 3, color: 'lavender'
+      store.create model
+      expect(JSON.parse(window.localStorage.getItem 'cats3')).toEqual id: 3, color: 'lavender'
+
     it 'generates an id when creating records with no id', ->
       window.localStorage.clear()
       store = new window.Store 'cats'
