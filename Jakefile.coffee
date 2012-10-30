@@ -16,6 +16,6 @@ task 'test', ->
     true              # showColors
     false             # teamcity
     false             # useRequireJs
-    /.*spec\.coffee/  # spec matcher
+    /^[^.].*spec\.coffee/  # spec matcher
     report: false     # junitreport
   )
