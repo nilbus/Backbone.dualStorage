@@ -23,55 +23,85 @@ describe 'delegating to localsync and onlineSync, and calling the model callback
 
   describe 'respects the remote only attribute on models', ->
     it 'delegates for remote models', ->
-      model.remote = true
-      window.dualsync('create', model, success: (->))
-      expect(window.onlineSync).toHaveBeenCalled()
-      expect(window.onlineSync.calls[0].args[0]).toEqual 'create'
+      ready = false
+      runs ->
+        model.remote = true
+        window.dualsync('create', model, success: (-> ready = true))
+      waitsFor (-> ready), "The success callback should have been called", 100
+      runs ->
+        expect(window.onlineSync).toHaveBeenCalled()
+        expect(window.onlineSync.calls[0].args[0]).toEqual 'create'
 
     it 'delegates for remote collections', ->
-      collection.remote = true
-      window.dualsync('read', model, success: (->))
-      expect(window.onlineSync).toHaveBeenCalled()
-      expect(window.onlineSync.calls[0].args[0]).toEqual 'read'
+      ready = false
+      runs ->
+        collection.remote = true
+        window.dualsync('read', model, success: (-> ready = true))
+      waitsFor (-> ready), "The success callback should have been called", 100
+      runs ->
+        expect(window.onlineSync).toHaveBeenCalled()
+        expect(window.onlineSync.calls[0].args[0]).toEqual 'read'
 
   describe 'respects the local only attribute on models', ->
     ## Spying on window.localsync does not make the spy available in the vm.
     ## Instead, check that the onlineSync spy is not called in these and other tests below.
     it 'delegates for local models', ->
       # spyOn window, 'localsync'
-      model.local = true
-      window.onlineSync.reset()
-      window.dualsync('update', model, success: (->))
-      # expect(window.localsync).toHaveBeenCalled()
-      # expect(window.localsync.calls[0].args[0]).toEqual 'update'
-      expect(window.onlineSync).not.toHaveBeenCalled()
+      ready = false
+      runs ->
+        model.local = true
+        window.onlineSync.reset()
+        window.dualsync('update', model, success: (-> ready = true))
+      waitsFor (-> ready), "The success callback should have been called", 100
+      runs ->
+        # expect(window.localsync).toHaveBeenCalled()
+        # expect(window.localsync.calls[0].args[0]).toEqual 'update'
+        expect(window.onlineSync).not.toHaveBeenCalled()
 
     it 'delegates for local collections', ->
-      collection.local = true
-      window.onlineSync.reset()
-      window.dualsync('delete', model, success: (->))
-      expect(window.onlineSync).not.toHaveBeenCalled()
+      ready = false
+      runs ->
+        collection.local = true
+        window.onlineSync.reset()
+        window.dualsync('delete', model, success: (-> ready = true))
+      waitsFor (-> ready), "The success callback should have been called", 100
+      runs ->
+        expect(window.onlineSync).not.toHaveBeenCalled()
 
   it 'respects the remote: false sync option', ->
-    window.onlineSync.reset()
-    window.dualsync('create', model, success: (->), remote: false)
-    expect(window.onlineSync).not.toHaveBeenCalled()
+    ready = false
+    runs ->
+      window.onlineSync.reset()
+      window.dualsync('create', model, success: (-> ready = true), remote: false)
+    waitsFor (-> ready), "The success callback should have been called", 100
+    runs ->
+      expect(window.onlineSync).not.toHaveBeenCalled()
 
 describe 'offline storage', ->
   it 'marks records dirty when options.remote is false, except if the model/collection is marked as local', ->
-    collection.local = true
-    window.dualsync('update', model, success: (->), remote: false)
-    # Using localsync instead of mocking it (see comment above)
-    expect(window.localsync('hasDirtyOrDestroyed', model, storeName: collection.url, ignoreCallbacks: true)).toBeFalsy()
-    collection.local = false
-    window.dualsync('update', model, success: (->), remote: false)
-    expect(window.localsync('hasDirtyOrDestroyed', model, storeName: collection.url, ignoreCallbacks: true)).toBeTruthy()
+    ready = undefined
+    runs ->
+      ready = false
+      collection.local = true
+      window.dualsync('update', model, success: (-> ready = true), remote: false)
+    waitsFor (-> ready), "The success callback should have been called", 100
+    runs ->
+      # Using localsync instead of mocking it (see comment above)
+      expect(window.localsync('hasDirtyOrDestroyed', model, storeName: collection.url, ignoreCallbacks: true)).toBeFalsy()
+      collection.local = false
+      window.dualsync('update', model, success: (-> ready = true), remote: false)
+    waitsFor (-> ready), "The success callback should have been called", 100
+    runs ->
+      expect(window.localsync('hasDirtyOrDestroyed', model, storeName: collection.url, ignoreCallbacks: true)).toBeTruthy()
 
 describe 'dualStorage hooks', ->
   beforeEach ->
     model.parseBeforeLocalSave = ->
       new Backbone.Model(parsedRemote: true)
-    window.dualsync 'create', model, success: (->)
+    ready = false
+    runs ->
+      window.dualsync 'create', model, success: (-> ready = true)
+    waitsFor (-> ready), "The success callback should have been called", 100
 
   it 'filters read responses through parseBeforeLocalSave when defined on the model or collection', ->
     response = null
