@@ -19,6 +19,7 @@ window =
   console:
     log: (args...) -> # console.log(args...)
   _: require('underscore')
+  jasmine: jasmine
 window.Backbone.sync = jasmine.createSpy('sync').andCallFake (method, model, options) -> options.success(model)
 window.window = window
 exports.window = window

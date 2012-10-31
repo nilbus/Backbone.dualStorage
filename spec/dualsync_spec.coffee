@@ -14,6 +14,16 @@ beforeEach ->
   model = collection.models[0]
   delete model.remote
 
+spyOnLocalsync = (spec) ->
+  coffee = require('coffee-script')
+  runs ->
+    coffee.eval "window.oldLocalsync = window.localsync; window.localsync = jasmine.createSpy('localsync').andCallFake((method, model, options) -> options.success())", sandbox: window
+  runs ->
+    spec(window.localsync)
+  runs ->
+    coffee.eval "window.localsync = window.oldLocalsync", sandbox: window
+
+
 describe 'delegating to localsync and onlineSync, and calling the model callbacks', ->
   describe 'dual tier storage', ->
     describe 'create', ->
@@ -43,20 +53,17 @@ describe 'delegating to localsync and onlineSync, and calling the model callback
         expect(window.onlineSync.calls[0].args[0]).toEqual 'read'
 
   describe 'respects the local only attribute on models', ->
-    ## Spying on window.localsync does not make the spy available in the vm.
-    ## Instead, check that the onlineSync spy is not called in these and other tests below.
     it 'delegates for local models', ->
-      # spyOn window, 'localsync'
-      ready = false
-      runs ->
-        model.local = true
-        window.onlineSync.reset()
-        window.dualsync('update', model, success: (-> ready = true))
-      waitsFor (-> ready), "The success callback should have been called", 100
-      runs ->
-        # expect(window.localsync).toHaveBeenCalled()
-        # expect(window.localsync.calls[0].args[0]).toEqual 'update'
-        expect(window.onlineSync).not.toHaveBeenCalled()
+      spyOnLocalsync ->
+        ready = false
+        runs ->
+          model.local = true
+          window.onlineSync.reset()
+          window.dualsync('update', model, success: (-> ready = true))
+        waitsFor (-> ready), "The success callback should have been called", 100
+        runs ->
+          expect(window.localsync).toHaveBeenCalled()
+          expect(window.localsync.calls[0].args[0]).toEqual 'update'
 
     it 'delegates for local collections', ->
       ready = false
@@ -79,20 +86,27 @@ describe 'delegating to localsync and onlineSync, and calling the model callback
 
 describe 'offline storage', ->
   it 'marks records dirty when options.remote is false, except if the model/collection is marked as local', ->
-    ready = undefined
-    runs ->
-      ready = false
-      collection.local = true
-      window.dualsync('update', model, success: (-> ready = true), remote: false)
-    waitsFor (-> ready), "The success callback should have been called", 100
-    runs ->
-      # Using localsync instead of mocking it (see comment above)
-      expect(window.localsync('hasDirtyOrDestroyed', model, storeName: collection.url, ignoreCallbacks: true)).toBeFalsy()
-      collection.local = false
-      window.dualsync('update', model, success: (-> ready = true), remote: false)
-    waitsFor (-> ready), "The success callback should have been called", 100
-    runs ->
-      expect(window.localsync('hasDirtyOrDestroyed', model, storeName: collection.url, ignoreCallbacks: true)).toBeTruthy()
+    spyOnLocalsync ->
+      ready = undefined
+      runs ->
+        ready = false
+        collection.local = true
+        window.dualsync('update', model, success: (-> ready = true), remote: false)
+      waitsFor (-> ready), "The success callback should have been called", 100
+      runs ->
+        expect(window.localsync).toHaveBeenCalled()
+        expect(window.localsync.calls.length).toEqual 1
+        expect(window.localsync.calls[0].args[2].dirty).toBeFalsy()
+      runs ->
+        window.localsync.reset()
+        ready = false
+        collection.local = false
+        window.dualsync('update', model, success: (-> ready = true), remote: false)
+      waitsFor (-> ready), "The success callback should have been called", 100
+      runs ->
+        expect(window.localsync).toHaveBeenCalled()
+        expect(window.localsync.calls.length).toEqual 1
+        expect(window.localsync.calls[0].args[2].dirty).toBeTruthy()
 
 describe 'dualStorage hooks', ->
   beforeEach ->
