@@ -17,7 +17,7 @@ beforeEach ->
 spyOnLocalsync = (spec) ->
   coffee = require('coffee-script')
   runs ->
-    coffee.eval "window.oldLocalsync = window.localsync; window.localsync = jasmine.createSpy('localsync').andCallFake((method, model, options) -> options.success())", sandbox: window
+    coffee.eval "window.oldLocalsync = window.localsync; window.localsync = jasmine.createSpy('localsync').andCallFake((method, model, options) -> (options.success?()) unless options.ignoreCallbacks)", sandbox: window
   runs ->
     spec(window.localsync)
   runs ->
@@ -27,9 +27,56 @@ spyOnLocalsync = (spec) ->
 describe 'delegating to localsync and onlineSync, and calling the model callbacks', ->
   describe 'dual tier storage', ->
     describe 'create', ->
+      it 'delegates to both localsync and onlinesync', ->
+        spyOnLocalsync ->
+          ready = false
+          runs ->
+            window.dualsync('create', model, success: (-> ready = true))
+          waitsFor (-> ready), "The success callback should have been called", 100
+          runs ->
+            expect(window.onlineSync).toHaveBeenCalled()
+            expect(window.onlineSync.calls[0].args[0]).toEqual 'create'
+            expect(window.localsync).toHaveBeenCalled()
+            expect(window.localsync.calls[0].args[0]).toEqual 'create'
+
     describe 'read', ->
+      it 'delegates to both localsync and onlinesync', ->
+        spyOnLocalsync ->
+          ready = false
+          runs ->
+            window.dualsync('read', model, success: (-> ready = true))
+          waitsFor (-> ready), "The success callback should have been called", 100
+          runs ->
+            expect(window.onlineSync).toHaveBeenCalled()
+            expect(_(window.onlineSync.calls).any((call) -> call.args[0] == 'read'))
+            expect(window.localsync).toHaveBeenCalled()
+            expect(_(window.localsync.calls).any((call) -> call.args[0] == 'read'))
+
     describe 'update', ->
+      it 'delegates to both localsync and onlinesync', ->
+        spyOnLocalsync ->
+          ready = false
+          runs ->
+            window.dualsync('update', model, success: (-> ready = true))
+          waitsFor (-> ready), "The success callback should have been called", 100
+          runs ->
+            expect(window.onlineSync).toHaveBeenCalled()
+            expect(_(window.onlineSync.calls).any((call) -> call.args[0] == 'update'))
+            expect(window.localsync).toHaveBeenCalled()
+            expect(_(window.localsync.calls).any((call) -> call.args[0] == 'update'))
+
     describe 'delete', ->
+      it 'delegates to both localsync and onlinesync', ->
+        spyOnLocalsync ->
+          ready = false
+          runs ->
+            window.dualsync('delete', model, success: (-> ready = true))
+          waitsFor (-> ready), "The success callback should have been called", 100
+          runs ->
+            expect(window.onlineSync).toHaveBeenCalled()
+            expect(_(window.onlineSync.calls).any((call) -> call.args[0] == 'delete'))
+            expect(window.localsync).toHaveBeenCalled()
+            expect(_(window.localsync.calls).any((call) -> call.args[0] == 'delete'))
 
   describe 'respects the remote only attribute on models', ->
     it 'delegates for remote models', ->
