@@ -21,6 +21,7 @@
   describe('using Backbone.sync directly', function() {
     return it('should save and retrieve data', function() {
       var errorCallback, successCallback;
+      localStorage.clear();
       successCallback = jasmine.createSpy('success');
       errorCallback = jasmine.createSpy('error');
       window.dualsync('create', model, {
@@ -30,7 +31,7 @@
       expect(window.onlineSync.calls.length).toEqual(1);
       expect(successCallback).toHaveBeenCalled();
       expect(errorCallback).not.toHaveBeenCalled();
-      expect(Object.keys(window.localStorage.values).length).toBeGreaterThan(0);
+      expect(window.localStorage.length).toBeGreaterThan(0);
       successCallback = jasmine.createSpy('success').andCallFake(function(resp) {
         return expect(resp.get('vision')).toEqual('crystal');
       });
