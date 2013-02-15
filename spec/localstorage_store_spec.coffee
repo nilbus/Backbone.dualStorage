@@ -1,5 +1,3 @@
-window = require('./spec_helper').window
-
 describe 'window.Store', ->
   {store, model} = {}
   beforeEach ->

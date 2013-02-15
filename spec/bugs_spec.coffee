@@ -1,6 +1,3 @@
-window = require('./spec_helper').window
-Backbone = window.Backbone
-
 describe 'bugs, that once fixed, should be moved to the proper spec file and modified to test their inverse', ->
   it 'will throw an exception when attempting to load a model by an id that does not exist', ->
     window.localStorage.clear()

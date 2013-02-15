@@ -1,5 +1,3 @@
-window = require('./spec_helper').window
-
 describe 'the spec_helper context', ->
   describe 'loading backbone.dualstorage.coffee', ->
     it 'defines Backbone.Collection.prototype.syncDirty', ->
