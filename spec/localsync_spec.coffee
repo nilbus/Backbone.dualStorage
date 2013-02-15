@@ -1,5 +1,3 @@
-window = require('./spec_helper').window
-
 describe 'localsync', ->
   describe 'standard Backbone.sync methods', ->
     describe 'creating records', ->

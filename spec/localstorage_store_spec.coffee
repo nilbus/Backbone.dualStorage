@@ -1,5 +1,3 @@
-window = require('./spec_helper').window
-
 describe 'window.Store', ->
   {store, model} = {}
   beforeEach ->
@@ -23,7 +21,7 @@ describe 'window.Store', ->
     it 'clears out its records', ->
       store.clear()
       expect(window.localStorage.getItem 'cats').toBe ''
-      expect(window.localStorage.getItem 'cats3').toBeUndefined()
+      expect(window.localStorage.getItem 'cats3').toBeNull()
 
     it 'creates records', ->
       model = id: 2, color: 'blue'
@@ -41,7 +39,7 @@ describe 'window.Store', ->
       store = new window.Store 'cats'
       model = color: 'calico', idAttribute: 'id', set: (attribute, value) -> this[attribute] = value
       store.create model
-      expect(model.id).not.toBeUndefined()
+      expect(model.id).not.toBeNull()
       expect(window.localStorage.getItem('cats')).toBe model.id
 
     it 'updates records', ->
@@ -51,7 +49,7 @@ describe 'window.Store', ->
     it 'destroys records', ->
       store.destroy id: 3
       expect(window.localStorage.getItem 'cats').toBe ''
-      expect(window.localStorage.getItem 'cats3').toBeUndefined()
+      expect(window.localStorage.getItem 'cats3').toBeNull()
 
   describe 'offline', ->
     it 'on a clean slate, hasDirtyOrDestroyed returns false', ->

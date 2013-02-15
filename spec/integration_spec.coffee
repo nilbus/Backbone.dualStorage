@@ -1,5 +1,3 @@
-window = require('./spec_helper').window
-Backbone = window.Backbone
 {collection, model} = {}
 
 beforeEach ->
@@ -13,13 +11,14 @@ beforeEach ->
 
 describe 'using Backbone.sync directly', ->
   it 'should save and retrieve data', ->
+    localStorage.clear()
     successCallback = jasmine.createSpy('success')
     errorCallback = jasmine.createSpy('error')
     window.dualsync 'create', model, success: successCallback, error: errorCallback
     expect(window.onlineSync.calls.length).toEqual(1)
     expect(successCallback).toHaveBeenCalled()
     expect(errorCallback).not.toHaveBeenCalled()
-    expect(Object.keys(window.localStorage.values).length).toBeGreaterThan(0)
+    expect(window.localStorage.length).toBeGreaterThan(0)
 
     successCallback = jasmine.createSpy('success').andCallFake (resp) ->
       expect(resp.get('vision')).toEqual('crystal')
