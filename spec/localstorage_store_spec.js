@@ -36,7 +36,7 @@
       it('clears out its records', function() {
         store.clear();
         expect(window.localStorage.getItem('cats')).toBe('');
-        return expect(window.localStorage.getItem('cats3')).toBeUndefined();
+        return expect(window.localStorage.getItem('cats3')).toBeNull();
       });
       it('creates records', function() {
         model = {
@@ -72,7 +72,7 @@
           }
         };
         store.create(model);
-        expect(model.id).not.toBeUndefined();
+        expect(model.id).not.toBeNull();
         return expect(window.localStorage.getItem('cats')).toBe(model.id);
       });
       it('updates records', function() {
@@ -90,7 +90,7 @@
           id: 3
         });
         expect(window.localStorage.getItem('cats')).toBe('');
-        return expect(window.localStorage.getItem('cats3')).toBeUndefined();
+        return expect(window.localStorage.getItem('cats3')).toBeNull();
       });
     });
     return describe('offline', function() {
