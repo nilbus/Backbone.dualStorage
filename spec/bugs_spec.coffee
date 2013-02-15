@@ -1,9 +1,4 @@
 describe 'bugs, that once fixed, should be moved to the proper spec file and modified to test their inverse', ->
-  it 'will throw an exception when attempting to load a model by an id that does not exist', ->
-    window.localStorage.clear()
-    readMissing = -> window.localsync 'read', {id: 1}, {success: (->), error: (->)}
-    expect(readMissing).toThrow()
-
   it 'fails to throw an error when no storeName is provided to the Store constructor,
       even though this will cause problems later.
       The root cause is that the model has no url set; the error should reflect this.', ->
