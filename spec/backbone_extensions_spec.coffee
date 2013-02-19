@@ -1,5 +1,3 @@
-window = require('./spec_helper').window
-
 describe 'monkey patching', ->
   it 'aliases Backbone.sync to onlineSync', ->
     expect(window.onlineSync).toBeDefined()

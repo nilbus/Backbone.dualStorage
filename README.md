@@ -61,20 +61,15 @@ use `parseBeforeLocalSave` to break up the data into an array of records like yo
 Testing
 -------
 
-Running the test suite requires [node.js](http://nodejs.org).
-Inside the project directory, use npm to install the required dependencies:
+To run the test suite, clone the project and open **SpecRunner.html** in a browser.
 
-    npm install -g jasmine-node coffee-script jake backbone underscore
+Note that the tests run against **spec/backbone.dualstorage.js**, not the copy in the project root.
+The spec version needs to be unwrapped. Compile it with:
 
-Now just run the tests with jake:
-
-    jake test
-
-You can also run the tests continually as changes are made with jasmine-node:
-
-    jasmine-node --autotest --coffee spec
+    coffee -cbo spec backbone.dualstorage.coffee
 
 Credits
 -------
 
+Thanks to [Edward Anderson](https://github.com/nilbus) for the test suite.
 Thanks to [Jerome Gravel-Niquet](https://github.com/jeromegn) for Backbone.dualStorage
