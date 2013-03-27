@@ -11,22 +11,32 @@ beforeEach ->
 
 describe 'using Backbone.sync directly', ->
   it 'should save and retrieve data', ->
-    localStorage.clear()
-    successCallback = jasmine.createSpy('success')
-    errorCallback = jasmine.createSpy('error')
-    window.dualsync 'create', model, success: successCallback, error: errorCallback
-    expect(window.onlineSync.calls.length).toEqual(1)
-    expect(successCallback).toHaveBeenCalled()
-    expect(errorCallback).not.toHaveBeenCalled()
-    expect(window.localStorage.length).toBeGreaterThan(0)
+    {successCallback, errorCallback} = {}
+    saved = false
+    runs ->
+      localStorage.clear()
+      successCallback = jasmine.createSpy('success').andCallFake -> saved = true
+      errorCallback = jasmine.createSpy('error')
+      window.dualsync 'create', model, success: successCallback, error: errorCallback
+    waitsFor (-> saved), "The success callback for 'create' should have been called", 100
+    runs ->
+      expect(window.onlineSync.calls.length).toEqual(1)
+      expect(successCallback).toHaveBeenCalled()
+      expect(errorCallback).not.toHaveBeenCalled()
+      expect(window.localStorage.length).toBeGreaterThan(0)
 
-    successCallback = jasmine.createSpy('success').andCallFake (resp) ->
-      expect(resp.get('vision')).toEqual('crystal')
-    errorCallback = jasmine.createSpy('error')
-    window.dualsync 'read', model, success: successCallback, error: errorCallback
-    expect(window.onlineSync.calls.length).toEqual(2)
-    expect(successCallback).toHaveBeenCalled()
-    expect(errorCallback).not.toHaveBeenCalled()
+    fetched = false
+    runs ->
+      successCallback = jasmine.createSpy('success').andCallFake (resp) ->
+        fetched = true
+        expect(resp.get('vision')).toEqual('crystal')
+      errorCallback = jasmine.createSpy('error')
+      window.dualsync 'read', model, success: successCallback, error: errorCallback
+    waitsFor (-> fetched), "The success callback for 'read' should have been called", 100
+    runs ->
+      expect(window.onlineSync.calls.length).toEqual(2)
+      expect(successCallback).toHaveBeenCalled()
+      expect(errorCallback).not.toHaveBeenCalled()
 
 describe 'using backbone models and retrieving from local storage', ->
   it "fetches a model after saving it", ->

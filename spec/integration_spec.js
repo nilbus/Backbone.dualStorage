@@ -20,29 +20,49 @@
 
   describe('using Backbone.sync directly', function() {
     return it('should save and retrieve data', function() {
-      var errorCallback, successCallback;
-      localStorage.clear();
-      successCallback = jasmine.createSpy('success');
-      errorCallback = jasmine.createSpy('error');
-      window.dualsync('create', model, {
-        success: successCallback,
-        error: errorCallback
+      var errorCallback, fetched, saved, successCallback, _ref1;
+      _ref1 = {}, successCallback = _ref1.successCallback, errorCallback = _ref1.errorCallback;
+      saved = false;
+      runs(function() {
+        localStorage.clear();
+        successCallback = jasmine.createSpy('success').andCallFake(function() {
+          return saved = true;
+        });
+        errorCallback = jasmine.createSpy('error');
+        return window.dualsync('create', model, {
+          success: successCallback,
+          error: errorCallback
+        });
       });
-      expect(window.onlineSync.calls.length).toEqual(1);
-      expect(successCallback).toHaveBeenCalled();
-      expect(errorCallback).not.toHaveBeenCalled();
-      expect(window.localStorage.length).toBeGreaterThan(0);
-      successCallback = jasmine.createSpy('success').andCallFake(function(resp) {
-        return expect(resp.get('vision')).toEqual('crystal');
+      waitsFor((function() {
+        return saved;
+      }), "The success callback for 'create' should have been called", 100);
+      runs(function() {
+        expect(window.onlineSync.calls.length).toEqual(1);
+        expect(successCallback).toHaveBeenCalled();
+        expect(errorCallback).not.toHaveBeenCalled();
+        return expect(window.localStorage.length).toBeGreaterThan(0);
       });
-      errorCallback = jasmine.createSpy('error');
-      window.dualsync('read', model, {
-        success: successCallback,
-        error: errorCallback
+      fetched = false;
+      runs(function() {
+        successCallback = jasmine.createSpy('success').andCallFake(function(resp) {
+          fetched = true;
+          return expect(resp.get('vision')).toEqual('crystal');
+        });
+        errorCallback = jasmine.createSpy('error');
+        return window.dualsync('read', model, {
+          success: successCallback,
+          error: errorCallback
+        });
       });
-      expect(window.onlineSync.calls.length).toEqual(2);
-      expect(successCallback).toHaveBeenCalled();
-      return expect(errorCallback).not.toHaveBeenCalled();
+      waitsFor((function() {
+        return fetched;
+      }), "The success callback for 'read' should have been called", 100);
+      return runs(function() {
+        expect(window.onlineSync.calls.length).toEqual(2);
+        expect(successCallback).toHaveBeenCalled();
+        return expect(errorCallback).not.toHaveBeenCalled();
+      });
     });
   });
 
