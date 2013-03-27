@@ -2,9 +2,9 @@
 (function() {
 
   describe('monkey patching', function() {
-    return it('aliases Backbone.sync to onlineSync', function() {
-      expect(window.onlineSync).toBeDefined();
-      return expect(window.onlineSync.identity).toEqual('sync');
+    return it('aliases Backbone.sync to backboneSync', function() {
+      expect(window.backboneSync).toBeDefined();
+      return expect(window.backboneSync.identity).toEqual('sync');
     });
   });
 

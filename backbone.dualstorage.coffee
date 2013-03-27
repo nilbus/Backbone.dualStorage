@@ -130,6 +130,21 @@ class window.Store
     @save()
     model
 
+callbackTranslator =
+  needsTranslation: Backbone.VERSION == '0.9.10'
+
+  forBackboneCaller: (callback) ->
+    if @needsTranslation
+      (model, resp, options) -> callback.call null, resp
+    else
+      callback
+
+  forDualstorageCaller: (callback, model, options) ->
+    if @needsTranslation
+      (resp) -> callback.call null, model, resp, options
+    else
+      callback
+
 # Override `Backbone.sync` to use delegate to the model or collection's
 # *localStorage* property, which should be an instance of `Store`.
 localsync = (method, model, options) ->
@@ -154,7 +169,7 @@ localsync = (method, model, options) ->
       if options.dirty
         store.destroyed(model)
       else
-        if model.id.toString().length == 36 
+        if model.id.toString().length == 36
           store.clean(model, 'dirty')
         else
           store.clean(model, 'destroyed')
@@ -181,12 +196,18 @@ parseRemoteResponse = (object, response) ->
   if not (object and object.parseBeforeLocalSave) then return response
   if _.isFunction(object.parseBeforeLocalSave) then object.parseBeforeLocalSave(response)
 
-onlineSync = Backbone.sync
+backboneSync = Backbone.sync
+onlineSync = (method, model, options) ->
+  options.success = callbackTranslator.forBackboneCaller(options.success)
+  options.error = callbackTranslator.forBackboneCaller(options.error)
+  backboneSync(method, model, options)
 
 dualsync = (method, model, options) ->
   console.log 'dualsync', method, model, options
   
   options.storeName = result(model.collection, 'url') || result(model, 'url')
+  options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
+  options.error = callbackTranslator.forDualstorageCaller(options.error, model, options)
   
   # execute only online sync
   return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')

@@ -15,7 +15,7 @@
       var Role, RoleCollection, collection, model, setup, _ref;
       _ref = {}, Role = _ref.Role, RoleCollection = _ref.RoleCollection, collection = _ref.collection, model = _ref.model;
       beforeEach(function() {
-        window.onlineSync.calls = [];
+        window.backboneSync.calls = [];
         window.localsync('clear', {}, {
           success: (function() {}),
           error: (function() {})

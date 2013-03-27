@@ -9,7 +9,7 @@ describe 'bugs, that once fixed, should be moved to the proper spec file and mod
     {Role, RoleCollection, collection, model} = {}
 
     beforeEach ->
-      window.onlineSync.calls = []
+      window.backboneSync.calls = []
       window.localsync 'clear', {}, success: (->), error: (->)
       collection = new Backbone.Collection
       collection.url = 'eyes/'

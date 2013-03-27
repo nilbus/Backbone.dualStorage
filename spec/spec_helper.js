@@ -2,8 +2,14 @@
 (function() {
 
   window.Backbone.sync = jasmine.createSpy('sync').andCallFake(function(method, model, options) {
-    return options.success(model);
+    var resp;
+    model.updatedByRemoteSync = true;
+    if (Backbone.VERSION === '0.9.10') {
+      resp = model;
+      return options.success(model, resp, options);
+    } else {
+      return options.success(model);
+    }
   });
-  console.log('SYNC', Backbone.sync);
 
 }).call(this);

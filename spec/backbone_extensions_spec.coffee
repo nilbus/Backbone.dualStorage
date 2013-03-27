@@ -1,7 +1,7 @@
 describe 'monkey patching', ->
-  it 'aliases Backbone.sync to onlineSync', ->
-    expect(window.onlineSync).toBeDefined()
-    expect(window.onlineSync.identity).toEqual('sync')
+  it 'aliases Backbone.sync to backboneSync', ->
+    expect(window.backboneSync).toBeDefined()
+    expect(window.backboneSync.identity).toEqual('sync')
 
 describe 'offline localStorage sync', ->
   {collection} = {}

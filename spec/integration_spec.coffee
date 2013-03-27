@@ -1,7 +1,7 @@
 {collection, model} = {}
 
 beforeEach ->
-  window.onlineSync.calls = []
+  window.backboneSync.calls = []
   window.localsync 'clear', {}, ignoreCallbacks: true, storeName: 'eyes/'
   collection = new Backbone.Collection
     id: 123
@@ -20,7 +20,7 @@ describe 'using Backbone.sync directly', ->
       window.dualsync 'create', model, success: successCallback, error: errorCallback
     waitsFor (-> saved), "The success callback for 'create' should have been called", 100
     runs ->
-      expect(window.onlineSync.calls.length).toEqual(1)
+      expect(window.backboneSync.calls.length).toEqual(1)
       expect(successCallback).toHaveBeenCalled()
       expect(errorCallback).not.toHaveBeenCalled()
       expect(window.localStorage.length).toBeGreaterThan(0)
@@ -34,7 +34,7 @@ describe 'using Backbone.sync directly', ->
       window.dualsync 'read', model, success: successCallback, error: errorCallback
     waitsFor (-> fetched), "The success callback for 'read' should have been called", 100
     runs ->
-      expect(window.onlineSync.calls.length).toEqual(2)
+      expect(window.backboneSync.calls.length).toEqual(2)
       expect(successCallback).toHaveBeenCalled()
       expect(errorCallback).not.toHaveBeenCalled()
 
@@ -69,3 +69,15 @@ describe 'using backbone collections and retrieving from local storage', ->
     runs ->
       expect(collection.length).toEqual(3)
       expect(collection.map (model) -> model.id).toEqual [1,2,3]
+
+describe 'success and error callback parameters', ->
+  it "passes back the response into the remote method's callback", ->
+    callbackResponse = null
+    runs ->
+      model.remote = true
+      model.fetch success: (args...) -> callbackResponse = args
+    waitsFor (-> callbackResponse), "The success callback for 'fetch' should have been called", 100
+    runs ->
+      console.log 'RESP', callbackResponse
+      expect(callbackResponse[0]).toEqual model
+      expect(callbackResponse[1].updatedByRemoteSync).toBeTruthy
