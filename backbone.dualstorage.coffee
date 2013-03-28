@@ -1,7 +1,10 @@
+###
+Backbone dualStorage Adapter v1.0.1
 
-# A simple module to replace `Backbone.sync` with *localStorage*-based
-# persistence. Models are given GUIDS, and saved into a JSON object. Simple
-# as that.
+A simple module to replace `Backbone.sync` with *localStorage*-based
+persistence. Models are given GUIDS, and saved into a JSON object. Simple
+as that.
+###
 
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
