@@ -56,15 +56,23 @@ use `parseBeforeLocalSave` to break up the data into an array of records like yo
 * The model's `parse` method still parses data read from localStorage.
 * The model's `parseBeforeLocalSave` method parses data read from the remote _before_ it is saved to localStorage on read.
 
+Compiling
+---------
+
+Compile the coffeescript into javascript with `make`. This requires that node.js and coffee-script are installed.
+
+    npm install -g coffee-script
+
+    make
+
 Testing
 -------
 
 To run the test suite, clone the project and open **SpecRunner.html** in a browser.
 
 Note that the tests run against **spec/backbone.dualstorage.js**, not the copy in the project root.
-The spec version needs to be unwrapped. Compile it with:
-
-    coffee -cbo spec backbone.dualstorage.coffee
+The spec version needs to be unwrapped to allow mocking components for testing.
+This version is compiled automatically when running `make`.
 
 Credits
 -------
