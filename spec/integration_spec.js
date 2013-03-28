@@ -163,7 +163,6 @@
         return callbackResponse;
       }), "The success callback for 'fetch' should have been called", 100);
       return runs(function() {
-        console.log('RESP', callbackResponse);
         expect(callbackResponse[0]).toEqual(model);
         return expect(callbackResponse[1].updatedByRemoteSync).toBeTruthy;
       });

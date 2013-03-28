@@ -78,6 +78,5 @@ describe 'success and error callback parameters', ->
       model.fetch success: (args...) -> callbackResponse = args
     waitsFor (-> callbackResponse), "The success callback for 'fetch' should have been called", 100
     runs ->
-      console.log 'RESP', callbackResponse
       expect(callbackResponse[0]).toEqual model
       expect(callbackResponse[1].updatedByRemoteSync).toBeTruthy
