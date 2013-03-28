@@ -1,4 +1,3 @@
-'use strict'
 
 # A simple module to replace `Backbone.sync` with *localStorage*-based
 # persistence. Models are given GUIDS, and saved into a JSON object. Simple
