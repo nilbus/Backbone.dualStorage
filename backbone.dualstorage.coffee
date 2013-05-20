@@ -9,7 +9,8 @@ as that.
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
 Backbone.Collection.prototype.syncDirty = ->
-  store = localStorage.getItem "#{@url}_dirty"
+  url = result(@, 'url')
+  store = localStorage.getItem "#{url}_dirty"
   ids = (store and store.split(',')) or []
   
   for id in ids
@@ -17,7 +18,8 @@ Backbone.Collection.prototype.syncDirty = ->
     model.save()
 
 Backbone.Collection.prototype.syncDestroyed = ->
-  store = localStorage.getItem "#{@url}_destroyed"
+  url = result(@, 'url')
+  store = localStorage.getItem "#{url}_destroyed"
   ids = (store and store.split(',')) or []
   
   for id in ids
