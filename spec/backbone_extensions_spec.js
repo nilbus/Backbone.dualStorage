@@ -52,13 +52,54 @@
         return expect(window.localStorage.getItem('cats_dirty')).toBeFalsy();
       });
     });
-    return describe('syncDestroyed', function() {
+    describe('syncDestroyed', function() {
       return it('finds all models marked as destroyed and destroys them', function() {
         var destroy;
 
         destroy = spyOn(collection.get(3), 'destroy');
         collection.syncDestroyed();
         return expect(window.localStorage.getItem('cats_destroyed')).toBeFalsy();
+      });
+    });
+    return describe('with collection url as function', function() {
+      beforeEach(function() {
+        window.localStorage.clear();
+        window.localStorage.setItem('cats', '2,3');
+        window.localStorage.setItem('cats_dirty', '2');
+        window.localStorage.setItem('cats_destroyed', '3');
+        window.localStorage.setItem('cats3', '{"id": "2", "color": "auburn"}');
+        window.localStorage.setItem('cats3', '{"id": "3", "color": "burgundy"}');
+        collection = new window.Backbone.Collection([
+          {
+            id: 2,
+            color: 'auburn'
+          }, {
+            id: 3,
+            color: 'burgundy'
+          }
+        ]);
+        return collection.url = function() {
+          return 'cats';
+        };
+      });
+      describe('syncDirty', function() {
+        return it('finds and saves all dirty models', function() {
+          var save;
+
+          save = spyOn(collection.get(2), 'save').andCallThrough();
+          collection.syncDirty();
+          expect(save).toHaveBeenCalled();
+          return expect(window.localStorage.getItem('cats_dirty')).toBeFalsy();
+        });
+      });
+      return describe('syncDestroyed', function() {
+        return it('finds all models marked as destroyed and destroys them', function() {
+          var destroy;
+
+          destroy = spyOn(collection.get(3), 'destroy');
+          collection.syncDestroyed();
+          return expect(window.localStorage.getItem('cats_destroyed')).toBeFalsy();
+        });
       });
     });
   });
