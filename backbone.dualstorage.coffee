@@ -170,13 +170,15 @@ localsync = (method, model, options) ->
           store.clean(model, 'dirty')
         else
           store.clean(model, 'destroyed')
-  
+    when 'set_clean'
+      store.clean(model, 'dirty')
+
   unless options.ignoreCallbacks
     if response
       options.success response
     else
       options.error 'Record not found'
-  
+
   response
 
 # If the value of the named property is a function then invoke it;
@@ -255,7 +257,10 @@ dualsync = (method, model, options) ->
     when 'update'
       if _.isString(model.id) and model.id.length == 36
         originalModel = model.clone()
-        
+        # pre-mark as clean so that a concurrent sync does not duplicate new models
+        # the error callback will mark it dirty again if needed
+        localsync('set_clean', originalModel, options)
+
         options.success = (resp, status, xhr) ->
           localsync('delete', originalModel, options)
           localsync('create', resp, options)
