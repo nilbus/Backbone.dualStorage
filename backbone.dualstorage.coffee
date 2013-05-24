@@ -268,7 +268,8 @@ dualsync = (method, model, options) ->
         onlineSync('create', model, options)
       else
         options.success = (resp, status, xhr) ->
-          success localsync(method, model, options)
+          success(resp) # use standard callback to populate the object with server response
+          localsync(method, model, options) # then write the result locally
         options.error = (resp) ->
           options.dirty = true
           success localsync(method, model, options)
