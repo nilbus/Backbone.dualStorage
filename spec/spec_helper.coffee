@@ -4,4 +4,4 @@ window.Backbone.sync = jasmine.createSpy('sync').andCallFake (method, model, opt
     resp = model
     options.success(model, resp, options)
   else
-    options.success(model)
+    options.success(model.toJSON(), 200, {})
