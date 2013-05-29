@@ -84,6 +84,8 @@ class window.Store
   create: (model) ->
     if not _.isObject(model) then return model
     #if model.attributes? then model = model.attributes #removed to fix issue 14
+    if not model.id and model.idAttribute
+      model.id = model.get(model.idAttribute)
     if not model.id
       model.id = @generateId()
       if not _.isUndefined(model.set)
