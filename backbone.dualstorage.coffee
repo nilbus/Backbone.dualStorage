@@ -86,7 +86,8 @@ class window.Store
     #if model.attributes? then model = model.attributes #removed to fix issue 14
     if not model.id
       model.id = @generateId()
-      model.set model.idAttribute, model.id
+      if not _.isUndefined(model.set)
+        model.set model.idAttribute, model.id
     localStorage.setItem @name + @sep + model.id, JSON.stringify(model)
     @records.push model.id.toString()
     @save()
