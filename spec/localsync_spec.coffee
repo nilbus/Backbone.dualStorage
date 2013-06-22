@@ -5,7 +5,7 @@ describe 'localsync', ->
         {ready, create, model} = {}
         runs ->
           create = spyOn(window.Store.prototype, 'create')
-          model = id: 1
+          model = new window.Backbone.Model id: 1
           window.localsync 'create', model, {success: (-> ready = true), error: (-> ready = true)}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
@@ -17,12 +17,14 @@ describe 'localsync', ->
           ready = false
           create = spyOn(window.Store.prototype, 'find').andReturn id: 1
           create = spyOn(window.Store.prototype, 'create')
-          window.localsync 'create', {id: 1}, {success: (-> ready = true), error: (-> ready = true), add: true}
+          model = new window.Backbone.Model id: 1
+          window.localsync 'create', model, {success: (-> ready = true), error: (-> ready = true), add: true}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
           ready = false
           expect(create).not.toHaveBeenCalled()
-          window.localsync 'create', {id: 1}, {success: (-> ready = true), error: (-> ready = true), add: true, merge: true}
+          model = new window.Backbone.Model id: 1
+          window.localsync 'create', model, {success: (-> ready = true), error: (-> ready = true), add: true, merge: true}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
           expect(create).toHaveBeenCalled()
@@ -30,7 +32,7 @@ describe 'localsync', ->
       it 'supports marking a new record dirty', ->
         {ready, create, model, dirty} = {}
         runs ->
-          model = id: 1
+          model = new window.Backbone.Model id: 1
           create = spyOn(window.Store.prototype, 'create').andReturn model
           dirty = spyOn(window.Store.prototype, 'dirty')
           window.localsync 'create', model, {success: (-> ready = true), error: (-> ready = true), dirty: true}
@@ -64,7 +66,7 @@ describe 'localsync', ->
         {ready, update, model} = {}
         runs ->
           update = spyOn(window.Store.prototype, 'update')
-          model = id: 1
+          model = new window.Backbone.Model id: 1
           window.localsync 'update', model, {success: (-> ready = true), error: (-> ready = true)}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
@@ -73,7 +75,7 @@ describe 'localsync', ->
       it 'supports marking an updated record dirty', ->
         {ready, update, model, dirty} = {}
         runs ->
-          model = id: 1
+          model = new window.Backbone.Model id: 1
           update = spyOn(window.Store.prototype, 'update')
           dirty = spyOn(window.Store.prototype, 'dirty')
           window.localsync 'update', model, {success: (-> ready = true), error: (-> ready = true), dirty: true}
@@ -87,7 +89,7 @@ describe 'localsync', ->
         {ready, destroy, model} = {}
         runs ->
           destroy = spyOn(window.Store.prototype, 'destroy')
-          model = id: 1
+          model = new window.Backbone.Model id: 1
           window.localsync 'delete', model, {success: (-> ready = true), error: (-> ready = true)}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
@@ -96,7 +98,7 @@ describe 'localsync', ->
       it 'supports marking a dirty record destroyed', ->
         {ready, destroy, destroyed, model} = {}
         runs ->
-          model = id: 1
+          model = new window.Backbone.Model id: 1
           destroy = spyOn(window.Store.prototype, 'destroy')
           destroyed = spyOn(window.Store.prototype, 'destroyed')
           window.localsync 'delete', model, {success: (-> ready = true), error: (-> ready = true), dirty: true}
@@ -117,14 +119,25 @@ describe 'localsync', ->
         window.localsync 'hasDirtyOrDestroyed', {}, {success: (-> ready = true), error: (-> ready = true)}
 
   describe 'callbacks', ->
+    it "sends the models's attributes as the callback response", ->
+      {model, response} = {}
+      runs ->
+        model = new window.Backbone.Model id: 1
+        window.localsync 'create', model, {success: ((resp) -> response = resp)}
+      waitsFor (-> response), "A callback should have been called with a response", 100
+      runs ->
+        expect(response).toBe model.attributes
+
     it 'ignores callbacks when the ignoreCallbacks option is set', ->
       {start, callback} = {start: new Date().getTime()}
       runs ->
         callback = jasmine.createSpy 'callback'
-        window.localsync 'create', {id: 1}, {success: callback, error: callback, ignoreCallbacks: true}
-      waitsFor (-> new Date().getTime() - start > 5), "This test is broken", 100
+        model = new window.Backbone.Model id: 1
+        window.localsync 'create', model, {success: callback, error: callback, ignoreCallbacks: true}
+      waitsFor (-> new Date().getTime() - start > 5), 'Wait 5 ms to give the callback a chance to execute', 100
       runs ->
         start = false
         expect(callback).not.toHaveBeenCalled()
-        window.localsync 'create', {id: 1}, {success: callback, error: callback}
+        model = new window.Backbone.Model id: 1
+        window.localsync 'create', model, {success: callback, error: callback}
       waitsFor (-> callback.wasCalled), 'The callback should have been called', 100
