@@ -149,7 +149,10 @@ localsync = (method, model, options) ->
 
   response = switch method
     when 'read'
-      if model.id then store.find(model) else store.findAll()
+      if model.id
+        store.find(model)
+      else
+        store.findAll()
     when 'hasDirtyOrDestroyed'
       store.hasDirtyOrDestroyed()
     when 'clear'
@@ -160,7 +163,10 @@ localsync = (method, model, options) ->
         store.dirty(model) if options.dirty
     when 'update'
       store.update(model)
-      if options.dirty then store.dirty(model) else store.clean(model, 'dirty')
+      if options.dirty
+        store.dirty(model)
+      else
+        store.clean(model, 'dirty')
     when 'delete'
       store.destroy(model)
       if options.dirty
