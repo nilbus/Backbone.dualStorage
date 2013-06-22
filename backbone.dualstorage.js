@@ -247,6 +247,9 @@ as that.
           }
       }
     })();
+    if (response != null ? response.attributes : void 0) {
+      response = response.attributes;
+    }
     if (!options.ignoreCallbacks) {
       if (response) {
         options.success(response);

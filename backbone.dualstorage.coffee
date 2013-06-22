@@ -170,6 +170,7 @@ localsync = (method, model, options) ->
           store.clean(model, 'dirty')
         else
           store.clean(model, 'destroyed')
+  response = response.attributes if response?.attributes
   
   unless options.ignoreCallbacks
     if response
