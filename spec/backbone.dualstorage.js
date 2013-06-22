@@ -200,7 +200,7 @@ callbackTranslator = {
 };
 
 localsync = function(method, model, options) {
-  var response, store;
+  var preExisting, response, store;
 
   store = new Store(options.storeName);
   response = (function() {
@@ -217,11 +217,15 @@ localsync = function(method, model, options) {
       case 'clear':
         return store.clear();
       case 'create':
-        if (!(options.add && !options.merge && store.find(model))) {
+        preExisting = store.find(model);
+        if (!(options.add && !options.merge && preExisting)) {
           model = store.create(model);
           if (options.dirty) {
-            return store.dirty(model);
+            store.dirty(model);
           }
+          return model;
+        } else {
+          return preExisting;
         }
         break;
       case 'update':
