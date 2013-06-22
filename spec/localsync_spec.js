@@ -9,9 +9,9 @@
           _ref = {}, ready = _ref.ready, create = _ref.create, model = _ref.model;
           runs(function() {
             create = spyOn(window.Store.prototype, 'create');
-            model = {
+            model = new window.Backbone.Model({
               id: 1
-            };
+            });
             return window.localsync('create', model, {
               success: (function() {
                 return ready = true;
@@ -33,14 +33,17 @@
 
           _ref = {}, ready = _ref.ready, create = _ref.create;
           runs(function() {
+            var model;
+
             ready = false;
             create = spyOn(window.Store.prototype, 'find').andReturn({
               id: 1
             });
             create = spyOn(window.Store.prototype, 'create');
-            return window.localsync('create', {
+            model = new window.Backbone.Model({
               id: 1
-            }, {
+            });
+            return window.localsync('create', model, {
               success: (function() {
                 return ready = true;
               }),
@@ -54,11 +57,14 @@
             return ready;
           }), "A callback should have been called", 100);
           runs(function() {
+            var model;
+
             ready = false;
             expect(create).not.toHaveBeenCalled();
-            return window.localsync('create', {
+            model = new window.Backbone.Model({
               id: 1
-            }, {
+            });
+            return window.localsync('create', model, {
               success: (function() {
                 return ready = true;
               }),
@@ -81,9 +87,9 @@
 
           _ref = {}, ready = _ref.ready, create = _ref.create, model = _ref.model, dirty = _ref.dirty;
           runs(function() {
-            model = {
+            model = new window.Backbone.Model({
               id: 1
-            };
+            });
             create = spyOn(window.Store.prototype, 'create').andReturn(model);
             dirty = spyOn(window.Store.prototype, 'dirty');
             return window.localsync('create', model, {
@@ -161,9 +167,9 @@
           _ref = {}, ready = _ref.ready, update = _ref.update, model = _ref.model;
           runs(function() {
             update = spyOn(window.Store.prototype, 'update');
-            model = {
+            model = new window.Backbone.Model({
               id: 1
-            };
+            });
             return window.localsync('update', model, {
               success: (function() {
                 return ready = true;
@@ -185,9 +191,9 @@
 
           _ref = {}, ready = _ref.ready, update = _ref.update, model = _ref.model, dirty = _ref.dirty;
           runs(function() {
-            model = {
+            model = new window.Backbone.Model({
               id: 1
-            };
+            });
             update = spyOn(window.Store.prototype, 'update');
             dirty = spyOn(window.Store.prototype, 'dirty');
             return window.localsync('update', model, {
@@ -216,9 +222,9 @@
           _ref = {}, ready = _ref.ready, destroy = _ref.destroy, model = _ref.model;
           runs(function() {
             destroy = spyOn(window.Store.prototype, 'destroy');
-            model = {
+            model = new window.Backbone.Model({
               id: 1
-            };
+            });
             return window.localsync('delete', model, {
               success: (function() {
                 return ready = true;
@@ -240,9 +246,9 @@
 
           _ref = {}, ready = _ref.ready, destroy = _ref.destroy, destroyed = _ref.destroyed, model = _ref.model;
           runs(function() {
-            model = {
+            model = new window.Backbone.Model({
               id: 1
-            };
+            });
             destroy = spyOn(window.Store.prototype, 'destroy');
             destroyed = spyOn(window.Store.prototype, 'destroyed');
             return window.localsync('delete', model, {
@@ -306,6 +312,27 @@
       });
     });
     return describe('callbacks', function() {
+      it("sends the models's attributes as the callback response", function() {
+        var model, response, _ref;
+
+        _ref = {}, model = _ref.model, response = _ref.response;
+        runs(function() {
+          model = new window.Backbone.Model({
+            id: 1
+          });
+          return window.localsync('create', model, {
+            success: (function(resp) {
+              return response = resp;
+            })
+          });
+        });
+        waitsFor((function() {
+          return response;
+        }), "A callback should have been called with a response", 100);
+        return runs(function() {
+          return expect(response).toBe(model.attributes);
+        });
+      });
       return it('ignores callbacks when the ignoreCallbacks option is set', function() {
         var callback, start, _ref;
 
@@ -313,10 +340,13 @@
           start: new Date().getTime()
         }, start = _ref.start, callback = _ref.callback;
         runs(function() {
+          var model;
+
           callback = jasmine.createSpy('callback');
-          return window.localsync('create', {
+          model = new window.Backbone.Model({
             id: 1
-          }, {
+          });
+          return window.localsync('create', model, {
             success: callback,
             error: callback,
             ignoreCallbacks: true
@@ -324,13 +354,16 @@
         });
         waitsFor((function() {
           return new Date().getTime() - start > 5;
-        }), "This test is broken", 100);
+        }), 'Wait 5 ms to give the callback a chance to execute', 100);
         runs(function() {
+          var model;
+
           start = false;
           expect(callback).not.toHaveBeenCalled();
-          return window.localsync('create', {
+          model = new window.Backbone.Model({
             id: 1
-          }, {
+          });
+          return window.localsync('create', model, {
             success: callback,
             error: callback
           });
