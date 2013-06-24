@@ -152,18 +152,28 @@ localsync = (method, model, options) ->
 
   response = switch method
     when 'read'
-      if model.id then store.find(model) else store.findAll()
+      if model.id
+        store.find(model)
+      else
+        store.findAll()
     when 'hasDirtyOrDestroyed'
       store.hasDirtyOrDestroyed()
     when 'clear'
       store.clear()
     when 'create'
-      unless options.add and not options.merge and store.find(model)
+      preExisting = store.find(model)
+      unless options.add and not options.merge and preExisting
         model = store.create(model)
         store.dirty(model) if options.dirty
+        model
+      else
+        preExisting
     when 'update'
       store.update(model)
-      if options.dirty then store.dirty(model) else store.clean(model, 'dirty')
+      if options.dirty
+        store.dirty(model)
+      else
+        store.clean(model, 'dirty')
     when 'delete'
       store.destroy(model)
       if options.dirty
@@ -173,6 +183,7 @@ localsync = (method, model, options) ->
           store.clean(model, 'dirty')
         else
           store.clean(model, 'destroyed')
+  response = response.attributes if response?.attributes
   
   unless options.ignoreCallbacks
     if response
