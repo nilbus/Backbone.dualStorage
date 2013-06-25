@@ -84,9 +84,12 @@ class window.Store
   create: (model) ->
     if not _.isObject(model) then return model
     #if model.attributes? then model = model.attributes #removed to fix issue 14
+    if not model.id and model.idAttribute
+      model.id = model.get(model.idAttribute)
     if not model.id
       model.id = @generateId()
-      model.set model.idAttribute, model.id
+      if not _.isUndefined(model.set)
+        model.set model.idAttribute, model.id
     localStorage.setItem @name + @sep + model.id, JSON.stringify(model)
     @records.push model.id.toString()
     @save()
@@ -158,7 +161,10 @@ localsync = (method, model, options) ->
     when 'clear'
       store.clear()
     when 'create'
-      preExisting = store.find(model)
+      if model && model.id
+        preExisting = store.find(model)
+      else
+        preExisting = model
       unless options.add and not options.merge and preExisting
         model = store.create(model)
         store.dirty(model) if options.dirty
