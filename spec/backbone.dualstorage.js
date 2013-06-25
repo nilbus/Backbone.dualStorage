@@ -217,8 +217,7 @@ localsync = function(method, model, options) {
       case 'clear':
         return store.clear();
       case 'create':
-        preExisting = store.find(model);
-        if (!(options.add && !options.merge && preExisting)) {
+        if (!(options.add && !options.merge && (preExisting = store.find(model)))) {
           model = store.create(model);
           if (options.dirty) {
             store.dirty(model);

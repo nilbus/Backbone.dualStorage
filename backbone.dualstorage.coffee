@@ -158,8 +158,7 @@ localsync = (method, model, options) ->
     when 'clear'
       store.clear()
     when 'create'
-      preExisting = store.find(model)
-      unless options.add and not options.merge and preExisting
+      unless options.add and not options.merge and (preExisting = store.find(model))
         model = store.create(model)
         store.dirty(model) if options.dirty
         model
