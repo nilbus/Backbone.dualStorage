@@ -29,7 +29,7 @@ You can also deactivate dualsync to some requests, when you want to sync with th
 Data synchronization
 --------------------
 
-When the client goes offline, dualStorage allows you to keep changing and destroying records. All changes will be send when the client goes online again.
+When the client goes offline, dualStorage allows you to keep changing and destroying records. All changes will be sent when the client goes online again.
 
     // server online. Go!
     People.fetch();       // load cars models and save them into localstorage
