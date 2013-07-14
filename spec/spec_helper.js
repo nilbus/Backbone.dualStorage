@@ -8,7 +8,7 @@
       resp = model;
       return options.success(model, resp, options);
     } else {
-      return options.success(model);
+      return options.success(model.toJSON(), 200, {});
     }
   });
 

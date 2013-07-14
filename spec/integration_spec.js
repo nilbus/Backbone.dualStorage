@@ -49,7 +49,7 @@
       runs(function() {
         successCallback = jasmine.createSpy('success').andCallFake(function(resp) {
           fetched = true;
-          return expect(resp.get('vision')).toEqual('crystal');
+          return expect(resp.vision).toEqual('crystal');
         });
         errorCallback = jasmine.createSpy('error');
         return window.dualsync('read', model, {
