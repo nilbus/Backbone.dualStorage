@@ -27,9 +27,9 @@ describe 'using Backbone.sync directly', ->
 
     fetched = false
     runs ->
-      successCallback = jasmine.createSpy('success').andCallFake (resp) ->
+      successCallback = jasmine.createSpy('success').andCallFake callbackTranslator.forBackboneCaller (resp) ->
         fetched = true
-        expect(resp.get('vision')).toEqual('crystal')
+        expect(resp.vision).toEqual('crystal')
       errorCallback = jasmine.createSpy('error')
       window.dualsync 'read', model, success: successCallback, error: errorCallback
     waitsFor (-> fetched), "The success callback for 'read' should have been called", 100
