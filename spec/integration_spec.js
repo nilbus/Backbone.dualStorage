@@ -47,10 +47,10 @@
       });
       fetched = false;
       runs(function() {
-        successCallback = jasmine.createSpy('success').andCallFake(function(resp) {
+        successCallback = jasmine.createSpy('success').andCallFake(callbackTranslator.forBackboneCaller(function(resp) {
           fetched = true;
           return expect(resp.vision).toEqual('crystal');
-        });
+        }));
         errorCallback = jasmine.createSpy('error');
         return window.dualsync('read', model, {
           success: successCallback,

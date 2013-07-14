@@ -27,7 +27,7 @@ describe 'using Backbone.sync directly', ->
 
     fetched = false
     runs ->
-      successCallback = jasmine.createSpy('success').andCallFake (resp) ->
+      successCallback = jasmine.createSpy('success').andCallFake callbackTranslator.forBackboneCaller (resp) ->
         fetched = true
         expect(resp.vision).toEqual('crystal')
       errorCallback = jasmine.createSpy('error')

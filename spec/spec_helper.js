@@ -5,7 +5,7 @@
 
     model.updatedByRemoteSync = true;
     if (Backbone.VERSION === '0.9.10') {
-      resp = model;
+      resp = model.toJSON();
       return options.success(model, resp, options);
     } else {
       return options.success(model.toJSON(), 200, {});
