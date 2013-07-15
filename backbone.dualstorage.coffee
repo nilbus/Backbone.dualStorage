@@ -279,7 +279,8 @@ dualsync = (method, model, options) ->
       else
         options.success = (resp, status, xhr) ->
           updatedAttributes = _.extend({}, model.toJSON(), resp)
-          success localsync(method, updatedAttributes, options)
+          localsync(method, updatedAttributes, options)
+          success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
           success localsync(method, model, options)

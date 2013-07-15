@@ -368,7 +368,8 @@ dualsync = function(method, model, options) {
           var updatedAttributes;
 
           updatedAttributes = _.extend({}, model.toJSON(), resp);
-          return success(localsync(method, updatedAttributes, options));
+          localsync(method, updatedAttributes, options);
+          return success(resp, status, xhr);
         };
         options.error = function(resp) {
           options.dirty = true;
