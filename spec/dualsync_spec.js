@@ -72,11 +72,11 @@
             expect(window.backboneSync).toHaveBeenCalled();
             expect(_(window.backboneSync.calls).any(function(call) {
               return call.args[0] === 'read';
-            }));
+            })).toBeTruthy();
             expect(window.localsync).toHaveBeenCalled();
             return expect(_(window.localsync.calls).any(function(call) {
-              return call.args[0] === 'read';
-            }));
+              return call.args[0] === 'create';
+            })).toBeTruthy();
           });
         });
       });
@@ -100,11 +100,11 @@
             expect(window.backboneSync).toHaveBeenCalled();
             expect(_(window.backboneSync.calls).any(function(call) {
               return call.args[0] === 'update';
-            }));
+            })).toBeTruthy();
             expect(window.localsync).toHaveBeenCalled();
             return expect(_(window.localsync.calls).any(function(call) {
               return call.args[0] === 'update';
-            }));
+            })).toBeTruthy();
           });
         });
       });
@@ -128,11 +128,11 @@
             expect(window.backboneSync).toHaveBeenCalled();
             expect(_(window.backboneSync.calls).any(function(call) {
               return call.args[0] === 'delete';
-            }));
+            })).toBeTruthy();
             expect(window.localsync).toHaveBeenCalled();
             return expect(_(window.localsync.calls).any(function(call) {
               return call.args[0] === 'delete';
-            }));
+            })).toBeTruthy();
           });
         });
       });

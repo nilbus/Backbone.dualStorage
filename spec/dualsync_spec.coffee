@@ -37,9 +37,9 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
         waitsFor (-> ready), "The success callback should have been called", 100
         runs ->
           expect(window.backboneSync).toHaveBeenCalled()
-          expect(_(window.backboneSync.calls).any((call) -> call.args[0] == 'read'))
+          expect(_(window.backboneSync.calls).any((call) -> call.args[0] == 'read')).toBeTruthy()
           expect(window.localsync).toHaveBeenCalled()
-          expect(_(window.localsync.calls).any((call) -> call.args[0] == 'read'))
+          expect(_(window.localsync.calls).any((call) -> call.args[0] == 'create')).toBeTruthy()
 
     describe 'update', ->
       it 'delegates to both localsync and backboneSync', ->
@@ -50,9 +50,9 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
         waitsFor (-> ready), "The success callback should have been called", 100
         runs ->
           expect(window.backboneSync).toHaveBeenCalled()
-          expect(_(window.backboneSync.calls).any((call) -> call.args[0] == 'update'))
+          expect(_(window.backboneSync.calls).any((call) -> call.args[0] == 'update')).toBeTruthy()
           expect(window.localsync).toHaveBeenCalled()
-          expect(_(window.localsync.calls).any((call) -> call.args[0] == 'update'))
+          expect(_(window.localsync.calls).any((call) -> call.args[0] == 'update')).toBeTruthy()
 
     describe 'delete', ->
       it 'delegates to both localsync and backboneSync', ->
@@ -63,9 +63,9 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
         waitsFor (-> ready), "The success callback should have been called", 100
         runs ->
           expect(window.backboneSync).toHaveBeenCalled()
-          expect(_(window.backboneSync.calls).any((call) -> call.args[0] == 'delete'))
+          expect(_(window.backboneSync.calls).any((call) -> call.args[0] == 'delete')).toBeTruthy()
           expect(window.localsync).toHaveBeenCalled()
-          expect(_(window.localsync.calls).any((call) -> call.args[0] == 'delete'))
+          expect(_(window.localsync.calls).any((call) -> call.args[0] == 'delete')).toBeTruthy()
 
   describe 'respects the remote only attribute on models', ->
     it 'delegates for remote models', ->
