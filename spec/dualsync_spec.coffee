@@ -54,6 +54,19 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(window.localsync).toHaveBeenCalled()
           expect(_(window.localsync.calls).any((call) -> call.args[0] == 'update')).toBeTruthy()
 
+      it 'merges updates from the server response into the model attributes on server-persisted models', ->
+        spyOnLocalsync()
+        ready = false
+        runs ->
+          window.dualsync('update', model, success: (-> ready = true), serverReturnedAttributes: {updated: 'by the server'})
+        waitsFor (-> ready), "The success callback should have been called", 100
+        runs ->
+          mergedAttributes =
+            id: 12
+            position: 'arm'
+            updated: 'by the server'
+          expect(_.isEqual window.localsync.calls[0].args[1], mergedAttributes).toBeTruthy()
+
     describe 'delete', ->
       it 'delegates to both localsync and backboneSync', ->
         spyOnLocalsync()

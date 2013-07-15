@@ -107,6 +107,35 @@
             })).toBeTruthy();
           });
         });
+        return it('merges updates from the server response into the model attributes on server-persisted models', function() {
+          var ready;
+
+          spyOnLocalsync();
+          ready = false;
+          runs(function() {
+            return window.dualsync('update', model, {
+              success: (function() {
+                return ready = true;
+              }),
+              serverReturnedAttributes: {
+                updated: 'by the server'
+              }
+            });
+          });
+          waitsFor((function() {
+            return ready;
+          }), "The success callback should have been called", 100);
+          return runs(function() {
+            var mergedAttributes;
+
+            mergedAttributes = {
+              id: 12,
+              position: 'arm',
+              updated: 'by the server'
+            };
+            return expect(_.isEqual(window.localsync.calls[0].args[1], mergedAttributes)).toBeTruthy();
+          });
+        });
       });
       return describe('delete', function() {
         return it('delegates to both localsync and backboneSync', function() {

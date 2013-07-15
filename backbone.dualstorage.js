@@ -367,7 +367,10 @@ as that.
           return onlineSync('create', model, options);
         } else {
           options.success = function(resp, status, xhr) {
-            return success(localsync(method, model, options));
+            var updatedAttributes;
+
+            updatedAttributes = _.extend({}, model.toJSON(), resp);
+            return success(localsync(method, updatedAttributes, options));
           };
           options.error = function(resp) {
             options.dirty = true;

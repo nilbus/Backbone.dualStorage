@@ -4,11 +4,11 @@
     var resp;
 
     model.updatedByRemoteSync = true;
+    resp = options.serverReturnedAttributes || model.toJSON();
     if (Backbone.VERSION === '0.9.10') {
-      resp = model.toJSON();
       return options.success(model, resp, options);
     } else {
-      return options.success(model.toJSON(), 200, {});
+      return options.success(resp, 200, {});
     }
   });
 
