@@ -16,7 +16,7 @@ spyOnLocalsync = ->
 describe 'delegating to localsync and backboneSync, and calling the model callbacks', ->
   describe 'dual tier storage', ->
     describe 'create', ->
-      it 'delegates to both localsync and onlinesync', ->
+      it 'delegates to both localsync and backboneSync', ->
         spyOnLocalsync()
         ready = false
         runs ->
@@ -29,7 +29,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(window.localsync.calls[0].args[0]).toEqual 'create'
 
     describe 'read', ->
-      it 'delegates to both localsync and onlinesync', ->
+      it 'delegates to both localsync and backboneSync', ->
         spyOnLocalsync()
         ready = false
         runs ->
@@ -42,7 +42,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(_(window.localsync.calls).any((call) -> call.args[0] == 'read'))
 
     describe 'update', ->
-      it 'delegates to both localsync and onlinesync', ->
+      it 'delegates to both localsync and backboneSync', ->
         spyOnLocalsync()
         ready = false
         runs ->
@@ -55,7 +55,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(_(window.localsync.calls).any((call) -> call.args[0] == 'update'))
 
     describe 'delete', ->
-      it 'delegates to both localsync and onlinesync', ->
+      it 'delegates to both localsync and backboneSync', ->
         spyOnLocalsync()
         ready = false
         runs ->

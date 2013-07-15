@@ -29,7 +29,7 @@
   describe('delegating to localsync and backboneSync, and calling the model callbacks', function() {
     describe('dual tier storage', function() {
       describe('create', function() {
-        return it('delegates to both localsync and onlinesync', function() {
+        return it('delegates to both localsync and backboneSync', function() {
           var ready;
 
           spyOnLocalsync();
@@ -53,7 +53,7 @@
         });
       });
       describe('read', function() {
-        return it('delegates to both localsync and onlinesync', function() {
+        return it('delegates to both localsync and backboneSync', function() {
           var ready;
 
           spyOnLocalsync();
@@ -81,7 +81,7 @@
         });
       });
       describe('update', function() {
-        return it('delegates to both localsync and onlinesync', function() {
+        it('delegates to both localsync and backboneSync', function() {
           var ready;
 
           spyOnLocalsync();
@@ -109,7 +109,7 @@
         });
       });
       return describe('delete', function() {
-        return it('delegates to both localsync and onlinesync', function() {
+        return it('delegates to both localsync and backboneSync', function() {
           var ready;
 
           spyOnLocalsync();
