@@ -7,12 +7,17 @@ describe 'offline localStorage sync', ->
   {collection} = {}
   beforeEach ->
     window.localStorage.clear()
-    window.localStorage.setItem 'cats', '2,3'
-    window.localStorage.setItem 'cats_dirty', '2'
+    window.localStorage.setItem 'cats', '2,3,a'
+    window.localStorage.setItem 'cats_dirty', '2,a'
     window.localStorage.setItem 'cats_destroyed', '3'
     window.localStorage.setItem 'cats3', '{"id": "2", "color": "auburn"}'
     window.localStorage.setItem 'cats3', '{"id": "3", "color": "burgundy"}'
-    collection = new window.Backbone.Collection [{id: 2, color: 'auburn'}, {id: 3, color: 'burgundy'}]
+    window.localStorage.setItem 'cats3', '{"id": "a", "color": "scarlet"}'
+    collection = new window.Backbone.Collection [
+      {id: 2, color: 'auburn'},
+      {id: 3, color: 'burgundy'},
+      {id: 'a', color: 'burgundy'}
+    ]
     collection.url = -> 'cats'
 
   describe 'syncDirtyAndDestroyed', ->
@@ -25,9 +30,11 @@ describe 'offline localStorage sync', ->
 
   describe 'syncDirty', ->
     it 'finds and saves all dirty models', ->
-      save = spyOn(collection.get(2), 'save').andCallThrough()
+      saveInteger = spyOn(collection.get(2), 'save').andCallThrough()
+      saveString = spyOn(collection.get('a'), 'save').andCallThrough()
       collection.syncDirty()
-      expect(save).toHaveBeenCalled()
+      expect(saveInteger).toHaveBeenCalled()
+      expect(saveString).toHaveBeenCalled()
       expect(window.localStorage.getItem 'cats_dirty').toBeFalsy()
 
   describe 'syncDestroyed', ->
