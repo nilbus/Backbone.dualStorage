@@ -9,45 +9,96 @@ as that.
 
 
 (function() {
-  var S4, backboneSync, callbackTranslator, dualsync, localsync, onlineSync, parseRemoteResponse, result;
+  var S4, Throttle, backboneSync, callbackTranslator, dualsync, localsync, onlineSync, parseRemoteResponse, result;
 
   Backbone.Collection.prototype.syncDirty = function() {
-    var id, ids, model, store, url, _i, _len, _results;
-    url = result(this, 'url');
-    store = localStorage.getItem("" + url + "_dirty");
-    ids = (store && store.split(',')) || [];
-    _results = [];
-    for (_i = 0, _len = ids.length; _i < _len; _i++) {
-      id = ids[_i];
-      model = id.length === 36 ? this.where({
-        id: id
-      })[0] : this.get(id);
-      _results.push(model.save());
-    }
-    return _results;
+    var _this = this;
+    return Throttle.run('dirty', function(callWhenDone) {
+      var id, ids, model, store, url, _i, _len, _results;
+      url = result(_this, 'url');
+      store = localStorage.getItem("" + url + "_dirty");
+      ids = (store && store.split(',')) || [];
+      _results = [];
+      for (_i = 0, _len = ids.length; _i < _len; _i++) {
+        id = ids[_i];
+        model = id.length === 36 ? _this.where({
+          id: id
+        })[0] : _this.get(id);
+        _results.push(model.save(null, {
+          success: callWhenDone,
+          error: callWhenDone
+        }));
+      }
+      return _results;
+    });
   };
 
   Backbone.Collection.prototype.syncDestroyed = function() {
-    var id, ids, model, store, url, _i, _len, _results;
-    url = result(this, 'url');
-    store = localStorage.getItem("" + url + "_destroyed");
-    ids = (store && store.split(',')) || [];
-    _results = [];
-    for (_i = 0, _len = ids.length; _i < _len; _i++) {
-      id = ids[_i];
-      model = new this.model({
-        id: id
-      });
-      model.collection = this;
-      _results.push(model.destroy());
-    }
-    return _results;
+    var _this = this;
+    return Throttle.run('destroyed', function(callWhenDone) {
+      var id, ids, model, store, url, _i, _len, _results;
+      url = result(_this, 'url');
+      store = localStorage.getItem("" + url + "_destroyed");
+      ids = (store && store.split(',')) || [];
+      _results = [];
+      for (_i = 0, _len = ids.length; _i < _len; _i++) {
+        id = ids[_i];
+        model = new _this.model({
+          id: id
+        });
+        model.collection = _this;
+        _results.push(model.destroy({
+          success: callWhenDone,
+          error: callWhenDone
+        }));
+      }
+      return _results;
+    });
   };
 
   Backbone.Collection.prototype.syncDirtyAndDestroyed = function() {
     this.syncDirty();
     return this.syncDestroyed();
   };
+
+  Throttle = (function() {
+    function Throttle() {}
+
+    Throttle.runningTasks = {};
+
+    Throttle.queuedTasks = {};
+
+    Throttle.run = function(name, task) {
+      if (_.isFunction(name)) {
+        task = name;
+        name = 'Throttle.default';
+      }
+      if (this.runningTasks[name]) {
+        return this.queuedTasks[name] = task;
+      } else {
+        this.runningTasks[name] = task;
+        return task(this.completionCallback(name));
+      }
+    };
+
+    Throttle.completionCallback = function(name) {
+      var _this = this;
+      return function() {
+        var _base;
+        _this.runningTasks[name] = _this.queuedTasks[name];
+        _this.queuedTasks[name] = null;
+        return typeof (_base = _this.runningTasks)[name] === "function" ? _base[name]() : void 0;
+      };
+    };
+
+    Throttle.reset = function() {
+      this.runningTasks = {};
+      return this.queuedTasks = {};
+    };
+
+    return Throttle;
+
+  })();
 
   S4 = function() {
     return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
