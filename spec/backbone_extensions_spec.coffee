@@ -1,4 +1,4 @@
-Throttle = window.Throttle
+{Throttle, Backbone, localStorage} = window
 beforeEach -> Throttle.reset()
 
 describe 'monkey patching', ->
@@ -10,14 +10,14 @@ describe 'offline localStorage sync', ->
   {collection, throttler} = {}
   beforeEach ->
     throttler = spyOn(Throttle, 'run').andCallFake (name, task) -> task(->)
-    window.localStorage.clear()
-    window.localStorage.setItem 'cats', '2,3,a'
-    window.localStorage.setItem 'cats_dirty', '2,a'
-    window.localStorage.setItem 'cats_destroyed', '3'
-    window.localStorage.setItem 'cats3', '{"id": "2", "color": "auburn"}'
-    window.localStorage.setItem 'cats3', '{"id": "3", "color": "burgundy"}'
-    window.localStorage.setItem 'cats3', '{"id": "a", "color": "scarlet"}'
-    collection = new window.Backbone.Collection [
+    localStorage.clear()
+    localStorage.setItem 'cats', '2,3,a'
+    localStorage.setItem 'cats_dirty', '2,a'
+    localStorage.setItem 'cats_destroyed', '3'
+    localStorage.setItem 'cats3', '{"id": "2", "color": "auburn"}'
+    localStorage.setItem 'cats3', '{"id": "3", "color": "burgundy"}'
+    localStorage.setItem 'cats3', '{"id": "a", "color": "scarlet"}'
+    collection = new Backbone.Collection [
       {id: 2, color: 'auburn'},
       {id: 3, color: 'burgundy'},
       {id: 'a', color: 'burgundy'}
@@ -26,8 +26,8 @@ describe 'offline localStorage sync', ->
 
   describe 'syncDirtyAndDestroyed', ->
     it 'calls syncDirty and syncDestroyed', ->
-      syncDirty = spyOn(window.Backbone.Collection.prototype, 'syncDirty')
-      syncDestroyed = spyOn(window.Backbone.Collection.prototype, 'syncDestroyed')
+      syncDirty = spyOn(Backbone.Collection.prototype, 'syncDirty')
+      syncDestroyed = spyOn(Backbone.Collection.prototype, 'syncDestroyed')
       collection.syncDirtyAndDestroyed()
       expect(syncDirty).toHaveBeenCalled()
       expect(syncDestroyed).toHaveBeenCalled()
@@ -39,13 +39,13 @@ describe 'offline localStorage sync', ->
       collection.syncDirty()
       expect(saveInteger).toHaveBeenCalled()
       expect(saveString).toHaveBeenCalled()
-      expect(window.localStorage.getItem 'cats_dirty').toBeFalsy()
+      expect(localStorage.getItem 'cats_dirty').toBeFalsy()
 
   describe 'syncDestroyed', ->
     it 'finds all models marked as destroyed and destroys them', ->
       destroy = spyOn collection.get(3), 'destroy'
       collection.syncDestroyed()
-      expect(window.localStorage.getItem 'cats_destroyed').toBeFalsy()
+      expect(localStorage.getItem 'cats_destroyed').toBeFalsy()
 
   describe 'multiple calls to syncDirty or syncDestroyed before the save completes', ->
     it 'does not produce multiple calls to save, to prevent duplicate create/update requests', ->

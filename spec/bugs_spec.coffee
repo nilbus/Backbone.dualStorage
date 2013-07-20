@@ -1,16 +1,18 @@
+{Store, backboneSync, localsync} = window
+
 describe 'bugs, that once fixed, should be moved to the proper spec file and modified to test their inverse', ->
   it 'fails to throw an error when no storeName is provided to the Store constructor,
       even though this will cause problems later.
       The root cause is that the model has no url set; the error should reflect this.', ->
-    createNamelessStore = -> new window.Store
+    createNamelessStore = -> new Store
     expect(createNamelessStore).not.toThrow()
 
   describe 'idAttribute being ignored', ->
     {Role, RoleCollection, collection, model} = {}
 
     beforeEach ->
-      window.backboneSync.calls = []
-      window.localsync 'clear', {}, success: (->), error: (->)
+      backboneSync.calls = []
+      localsync 'clear', {}, success: (->), error: (->)
       collection = new Backbone.Collection
       collection.url = 'eyes/'
       model = new Backbone.Model
