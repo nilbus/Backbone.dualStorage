@@ -12,7 +12,7 @@ Include Backbone.dualStorage after having included Backbone.js:
     <script type="text/javascript" src="backbone.dualstorage.js"></script>
 
 Create your models and collections in the usual way. 
-Feel free to use Backbone as you usually would, this is a drop-in replacement.
+Feel free to use Backbone as you usually would; this is a drop-in replacement.
 
     
 Keep in mind that Backbone.dualStorage really loves your models. By default it will cache everything that passes through Backbone.sync. You can override this behaviour with the booleans ```remote``` or ```local``` on models and collections:
