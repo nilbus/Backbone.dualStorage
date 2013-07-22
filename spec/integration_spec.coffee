@@ -54,6 +54,23 @@ describe 'using backbone models and retrieving from local storage', ->
     runs ->
       expect(retrievedModel.get('vision')).toEqual('crystal')
 
+  it "works with an idAttribute other than 'id'", ->
+    class NonstandardModel extends Backbone.Model
+      idAttribute: 'eyeDee'
+      url: 'eyes/'
+    model = new NonstandardModel eyeDee: 123, vision: 'crystal'
+    saved = false
+    runs ->
+      model.save {}, success: -> saved = true
+    waitsFor (-> saved), "The success callback for 'save' should have been called", 100
+    fetched = false
+    retrievedModel = new NonstandardModel eyeDee: 123
+    runs ->
+      retrievedModel.fetch remote: false, success: -> fetched = true
+    waitsFor (-> fetched), "The success callback for 'fetch' should have been called", 100
+    runs ->
+      expect(retrievedModel.get('vision')).toEqual('crystal')
+
 describe 'using backbone collections and retrieving from local storage', ->
   it 'loads a collection after adding several models to it', ->
     saved = 0

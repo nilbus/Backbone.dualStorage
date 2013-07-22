@@ -31,7 +31,7 @@
           id: 1
         });
       });
-      setup = function(useIdAttribute) {
+      return setup = function(useIdAttribute) {
         Role = Backbone.Model.extend({
           idAttribute: useIdAttribute ? '_id' : void 0,
           urlRoot: "/roles"
@@ -41,76 +41,6 @@
           url: "/roles"
         });
       };
-      it('does work with the default idAttribute, id', function() {
-        var fetched, retrievedModel, saved;
-        setup(false);
-        saved = false;
-        runs(function() {
-          return model.save({
-            vision: 'crystal'
-          }, {
-            success: function() {
-              return saved = true;
-            }
-          });
-        });
-        waitsFor((function() {
-          return saved;
-        }), "The success callback for 'save' should have been called", 100);
-        fetched = false;
-        retrievedModel = new Backbone.Model({
-          id: 1
-        });
-        retrievedModel.collection = collection;
-        runs(function() {
-          return retrievedModel.fetch({
-            remote: false,
-            success: function() {
-              return fetched = true;
-            }
-          });
-        });
-        waitsFor((function() {
-          return fetched;
-        }), "The success callback for 'fetch' should have been called", 100);
-        return runs(function() {
-          return expect(retrievedModel.get('vision')).toEqual('crystal');
-        });
-      });
-      return it('does not respect idAttribute on models (issue 24)', function() {
-        var fetched, retrievedModel, saved;
-        setup(true);
-        saved = false;
-        runs(function() {
-          return model.save({}, {
-            success: function() {
-              return saved = true;
-            }
-          });
-        });
-        waitsFor((function() {
-          return saved;
-        }), "The success callback for 'save' should have been called", 100);
-        fetched = false;
-        retrievedModel = new Backbone.Model({
-          id: 1
-        });
-        retrievedModel.collection = collection;
-        runs(function() {
-          return retrievedModel.fetch({
-            remote: false,
-            success: function() {
-              return fetched = true;
-            }
-          });
-        });
-        waitsFor((function() {
-          return fetched;
-        }), "The success callback for 'fetch' should have been called", 100);
-        return runs(function() {
-          return expect(retrievedModel.get('vision')).toBeUndefined();
-        });
-      });
     });
   });
 

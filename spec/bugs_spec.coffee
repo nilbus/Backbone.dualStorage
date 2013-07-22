@@ -26,35 +26,3 @@ describe 'bugs, that once fixed, should be moved to the proper spec file and mod
       RoleCollection = Backbone.Collection.extend
         model: Role
         url: "/roles"
-
-    it 'does work with the default idAttribute, id', ->
-      setup false
-      saved = false
-      runs ->
-        model.save {vision: 'crystal'}, success: -> saved = true
-      waitsFor (-> saved), "The success callback for 'save' should have been called", 100
-      fetched = false
-      retrievedModel = new Backbone.Model id: 1
-      retrievedModel.collection = collection
-      runs ->
-        retrievedModel.fetch remote: false, success: -> fetched = true
-      waitsFor (-> fetched), "The success callback for 'fetch' should have been called", 100
-      runs ->
-        expect(retrievedModel.get('vision')).toEqual('crystal')
-
-
-    it 'does not respect idAttribute on models (issue 24)', ->
-      setup true
-      saved = false
-      runs ->
-        model.save {}, success: -> saved = true
-      waitsFor (-> saved), "The success callback for 'save' should have been called", 100
-      fetched = false
-      retrievedModel = new Backbone.Model id: 1
-      retrievedModel.collection = collection
-      runs ->
-        retrievedModel.fetch remote: false, success: -> fetched = true
-      waitsFor (-> fetched), "The success callback for 'fetch' should have been called", 100
-      runs ->
-        expect(retrievedModel.get('vision')).toBeUndefined()
-
