@@ -68,7 +68,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
             id: 12
             position: 'arm'
             updated: 'by the server'
-          expect(_.isEqual localsync.calls[0].args[1], mergedAttributes).toBeTruthy()
+          expect(localsync.calls[0].args[1]).toEqual(mergedAttributes)
 
     describe 'delete', ->
       it 'delegates to both localsync and backboneSync', ->
