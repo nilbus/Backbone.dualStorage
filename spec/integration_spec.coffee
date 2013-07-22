@@ -80,4 +80,4 @@ describe 'success and error callback parameters', ->
     waitsFor (-> callbackResponse), "The success callback for 'fetch' should have been called", 100
     runs ->
       expect(callbackResponse[0]).toEqual model
-      expect(callbackResponse[1].updatedByRemoteSync).toBeTruthy
+      expect(callbackResponse[1]).toEqual model.attributes

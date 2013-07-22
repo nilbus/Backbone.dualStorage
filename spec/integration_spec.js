@@ -166,7 +166,7 @@
       }), "The success callback for 'fetch' should have been called", 100);
       return runs(function() {
         expect(callbackResponse[0]).toEqual(model);
-        return expect(callbackResponse[1].updatedByRemoteSync).toBeTruthy;
+        return expect(callbackResponse[1]).toEqual(model.attributes);
       });
     });
   });
