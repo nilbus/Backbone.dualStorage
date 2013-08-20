@@ -26,9 +26,9 @@
       localStorage.setItem('cats', '2,3,a');
       localStorage.setItem('cats_dirty', '2,a');
       localStorage.setItem('cats_destroyed', '3');
-      localStorage.setItem('cats3', '{"id": "2", "color": "auburn"}');
+      localStorage.setItem('cats2', '{"id": "2", "color": "auburn"}');
       localStorage.setItem('cats3', '{"id": "3", "color": "burgundy"}');
-      localStorage.setItem('cats3', '{"id": "a", "color": "scarlet"}');
+      localStorage.setItem('catsa', '{"id": "a", "color": "scarlet"}');
       collection = new Backbone.Collection([
         {
           id: 2,
@@ -38,7 +38,7 @@
           color: 'burgundy'
         }, {
           id: 'a',
-          color: 'burgundy'
+          color: 'scarlet'
         }
       ]);
       return collection.url = function() {
@@ -56,7 +56,7 @@
       });
     });
     describe('syncDirty', function() {
-      return it('finds and saves all dirty models', function() {
+      it('finds and saves all dirty models', function() {
         var saveInteger, saveString;
         saveInteger = spyOn(collection.get(2), 'save').andCallThrough();
         saveString = spyOn(collection.get('a'), 'save').andCallThrough();
@@ -65,13 +65,26 @@
         expect(saveString).toHaveBeenCalled();
         return expect(localStorage.getItem('cats_dirty')).toBeFalsy();
       });
+      return it('works when there are no dirty records', function() {
+        localStorage.removeItem('cats_dirty');
+        return collection.syncDirty();
+      });
     });
     describe('syncDestroyed', function() {
-      return it('finds all models marked as destroyed and destroys them', function() {
+      it('finds all models marked as destroyed and destroys them', function() {
         var destroy;
         destroy = spyOn(collection.get(3), 'destroy');
         collection.syncDestroyed();
         return expect(localStorage.getItem('cats_destroyed')).toBeFalsy();
+      });
+      it('works when there are no destroyed records', function() {
+        localStorage.setItem('cats_destroyed', '');
+        return collection.syncDestroyed();
+      });
+      return it('works when there are no records', function() {
+        localStorage.setItem('cats_destroyed', '');
+        localStorage.setItem('cats_destroyed', '');
+        return collection.syncDestroyed();
       });
     });
     return describe('multiple calls to syncDirty or syncDestroyed before the save completes', function() {

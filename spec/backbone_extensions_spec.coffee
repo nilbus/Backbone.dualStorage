@@ -14,13 +14,13 @@ describe 'offline localStorage sync', ->
     localStorage.setItem 'cats', '2,3,a'
     localStorage.setItem 'cats_dirty', '2,a'
     localStorage.setItem 'cats_destroyed', '3'
-    localStorage.setItem 'cats3', '{"id": "2", "color": "auburn"}'
+    localStorage.setItem 'cats2', '{"id": "2", "color": "auburn"}'
     localStorage.setItem 'cats3', '{"id": "3", "color": "burgundy"}'
-    localStorage.setItem 'cats3', '{"id": "a", "color": "scarlet"}'
+    localStorage.setItem 'catsa', '{"id": "a", "color": "scarlet"}'
     collection = new Backbone.Collection [
       {id: 2, color: 'auburn'},
       {id: 3, color: 'burgundy'},
-      {id: 'a', color: 'burgundy'}
+      {id: 'a', color: 'scarlet'}
     ]
     collection.url = -> 'cats'
 
@@ -41,11 +41,19 @@ describe 'offline localStorage sync', ->
       expect(saveString).toHaveBeenCalled()
       expect(localStorage.getItem 'cats_dirty').toBeFalsy()
 
+    it 'works when there are no dirty records', ->
+      localStorage.removeItem 'cats_dirty'
+      collection.syncDirty()
+
   describe 'syncDestroyed', ->
     it 'finds all models marked as destroyed and destroys them', ->
       destroy = spyOn collection.get(3), 'destroy'
       collection.syncDestroyed()
       expect(localStorage.getItem 'cats_destroyed').toBeFalsy()
+
+    it 'works when there are no destroyed records', ->
+      localStorage.setItem 'cats_destroyed', ''
+      collection.syncDestroyed()
 
   describe 'multiple calls to syncDirty or syncDestroyed before the save completes', ->
     it 'does not produce multiple calls to save, to prevent duplicate create/update requests', ->
