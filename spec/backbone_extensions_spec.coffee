@@ -1,5 +1,4 @@
-{Throttle, Backbone, localStorage} = window
-beforeEach -> Throttle.reset()
+{Backbone, localStorage} = window
 
 describe 'monkey patching', ->
   it 'aliases Backbone.sync to backboneSync', ->
@@ -7,9 +6,8 @@ describe 'monkey patching', ->
     expect(window.backboneSync.identity).toEqual('sync')
 
 describe 'offline localStorage sync', ->
-  {collection, throttler} = {}
+  {collection} = {}
   beforeEach ->
-    throttler = spyOn(Throttle, 'run').andCallFake (name, task) -> task(->)
     localStorage.clear()
     localStorage.setItem 'cats', '2,3,a'
     localStorage.setItem 'cats_dirty', '2,a'
@@ -26,8 +24,8 @@ describe 'offline localStorage sync', ->
 
   describe 'syncDirtyAndDestroyed', ->
     it 'calls syncDirty and syncDestroyed', ->
-      syncDirty = spyOn(Backbone.Collection.prototype, 'syncDirty')
-      syncDestroyed = spyOn(Backbone.Collection.prototype, 'syncDestroyed')
+      syncDirty = spyOn Backbone.Collection.prototype, 'syncDirty'
+      syncDestroyed = spyOn Backbone.Collection.prototype, 'syncDestroyed'
       collection.syncDirtyAndDestroyed()
       expect(syncDirty).toHaveBeenCalled()
       expect(syncDestroyed).toHaveBeenCalled()
@@ -54,72 +52,3 @@ describe 'offline localStorage sync', ->
     it 'works when there are no destroyed records', ->
       localStorage.setItem 'cats_destroyed', ''
       collection.syncDestroyed()
-
-  describe 'multiple calls to syncDirty or syncDestroyed before the save completes', ->
-    it 'does not produce multiple calls to save, to prevent duplicate create/update requests', ->
-      collection.syncDirtyAndDestroyed()
-      expect(throttler.calls.length).toEqual 2
-
-describe 'Throttle.run', ->
-  it 'runs jobs immediately unless there is already one running', ->
-    ran1 = ran2 = false
-    Throttle.run -> ran1 = true
-    Throttle.run -> ran2 = true
-    expect(ran1).toBeTruthy()
-    expect(ran2).toBeFalsy()
-
-  it 'accets a job name as an optional first parameter', ->
-    ran1 = ran2 = ran3 = ran4 = false
-    Throttle.run 'job', -> ran1 = true
-    Throttle.run 'job', -> ran2 = true
-    Throttle.run 'another', -> ran3 = true
-    Throttle.run 'another', -> ran4 = true
-    expect(ran1).toBeTruthy()
-    expect(ran2).toBeFalsy()
-    expect(ran3).toBeTruthy()
-    expect(ran4).toBeFalsy()
-
-  it 'sends a callback argument to the throttled function that starts the next job when called', ->
-    ran1 = ran2 = false
-    callback = null
-    Throttle.run (runWhenDone) ->
-      ran1 = true
-      callback = runWhenDone
-    Throttle.run -> ran2 = true
-    expect(ran1).toBeTruthy()
-    expect(ran2).toBeFalsy()
-    callback()
-    expect(ran2).toBeTruthy()
-
-  it 'replaces an existing queued job when a new job is queued', ->
-    ran1 = ran2 = ran3 = false
-    callback = null
-    Throttle.run (runWhenDone) ->
-      ran1 = true
-      callback = runWhenDone
-    Throttle.run -> ran2 = true
-    Throttle.run -> ran3 = true
-    expect(ran1).toBeTruthy()
-    expect(ran2).toBeFalsy()
-    expect(ran3).toBeFalsy()
-    callback()
-    expect(ran2).toBeFalsy()
-    expect(ran3).toBeTruthy()
-
-  it 'is done when it executes all of its jobs, but it still accepts further jobs', ->
-    ran1 = ran2 = ran3 = false
-    callback = null
-    Throttle.run (runWhenDone) ->
-      ran1 = true
-      callback = runWhenDone
-    Throttle.run (runWhenDone) ->
-      ran2 = true
-      callback = runWhenDone
-    Throttle.run -> ran2 = true
-    expect(ran1).toBeTruthy()
-    expect(ran2).toBeFalsy()
-    callback()
-    expect(ran2).toBeTruthy()
-    callback()
-    Throttle.run -> ran3 = true
-    expect(ran3).toBeTruthy()

@@ -9,53 +9,27 @@ as that.
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
 Backbone.Collection.prototype.syncDirty = ->
-  Throttle.run 'dirty', (callWhenDone) =>
-    url = result(@, 'url')
-    store = localStorage.getItem "#{url}_dirty"
-    ids = (store and store.split(',')) or []
-
-    for id in ids
-      model = if id.length == 36 then @where(id: id)[0] else @get(id)
-      model.save(null, success: callWhenDone, error: callWhenDone)
+  url = result(@, 'url')
+  store = localStorage.getItem "#{url}_dirty"
+  ids = (store and store.split(',')) or []
+  
+  for id in ids
+    model = if id.length == 36 then @where(id: id)[0] else @get(id)
+    model.save()
 
 Backbone.Collection.prototype.syncDestroyed = ->
-  Throttle.run 'destroyed', (callWhenDone) =>
-    url = result(@, 'url')
-    store = localStorage.getItem "#{url}_destroyed"
-    ids = (store and store.split(',')) or []
-
-    for id in ids
-      model = new @model({id: id})
-      model.collection = @
-      model.destroy(success: callWhenDone, error: callWhenDone)
+  url = result(@, 'url')
+  store = localStorage.getItem "#{url}_destroyed"
+  ids = (store and store.split(',')) or []
+  
+  for id in ids
+    model = new @model({id: id})
+    model.collection = @
+    model.destroy()
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
   @syncDirty()
   @syncDestroyed()
-
-class Throttle
-  @runningTasks: {}
-  @queuedTasks:  {}
-
-  @run: (name, task) ->
-    if _.isFunction(name)
-      task = name
-      name = 'Throttle.default'
-    if @runningTasks[name]
-      @queuedTasks[name] = task
-    else
-      @runningTasks[name] = task
-      task(@completionCallback(name))
-
-  @completionCallback: (name) ->
-    =>
-      @runningTasks[name] = @queuedTasks[name]
-      @queuedTasks[name] = null
-      @runningTasks[name]?()
-
-  @reset: ->
-    @runningTasks = {}
-    @queuedTasks  = {}
 
 # Generate four random hex digits.
 S4 = ->
