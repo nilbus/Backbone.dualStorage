@@ -131,7 +131,7 @@
               position: 'arm',
               updated: 'by the server'
             };
-            return expect(localsync.calls[0].args[1]).toEqual(mergedAttributes);
+            return expect(localsync.calls[0].args[1].attributes).toEqual(mergedAttributes);
           });
         });
       });
