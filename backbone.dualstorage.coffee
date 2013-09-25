@@ -278,8 +278,8 @@ dualsync = (method, model, options) ->
         onlineSync('create', model, options)
       else
         options.success = (resp, status, xhr) ->
-          updatedAttributes = _.extend({}, model.toJSON(), resp)
-          localsync(method, updatedAttributes, options)
+          model.set model.parse resp
+          localsync(method, model, options)
           success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
