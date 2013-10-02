@@ -1,4 +1,4 @@
-Backbone dualStorage Adapter v1.0.1
+Backbone dualStorage Adapter v1.0.2
 ===================================
 
 A dualStorage adapter for Backbone. It's a drop-in replacement for Backbone.Sync() to handle saving to a localStorage database as a cache for the remote models.
@@ -25,6 +25,11 @@ Keep in mind that Backbone.dualStorage really loves your models. By default it w
 You can also deactivate dualsync to some requests, when you want to sync with the server only later.
 
     SomeCollection.create({name: "someone"}, {remote: false});
+
+Usage with RequireJS
+--------------------
+
+Just use the backbone.dualstorage.amd.js instead of backbone.dualstorage.js
 
 Data synchronization
 --------------------
