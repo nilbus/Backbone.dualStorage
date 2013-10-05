@@ -145,6 +145,13 @@ callbackTranslator =
 # Override `Backbone.sync` to use delegate to the model or collection's
 # *localStorage* property, which should be an instance of `Store`.
 localsync = (method, model, options) ->
+  isValidModel = (method is 'clear') or (method is 'hasDirtyOrDestroyed')
+  isValidModel ||= model instanceof Backbone.Model
+  isValidModel ||= model instanceof Backbone.Collection
+
+  if not isValidModel
+    throw new Error 'model parameter is required to be a backbone model or collection.'
+
   store = new Store options.storeName
 
   response = switch method
@@ -203,6 +210,10 @@ parseRemoteResponse = (object, response) ->
   if not (object and object.parseBeforeLocalSave) then return response
   if _.isFunction(object.parseBeforeLocalSave) then object.parseBeforeLocalSave(response)
 
+mergeModelWithResponse = (model, response) ->
+  model.set (model.parse response), { silent: true }
+  model
+
 backboneSync = Backbone.sync
 onlineSync = (method, model, options) ->
   options.success = callbackTranslator.forBackboneCaller(options.success)
@@ -241,9 +252,11 @@ dualsync = (method, model, options) ->
 
           if _.isArray resp
             for i in resp
-              localsync('create', i, options)
+              model = mergeModelWithResponse model, i
+              localsync('create', model, options)
           else
-            localsync('create', resp, options)
+            mergeModelWithResponse model, resp
+            localsync('create', model, options)
 
           success(resp, status, xhr)
 
@@ -254,7 +267,8 @@ dualsync = (method, model, options) ->
 
     when 'create'
       options.success = (resp, status, xhr) ->
-        localsync(method, resp, options)
+        mergeModelWithResponse model, resp
+        localsync(method, model, options)
         success(resp, status, xhr)
       options.error = (resp) ->
         options.dirty = true
@@ -267,8 +281,9 @@ dualsync = (method, model, options) ->
         originalModel = model.clone()
 
         options.success = (resp, status, xhr) ->
+          mergeModelWithResponse model, resp
           localsync('delete', originalModel, options)
-          localsync('create', resp, options)
+          localsync('create', model, options)
           success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
@@ -278,8 +293,8 @@ dualsync = (method, model, options) ->
         onlineSync('create', model, options)
       else
         options.success = (resp, status, xhr) ->
-          updatedAttributes = _.extend({}, model.toJSON(), resp)
-          localsync(method, updatedAttributes, options)
+          mergeModelWithResponse model, resp
+          localsync(method, model, options)
           success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true

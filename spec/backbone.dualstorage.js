@@ -7,7 +7,7 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
 */
 
-var S4, backboneSync, callbackTranslator, dualsync, localsync, onlineSync, parseRemoteResponse, result;
+var S4, backboneSync, callbackTranslator, dualsync, localsync, mergeModelWithResponse, onlineSync, parseRemoteResponse, result;
 
 Backbone.Collection.prototype.syncDirty = function() {
   var id, ids, model, store, url, _i, _len, _results;
@@ -192,7 +192,13 @@ callbackTranslator = {
 };
 
 localsync = function(method, model, options) {
-  var preExisting, response, store;
+  var isValidModel, preExisting, response, store;
+  isValidModel = (method === 'clear') || (method === 'hasDirtyOrDestroyed');
+  isValidModel || (isValidModel = model instanceof Backbone.Model);
+  isValidModel || (isValidModel = model instanceof Backbone.Collection);
+  if (!isValidModel) {
+    throw new Error('model parameter is required to be a backbone model or collection.');
+  }
   store = new Store(options.storeName);
   response = (function() {
     switch (method) {
@@ -274,6 +280,13 @@ parseRemoteResponse = function(object, response) {
   }
 };
 
+mergeModelWithResponse = function(model, response) {
+  model.set(model.parse(response), {
+    silent: true
+  });
+  return model;
+};
+
 backboneSync = Backbone.sync;
 
 onlineSync = function(method, model, options) {
@@ -312,10 +325,12 @@ dualsync = function(method, model, options) {
           if (_.isArray(resp)) {
             for (_i = 0, _len = resp.length; _i < _len; _i++) {
               i = resp[_i];
-              localsync('create', i, options);
+              model = mergeModelWithResponse(model, i);
+              localsync('create', model, options);
             }
           } else {
-            localsync('create', resp, options);
+            mergeModelWithResponse(model, resp);
+            localsync('create', model, options);
           }
           return success(resp, status, xhr);
         };
@@ -327,7 +342,8 @@ dualsync = function(method, model, options) {
       break;
     case 'create':
       options.success = function(resp, status, xhr) {
-        localsync(method, resp, options);
+        mergeModelWithResponse(model, resp);
+        localsync(method, model, options);
         return success(resp, status, xhr);
       };
       options.error = function(resp) {
@@ -339,8 +355,9 @@ dualsync = function(method, model, options) {
       if (_.isString(model.id) && model.id.length === 36) {
         originalModel = model.clone();
         options.success = function(resp, status, xhr) {
+          mergeModelWithResponse(model, resp);
           localsync('delete', originalModel, options);
-          localsync('create', resp, options);
+          localsync('create', model, options);
           return success(resp, status, xhr);
         };
         options.error = function(resp) {
@@ -353,9 +370,8 @@ dualsync = function(method, model, options) {
         return onlineSync('create', model, options);
       } else {
         options.success = function(resp, status, xhr) {
-          var updatedAttributes;
-          updatedAttributes = _.extend({}, model.toJSON(), resp);
-          localsync(method, updatedAttributes, options);
+          mergeModelWithResponse(model, resp);
+          localsync(method, model, options);
           return success(resp, status, xhr);
         };
         options.error = function(resp) {
