@@ -64,7 +64,7 @@
             return expect(localsync.calls[0].args[0]).toEqual('create');
           });
         });
-        return it('always calls localsync with a backbone model', function() {
+        it('always calls localsync with a backbone model', function() {
           var ready;
           spyOnLocalsync();
           ready = false;
@@ -82,6 +82,25 @@
             return expect(_(localsync.calls).every(function(call) {
               return call.args[1] instanceof Backbone.Model;
             })).toBeTruthy();
+          });
+        });
+        return it('should merge local model with received response', function() {
+          var ready;
+          spyOnLocalsync();
+          spyOn(window, 'mergeModelWithResponse').andCallThrough();
+          ready = false;
+          runs(function() {
+            return dualsync('create', model, {
+              success: (function() {
+                return ready = true;
+              })
+            });
+          });
+          waitsFor((function() {
+            return ready;
+          }), "The success callback should have been called", 100);
+          return runs(function() {
+            return expect(window.mergeModelWithResponse).toHaveBeenCalled();
           });
         });
       });
@@ -131,7 +150,7 @@
             })).toBeTruthy();
           });
         });
-        return it('always calls localsync with a backbone model when an array is received', function() {
+        it('always calls localsync with a backbone model when an array is received', function() {
           var lastCalledWith, ready, _ref1;
           _ref1 = {}, ready = _ref1.ready, lastCalledWith = _ref1.lastCalledWith;
           spyOnLocalsyncNonDirty(function(lastModel) {
@@ -150,6 +169,25 @@
           }), "success callback should have been called", 100);
           return runs(function() {
             return expect(lastCalledWith instanceof Backbone.Model).toBeTruthy();
+          });
+        });
+        return it('should merge local model with received response', function() {
+          var ready;
+          spyOnLocalsyncNonDirty();
+          spyOn(window, 'mergeModelWithResponse').andCallThrough();
+          ready = false;
+          runs(function() {
+            return dualsync('read', model, {
+              success: (function() {
+                return ready = true;
+              })
+            });
+          });
+          waitsFor((function() {
+            return ready;
+          }), "The success callback should have been called", 100);
+          return runs(function() {
+            return expect(window.mergeModelWithResponse).toHaveBeenCalled();
           });
         });
       });
@@ -206,7 +244,7 @@
             return expect(localsync.calls[0].args[1].attributes).toEqual(mergedAttributes);
           });
         });
-        return it('always calls localsync with a backbone model for non-syncronized offline models', function() {
+        it('always calls localsync with a backbone model for non-syncronized offline models', function() {
           var newModel, ready, store;
           store = new window.Store('bones/');
           newModel = store.create(new Backbone.Model({
@@ -230,6 +268,25 @@
             return expect(_(localsync.calls).every(function(call) {
               return call.args[1] instanceof Backbone.Model;
             })).toBeTruthy();
+          });
+        });
+        return it('should merge local model with received response', function() {
+          var ready;
+          spyOnLocalsync();
+          spyOn(window, 'mergeModelWithResponse').andCallThrough();
+          ready = false;
+          runs(function() {
+            return dualsync('update', model, {
+              success: (function() {
+                return ready = true;
+              })
+            });
+          });
+          waitsFor((function() {
+            return ready;
+          }), "The success callback should have been called", 100);
+          return runs(function() {
+            return expect(window.mergeModelWithResponse).toHaveBeenCalled();
           });
         });
       });
@@ -447,6 +504,41 @@
       return runs(function() {
         return expect(response[0].get('parsedRemote') || response[1].get('parsedRemote')).toBeTruthy();
       });
+    });
+  });
+
+  describe('merge local model with remote response', function() {
+    var changeTriggered, localModel, newModel, remoteModel, _ref1;
+    _ref1 = {}, newModel = _ref1.newModel, localModel = _ref1.localModel, remoteModel = _ref1.remoteModel, changeTriggered = _ref1.changeTriggered;
+    changeTriggered = false;
+    beforeEach(function() {
+      var remoteResponse;
+      localModel = new Backbone.Model({
+        id: 1,
+        name: 'model',
+        origin: 'local'
+      });
+      remoteModel = new Backbone.Model({
+        id: 1,
+        name: 'model',
+        origin: 'remote',
+        extra: 'extra'
+      });
+      Backbone.listenTo(localModel, 'change', function() {
+        return changeTriggered = true;
+      });
+      remoteResponse = remoteModel.toJSON();
+      return newModel = mergeModelWithResponse(localModel, remoteResponse);
+    });
+    afterEach(function() {
+      return Backbone.stopListening(localModel, 'change');
+    });
+    it('should not trigger change event on model', function() {
+      return expect(changeTriggered).toBe(false);
+    });
+    return it('should return a model with updated attributes', function() {
+      expect(newModel.get('origin')).toEqual('remote');
+      return expect(newModel.get('extra')).toEqual('extra');
     });
   });
 

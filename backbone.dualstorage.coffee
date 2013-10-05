@@ -210,6 +210,10 @@ parseRemoteResponse = (object, response) ->
   if not (object and object.parseBeforeLocalSave) then return response
   if _.isFunction(object.parseBeforeLocalSave) then object.parseBeforeLocalSave(response)
 
+mergeModelWithResponse = (model, response) ->
+  model.set (model.parse response), { silent: true }
+  model
+
 backboneSync = Backbone.sync
 onlineSync = (method, model, options) ->
   options.success = callbackTranslator.forBackboneCaller(options.success)
@@ -248,10 +252,10 @@ dualsync = (method, model, options) ->
 
           if _.isArray resp
             for i in resp
-              model.set model.parse i
+              model = mergeModelWithResponse model, i
               localsync('create', model, options)
           else
-            model.set model.parse resp
+            mergeModelWithResponse model, resp
             localsync('create', model, options)
 
           success(resp, status, xhr)
@@ -263,7 +267,7 @@ dualsync = (method, model, options) ->
 
     when 'create'
       options.success = (resp, status, xhr) ->
-        model.set model.parse resp
+        mergeModelWithResponse model, resp
         localsync(method, model, options)
         success(resp, status, xhr)
       options.error = (resp) ->
@@ -277,7 +281,7 @@ dualsync = (method, model, options) ->
         originalModel = model.clone()
 
         options.success = (resp, status, xhr) ->
-          model.set model.parse resp
+          mergeModelWithResponse model, resp
           localsync('delete', originalModel, options)
           localsync('create', model, options)
           success(resp, status, xhr)
@@ -289,7 +293,7 @@ dualsync = (method, model, options) ->
         onlineSync('create', model, options)
       else
         options.success = (resp, status, xhr) ->
-          model.set model.parse resp
+          mergeModelWithResponse model, resp
           localsync(method, model, options)
           success(resp, status, xhr)
         options.error = (resp) ->
