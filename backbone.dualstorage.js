@@ -194,7 +194,13 @@ as that.
   };
 
   localsync = function(method, model, options) {
-    var preExisting, response, store;
+    var isValidModel, preExisting, response, store;
+    isValidModel = (method === 'clear') || (method === 'hasDirtyOrDestroyed');
+    isValidModel || (isValidModel = model instanceof Backbone.Model);
+    isValidModel || (isValidModel = model instanceof Backbone.Collection);
+    if (!isValidModel) {
+      throw new Error('model parameter is required to be a backbone model or collection.');
+    }
     store = new Store(options.storeName);
     response = (function() {
       switch (method) {
@@ -314,10 +320,12 @@ as that.
             if (_.isArray(resp)) {
               for (_i = 0, _len = resp.length; _i < _len; _i++) {
                 i = resp[_i];
-                localsync('create', i, options);
+                model.set(model.parse(i));
+                localsync('create', model, options);
               }
             } else {
-              localsync('create', resp, options);
+              model.set(model.parse(resp));
+              localsync('create', model, options);
             }
             return success(resp, status, xhr);
           };
@@ -329,7 +337,8 @@ as that.
         break;
       case 'create':
         options.success = function(resp, status, xhr) {
-          localsync(method, resp, options);
+          model.set(model.parse(resp));
+          localsync(method, model, options);
           return success(resp, status, xhr);
         };
         options.error = function(resp) {
@@ -341,8 +350,9 @@ as that.
         if (_.isString(model.id) && model.id.length === 36) {
           originalModel = model.clone();
           options.success = function(resp, status, xhr) {
+            model.set(model.parse(resp));
             localsync('delete', originalModel, options);
-            localsync('create', resp, options);
+            localsync('create', model, options);
             return success(resp, status, xhr);
           };
           options.error = function(resp) {

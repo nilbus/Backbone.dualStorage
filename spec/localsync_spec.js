@@ -5,6 +5,53 @@
   Store = window.Store, Backbone = window.Backbone, localsync = window.localsync;
 
   describe('localsync', function() {
+    describe('parameters', function() {
+      it('should not accept objects / attributes as model', function() {
+        var call;
+        call = function() {
+          return localsync('create', {}, {
+            ignoreCallbacks: true
+          });
+        };
+        return expect(call).toThrow();
+      });
+      it('should accept a backbone model as model', function() {
+        var call;
+        call = function() {
+          return localsync('create', new Backbone.Model, {
+            ignoreCallbacks: true
+          });
+        };
+        return expect(call()).toBeTruthy();
+      });
+      it('should accept a backbone collection as model', function() {
+        var call;
+        call = function() {
+          return localsync('create', new Backbone.Collection, {
+            ignoreCallbacks: true
+          });
+        };
+        return expect(call()).toBeTruthy();
+      });
+      it('should accept any object as model on extra method "clear"', function() {
+        var call;
+        call = function() {
+          return localsync('clear', {}, {
+            ignoreCallbacks: true
+          });
+        };
+        return expect(call).not.toThrow();
+      });
+      return it('should accept any object as model on extra method "hasDirtyOrDestroyed"', function() {
+        var call;
+        call = function() {
+          return localsync('hasDirtyOrDestroyed', {}, {
+            ignoreCallbacks: true
+          });
+        };
+        return expect(call).not.toThrow();
+      });
+    });
     describe('standard Backbone.sync methods', function() {
       describe('creating records', function() {
         it('creates records', function() {

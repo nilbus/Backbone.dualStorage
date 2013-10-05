@@ -145,6 +145,13 @@ callbackTranslator =
 # Override `Backbone.sync` to use delegate to the model or collection's
 # *localStorage* property, which should be an instance of `Store`.
 localsync = (method, model, options) ->
+  isValidModel = (method is 'clear') or (method is 'hasDirtyOrDestroyed')
+  isValidModel ||= model instanceof Backbone.Model
+  isValidModel ||= model instanceof Backbone.Collection
+
+  if not isValidModel
+    throw new Error 'model parameter is required to be a backbone model or collection.'
+
   store = new Store options.storeName
 
   response = switch method
@@ -241,9 +248,11 @@ dualsync = (method, model, options) ->
 
           if _.isArray resp
             for i in resp
-              localsync('create', i, options)
+              model.set model.parse i
+              localsync('create', model, options)
           else
-            localsync('create', resp, options)
+            model.set model.parse resp
+            localsync('create', model, options)
 
           success(resp, status, xhr)
 
@@ -254,7 +263,8 @@ dualsync = (method, model, options) ->
 
     when 'create'
       options.success = (resp, status, xhr) ->
-        localsync(method, resp, options)
+        model.set model.parse resp
+        localsync(method, model, options)
         success(resp, status, xhr)
       options.error = (resp) ->
         options.dirty = true
@@ -267,8 +277,9 @@ dualsync = (method, model, options) ->
         originalModel = model.clone()
 
         options.success = (resp, status, xhr) ->
+          model.set model.parse resp
           localsync('delete', originalModel, options)
-          localsync('create', resp, options)
+          localsync('create', model, options)
           success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
