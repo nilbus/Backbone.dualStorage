@@ -210,7 +210,7 @@ parseRemoteResponse = (object, response) ->
   if not (object and object.parseBeforeLocalSave) then return response
   if _.isFunction(object.parseBeforeLocalSave) then object.parseBeforeLocalSave(response)
 
-mergeModelWithResponse = (model, response) ->
+updateModelWithResponse = (model, response) ->
   model.set (model.parse response), { silent: true }
   model
 
@@ -251,10 +251,10 @@ dualsync = (method, model, options) ->
 
           if _.isArray resp
             for i in resp
-              model = mergeModelWithResponse model, i
+              model = updateModelWithResponse model, i
               localsync('create', model, options)
           else
-            mergeModelWithResponse model, resp
+            updateModelWithResponse model, resp
             localsync('create', model, options)
 
           success(resp, status, xhr)
@@ -266,7 +266,7 @@ dualsync = (method, model, options) ->
 
     when 'create'
       options.success = (resp, status, xhr) ->
-        mergeModelWithResponse model, resp
+        updateModelWithResponse model, resp
         localsync(method, model, options)
         success(resp, status, xhr)
       options.error = (resp) ->
@@ -280,7 +280,7 @@ dualsync = (method, model, options) ->
         originalModel = model.clone()
 
         options.success = (resp, status, xhr) ->
-          mergeModelWithResponse model, resp
+          updateModelWithResponse model, resp
           localsync('delete', originalModel, options)
           localsync('create', model, options)
           success(resp, status, xhr)
@@ -292,7 +292,7 @@ dualsync = (method, model, options) ->
         onlineSync('create', model, options)
       else
         options.success = (resp, status, xhr) ->
-          mergeModelWithResponse model, resp
+          updateModelWithResponse model, resp
           localsync(method, model, options)
           success(resp, status, xhr)
         options.error = (resp) ->

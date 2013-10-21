@@ -35,7 +35,7 @@
       checkMergedAttributesOn = function(method) {
         var ready;
         spyOnLocalsync();
-        spyOn(window, 'mergeModelWithResponse').andCallThrough();
+        spyOn(window, 'updateModelWithResponse').andCallThrough();
         ready = false;
         runs(function() {
           return dualsync(method, model, {
@@ -48,7 +48,7 @@
           return ready;
         }), "The success callback should have been called", 100);
         return runs(function() {
-          return expect(window.mergeModelWithResponse).toHaveBeenCalled();
+          return expect(window.updateModelWithResponse).toHaveBeenCalled();
         });
       };
       describe('create', function() {
@@ -387,7 +387,7 @@
         return changeTriggered = true;
       });
       remoteResponse = remoteModel.toJSON();
-      return newModel = mergeModelWithResponse(localModel, remoteResponse);
+      return newModel = updateModelWithResponse(localModel, remoteResponse);
     });
     afterEach(function() {
       return Backbone.stopListening(localModel, 'change');
@@ -396,6 +396,7 @@
       return expect(changeTriggered).toBe(false);
     });
     return it('should return a model with updated attributes', function() {
+      expect(newModel.get('name')).toEqual('model');
       expect(newModel.get('origin')).toEqual('remote');
       return expect(newModel.get('extra')).toEqual('extra');
     });

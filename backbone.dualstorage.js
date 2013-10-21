@@ -9,7 +9,7 @@ as that.
 
 
 (function() {
-  var S4, backboneSync, callbackTranslator, dualsync, localsync, mergeModelWithResponse, onlineSync, parseRemoteResponse, result;
+  var S4, backboneSync, callbackTranslator, dualsync, localsync, onlineSync, parseRemoteResponse, result, updateModelWithResponse;
 
   Backbone.Collection.prototype.syncDirty = function() {
     var id, ids, model, store, url, _i, _len, _results;
@@ -282,7 +282,7 @@ as that.
     }
   };
 
-  mergeModelWithResponse = function(model, response) {
+  updateModelWithResponse = function(model, response) {
     model.set(model.parse(response), {
       silent: true
     });
@@ -327,11 +327,11 @@ as that.
             if (_.isArray(resp)) {
               for (_i = 0, _len = resp.length; _i < _len; _i++) {
                 i = resp[_i];
-                model = mergeModelWithResponse(model, i);
+                model = updateModelWithResponse(model, i);
                 localsync('create', model, options);
               }
             } else {
-              mergeModelWithResponse(model, resp);
+              updateModelWithResponse(model, resp);
               localsync('create', model, options);
             }
             return success(resp, status, xhr);
@@ -344,7 +344,7 @@ as that.
         break;
       case 'create':
         options.success = function(resp, status, xhr) {
-          mergeModelWithResponse(model, resp);
+          updateModelWithResponse(model, resp);
           localsync(method, model, options);
           return success(resp, status, xhr);
         };
@@ -357,7 +357,7 @@ as that.
         if (_.isString(model.id) && model.id.length === 36) {
           originalModel = model.clone();
           options.success = function(resp, status, xhr) {
-            mergeModelWithResponse(model, resp);
+            updateModelWithResponse(model, resp);
             localsync('delete', originalModel, options);
             localsync('create', model, options);
             return success(resp, status, xhr);
@@ -372,7 +372,7 @@ as that.
           return onlineSync('create', model, options);
         } else {
           options.success = function(resp, status, xhr) {
-            mergeModelWithResponse(model, resp);
+            updateModelWithResponse(model, resp);
             localsync(method, model, options);
             return success(resp, status, xhr);
           };

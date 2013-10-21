@@ -22,13 +22,13 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
   describe 'dual tier storage', ->
     checkMergedAttributesOn = (method) ->
       spyOnLocalsync()
-      spyOn(window, 'mergeModelWithResponse').andCallThrough()
+      spyOn(window, 'updateModelWithResponse').andCallThrough()
       ready = false
       runs ->
         dualsync(method, model, success: (-> ready = true))
       waitsFor (-> ready), "The success callback should have been called", 100
       runs ->
-        expect(window.mergeModelWithResponse).toHaveBeenCalled()
+        expect(window.updateModelWithResponse).toHaveBeenCalled()
 
     describe 'create', ->
       it 'delegates to both localsync and backboneSync', ->
@@ -210,7 +210,7 @@ describe 'merge local model with remote response', ->
       changeTriggered = true
 
     remoteResponse = remoteModel.toJSON()
-    newModel = mergeModelWithResponse localModel, remoteResponse
+    newModel = updateModelWithResponse localModel, remoteResponse
 
   afterEach ->
     Backbone.stopListening localModel, 'change'
@@ -219,6 +219,7 @@ describe 'merge local model with remote response', ->
     expect(changeTriggered).toBe false
 
   it 'should return a model with updated attributes', ->
+    expect(newModel.get 'name').toEqual 'model'
     expect(newModel.get 'origin').toEqual 'remote'
     expect(newModel.get 'extra').toEqual 'extra'
 
