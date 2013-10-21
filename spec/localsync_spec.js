@@ -356,11 +356,15 @@
         }), 'The callback should have been called', 100);
       });
     });
-    return describe('parameters', function() {
+    return describe('model parameter', function() {
+      beforeEach(function() {
+        return spyOn(Store.prototype, 'create');
+      });
       it('should not accept objects / attributes as model', function() {
-        var call;
+        var attributes, call;
+        attributes = {};
         call = function() {
-          return localsync('create', {}, {
+          return localsync('create', attributes, {
             ignoreCallbacks: true
           });
         };
@@ -373,7 +377,7 @@
             ignoreCallbacks: true
           });
         };
-        return expect(call()).toBeTruthy();
+        return expect(call).not.toThrow();
       });
       it('should accept a backbone collection as model', function() {
         var call;
@@ -382,7 +386,7 @@
             ignoreCallbacks: true
           });
         };
-        return expect(call()).toBeTruthy();
+        return expect(call).not.toThrow();
       });
       it('should accept any object as model on extra method "clear"', function() {
         var call;

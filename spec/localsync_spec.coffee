@@ -144,18 +144,22 @@ describe 'localsync', ->
         localsync 'create', model, {success: callback, error: callback}
       waitsFor (-> callback.wasCalled), 'The callback should have been called', 100
 
-  describe 'parameters', ->
+  describe 'model parameter', ->
+    beforeEach ->
+      spyOn(Store.prototype, 'create')
+
     it 'should not accept objects / attributes as model', ->
-      call = -> localsync 'create', {}, {ignoreCallbacks: true}
+      attributes = {}
+      call = -> localsync 'create', attributes, {ignoreCallbacks: true}
       expect(call).toThrow()
 
     it 'should accept a backbone model as model', ->
       call = -> localsync 'create', new Backbone.Model, {ignoreCallbacks: true}
-      expect(call()).toBeTruthy()
+      expect(call).not.toThrow()
 
     it 'should accept a backbone collection as model', ->
       call = -> localsync 'create', new Backbone.Collection, {ignoreCallbacks: true}
-      expect(call()).toBeTruthy()
+      expect(call).not.toThrow()
 
     it 'should accept any object as model on extra method "clear"', ->
       call = -> localsync 'clear', {}, {ignoreCallbacks: true}
