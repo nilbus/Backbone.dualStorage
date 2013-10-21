@@ -1,27 +1,6 @@
 {Store, Backbone, localsync} = window
 
 describe 'localsync', ->
-  describe 'parameters', ->
-    it 'should not accept objects / attributes as model', ->
-      call = -> localsync 'create', {}, { ignoreCallbacks:true }
-      expect(call).toThrow()
-
-    it 'should accept a backbone model as model', ->
-      call = -> localsync 'create', new Backbone.Model, { ignoreCallbacks:true }
-      expect(call()).toBeTruthy()
-
-    it 'should accept a backbone collection as model', ->
-      call = -> localsync 'create', new Backbone.Collection, { ignoreCallbacks:true }
-      expect(call()).toBeTruthy()
-
-    it 'should accept any object as model on extra method "clear"', ->
-      call = -> localsync 'clear', {}, { ignoreCallbacks:true }
-      expect(call).not.toThrow()
-
-    it 'should accept any object as model on extra method "hasDirtyOrDestroyed"', ->
-      call = -> localsync 'hasDirtyOrDestroyed', {}, { ignoreCallbacks:true }
-      expect(call).not.toThrow()
-
   describe 'standard Backbone.sync methods', ->
     describe 'creating records', ->
       it 'creates records', ->
@@ -164,3 +143,24 @@ describe 'localsync', ->
         model = new Backbone.Model id: 1
         localsync 'create', model, {success: callback, error: callback}
       waitsFor (-> callback.wasCalled), 'The callback should have been called', 100
+
+  describe 'parameters', ->
+    it 'should not accept objects / attributes as model', ->
+      call = -> localsync 'create', {}, {ignoreCallbacks: true}
+      expect(call).toThrow()
+
+    it 'should accept a backbone model as model', ->
+      call = -> localsync 'create', new Backbone.Model, {ignoreCallbacks: true}
+      expect(call()).toBeTruthy()
+
+    it 'should accept a backbone collection as model', ->
+      call = -> localsync 'create', new Backbone.Collection, {ignoreCallbacks: true}
+      expect(call()).toBeTruthy()
+
+    it 'should accept any object as model on extra method "clear"', ->
+      call = -> localsync 'clear', {}, {ignoreCallbacks: true}
+      expect(call).not.toThrow()
+
+    it 'should accept any object as model on extra method "hasDirtyOrDestroyed"', ->
+      call = -> localsync 'hasDirtyOrDestroyed', {}, {ignoreCallbacks: true}
+      expect(call).not.toThrow()
