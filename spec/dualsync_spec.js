@@ -31,6 +31,26 @@
 
   describe('delegating to localsync and backboneSync, and calling the model callbacks', function() {
     describe('dual tier storage', function() {
+      var checkMergedAttributesOn;
+      checkMergedAttributesOn = function(method) {
+        var ready;
+        spyOnLocalsync();
+        spyOn(window, 'mergeModelWithResponse').andCallThrough();
+        ready = false;
+        runs(function() {
+          return dualsync(method, model, {
+            success: (function() {
+              return ready = true;
+            })
+          });
+        });
+        waitsFor((function() {
+          return ready;
+        }), "The success callback should have been called", 100);
+        return runs(function() {
+          return expect(window.mergeModelWithResponse).toHaveBeenCalled();
+        });
+      };
       describe('create', function() {
         it('delegates to both localsync and backboneSync', function() {
           var ready;
@@ -56,24 +76,8 @@
             })).toBeTruthy();
           });
         });
-        return it('should merge local model with received response', function() {
-          var ready;
-          spyOnLocalsync();
-          spyOn(window, 'mergeModelWithResponse').andCallThrough();
-          ready = false;
-          runs(function() {
-            return dualsync('create', model, {
-              success: (function() {
-                return ready = true;
-              })
-            });
-          });
-          waitsFor((function() {
-            return ready;
-          }), "The success callback should have been called", 100);
-          return runs(function() {
-            return expect(window.mergeModelWithResponse).toHaveBeenCalled();
-          });
+        return it('merges the response attributes into the model attributes', function() {
+          return checkMergedAttributesOn('create');
         });
       });
       describe('read', function() {
@@ -105,23 +109,8 @@
             })).toBeTruthy();
           });
         });
-        return it('should merge local model with received response', function() {
-          var ready;
-          spyOn(window, 'mergeModelWithResponse').andCallThrough();
-          ready = false;
-          runs(function() {
-            return dualsync('read', model, {
-              success: (function() {
-                return ready = true;
-              })
-            });
-          });
-          waitsFor((function() {
-            return ready;
-          }), "The success callback should have been called", 100);
-          return runs(function() {
-            return expect(window.mergeModelWithResponse).toHaveBeenCalled();
-          });
+        return it('merges the response attributes into the model attributes', function() {
+          return checkMergedAttributesOn('read');
         });
       });
       describe('update', function() {
@@ -153,51 +142,8 @@
             })).toBeTruthy();
           });
         });
-        it('merges updates from the server response into the model attributes on server-persisted models', function() {
-          var ready;
-          spyOnLocalsync();
-          ready = false;
-          runs(function() {
-            return dualsync('update', model, {
-              success: (function() {
-                return ready = true;
-              }),
-              serverReturnedAttributes: {
-                updated: 'by the server'
-              }
-            });
-          });
-          waitsFor((function() {
-            return ready;
-          }), "The success callback should have been called", 100);
-          return runs(function() {
-            var mergedAttributes;
-            mergedAttributes = {
-              id: 12,
-              position: 'arm',
-              updated: 'by the server'
-            };
-            return expect(localsync.calls[0].args[1].attributes).toEqual(mergedAttributes);
-          });
-        });
-        return it('should merge local model with received response', function() {
-          var ready;
-          spyOnLocalsync();
-          spyOn(window, 'mergeModelWithResponse').andCallThrough();
-          ready = false;
-          runs(function() {
-            return dualsync('update', model, {
-              success: (function() {
-                return ready = true;
-              })
-            });
-          });
-          waitsFor((function() {
-            return ready;
-          }), "The success callback should have been called", 100);
-          return runs(function() {
-            return expect(window.mergeModelWithResponse).toHaveBeenCalled();
-          });
+        return it('merges the response attributes into the model attributes', function() {
+          return checkMergedAttributesOn('update');
         });
       });
       return describe('delete', function() {

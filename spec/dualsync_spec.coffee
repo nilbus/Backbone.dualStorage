@@ -20,6 +20,16 @@ spyOnLocalsync = ->
 
 describe 'delegating to localsync and backboneSync, and calling the model callbacks', ->
   describe 'dual tier storage', ->
+    checkMergedAttributesOn = (method) ->
+      spyOnLocalsync()
+      spyOn(window, 'mergeModelWithResponse').andCallThrough()
+      ready = false
+      runs ->
+        dualsync(method, model, success: (-> ready = true))
+      waitsFor (-> ready), "The success callback should have been called", 100
+      runs ->
+        expect(window.mergeModelWithResponse).toHaveBeenCalled()
+
     describe 'create', ->
       it 'delegates to both localsync and backboneSync', ->
         spyOnLocalsync()
@@ -34,16 +44,8 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(localsync.calls[0].args[0]).toEqual 'create'
           expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
-      it 'should merge local model with received response', ->
-        spyOnLocalsync()
-        spyOn(window, 'mergeModelWithResponse')
-          .andCallThrough()
-        ready = false
-        runs ->
-          dualsync('create', model, success: (-> ready = true))
-        waitsFor (-> ready), "The success callback should have been called", 100
-        runs ->
-          expect(window.mergeModelWithResponse).toHaveBeenCalled()
+      it 'merges the response attributes into the model attributes', ->
+        checkMergedAttributesOn 'create'
 
     describe 'read', ->
       it 'delegates to both localsync and backboneSync', ->
@@ -59,15 +61,8 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(_(localsync.calls).any((call) -> call.args[0] == 'create')).toBeTruthy()
           expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
-      it 'should merge local model with received response', ->
-        spyOn(window, 'mergeModelWithResponse')
-          .andCallThrough()
-        ready = false
-        runs ->
-          dualsync('read', model, success: (-> ready = true))
-        waitsFor (-> ready), "The success callback should have been called", 100
-        runs ->
-          expect(window.mergeModelWithResponse).toHaveBeenCalled()
+      it 'merges the response attributes into the model attributes', ->
+        checkMergedAttributesOn 'read'
 
     describe 'update', ->
       it 'delegates to both localsync and backboneSync', ->
@@ -83,29 +78,8 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(_(localsync.calls).any((call) -> call.args[0] == 'update')).toBeTruthy()
           expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
-      it 'merges updates from the server response into the model attributes on server-persisted models', ->
-        spyOnLocalsync()
-        ready = false
-        runs ->
-          dualsync('update', model, success: (-> ready = true), serverReturnedAttributes: {updated: 'by the server'})
-        waitsFor (-> ready), "The success callback should have been called", 100
-        runs ->
-          mergedAttributes =
-            id: 12
-            position: 'arm'
-            updated: 'by the server'
-          expect(localsync.calls[0].args[1].attributes).toEqual(mergedAttributes)
-
-      it 'should merge local model with received response', ->
-        spyOnLocalsync()
-        spyOn(window, 'mergeModelWithResponse')
-          .andCallThrough()
-        ready = false
-        runs ->
-          dualsync('update', model, success: (-> ready = true))
-        waitsFor (-> ready), "The success callback should have been called", 100
-        runs ->
-          expect(window.mergeModelWithResponse).toHaveBeenCalled()
+      it 'merges the response attributes into the model attributes', ->
+        checkMergedAttributesOn 'update'
 
     describe 'delete', ->
       it 'delegates to both localsync and backboneSync', ->
