@@ -13,15 +13,10 @@ beforeEach ->
   delete model.remote
 
 spyOnLocalsync = ->
-  spyOn(window, 'localsync').andCallFake((method, model, options) -> (options.success?()) unless options.ignoreCallbacks)
-  localsync = window.localsync
-
-spyOnLocalsyncNonDirty = (notifyLastModel) ->
   spyOn(window, 'localsync')
     .andCallFake (method, model, options) ->
-      if _.isFunction notifyLastModel
-        notifyLastModel model
-      return false if method is 'hasDirtyOrDestroyed'
+      options.success?() unless options.ignoreCallbacks
+  localsync = window.localsync
 
 describe 'delegating to localsync and backboneSync, and calling the model callbacks', ->
   describe 'dual tier storage', ->
@@ -37,16 +32,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(backboneSync.calls[0].args[0]).toEqual 'create'
           expect(localsync).toHaveBeenCalled()
           expect(localsync.calls[0].args[0]).toEqual 'create'
-
-      it 'always calls localsync with a backbone model', ->
-        spyOnLocalsync()
-        ready = false
-        runs ->
-          dualsync 'create', model, success: (-> ready = true)
-        waitsFor (-> ready), "success callback should have been called", 100
-        runs ->
-          expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model))
-            .toBeTruthy()
+          expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
       it 'should merge local model with received response', ->
         spyOnLocalsync()
@@ -71,30 +57,9 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(_(backboneSync.calls).any((call) -> call.args[0] == 'read')).toBeTruthy()
           expect(localsync).toHaveBeenCalled()
           expect(_(localsync.calls).any((call) -> call.args[0] == 'create')).toBeTruthy()
-
-      it 'always calls localsync with a backbone model when an object is received', ->
-        spyOnLocalsyncNonDirty()
-        ready = false
-        runs ->
-          dualsync 'read', model, success: (-> ready = true)
-        waitsFor (-> ready), "success callback should have been called", 100
-        runs ->
-          expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model))
-            .toBeTruthy()
-
-      it 'always calls localsync with a backbone model when an array is received', ->
-        {ready, lastCalledWith} = {}
-        # Note: Need to go this hacky way because jasmine's spy.mostRecentCall
-        # was not reporting the last called args properly.
-        spyOnLocalsyncNonDirty (lastModel) -> lastCalledWith = lastModel
-        runs ->
-          dualsync 'read', model, success: (-> ready = true), serverReturnedAttributes: collection.toJSON()
-        waitsFor (-> ready), "success callback should have been called", 100
-        runs ->
-          expect(lastCalledWith instanceof Backbone.Model).toBeTruthy()
+          expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
       it 'should merge local model with received response', ->
-        spyOnLocalsyncNonDirty()
         spyOn(window, 'mergeModelWithResponse')
           .andCallThrough()
         ready = false
@@ -116,6 +81,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(_(backboneSync.calls).any((call) -> call.args[0] == 'update')).toBeTruthy()
           expect(localsync).toHaveBeenCalled()
           expect(_(localsync.calls).any((call) -> call.args[0] == 'update')).toBeTruthy()
+          expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
       it 'merges updates from the server response into the model attributes on server-persisted models', ->
         spyOnLocalsync()
@@ -129,23 +95,6 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
             position: 'arm'
             updated: 'by the server'
           expect(localsync.calls[0].args[1].attributes).toEqual(mergedAttributes)
-
-      it 'always calls localsync with a backbone model for non-syncronized offline models', ->
-        store = new window.Store 'bones/'
-
-        newModel = store.create new Backbone.Model
-          position: 'Hand'
-        newModel.url = 'bones/'
-        console.log newModel
-
-        spyOnLocalsync()
-        ready = false
-        runs ->
-          dualsync 'update', newModel, success: (-> ready = true)
-        waitsFor (-> ready), "success callback should have been called", 100
-        runs ->
-          expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model))
-            .toBeTruthy()
 
       it 'should merge local model with received response', ->
         spyOnLocalsync()
@@ -170,6 +119,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(_(backboneSync.calls).any((call) -> call.args[0] == 'delete')).toBeTruthy()
           expect(localsync).toHaveBeenCalled()
           expect(_(localsync.calls).any((call) -> call.args[0] == 'delete')).toBeTruthy()
+          expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
   describe 'respects the remote only attribute on models', ->
     it 'delegates for remote models', ->
