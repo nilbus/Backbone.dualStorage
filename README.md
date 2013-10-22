@@ -81,4 +81,5 @@ Credits
 -------
 
 Thanks to [Edward Anderson](https://github.com/nilbus) for the test suite.
-Thanks to [Jerome Gravel-Niquet](https://github.com/jeromegn) for Backbone.localStorage
+Thanks to [Lucian Mihaila](https://github.com/lucian1900) for creating Backbone.dualStorage.
+Thanks to [Jerome Gravel-Niquet](https://github.com/jeromegn) for Backbone.localStorage.
