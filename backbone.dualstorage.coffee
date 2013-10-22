@@ -210,9 +210,10 @@ parseRemoteResponse = (object, response) ->
   if not (object and object.parseBeforeLocalSave) then return response
   if _.isFunction(object.parseBeforeLocalSave) then object.parseBeforeLocalSave(response)
 
-updateModelWithResponse = (model, response) ->
-  model.set (model.parse response), { silent: true }
-  model
+modelUpdatedWithResponse = (model, response) ->
+  modelClone = model.clone()
+  modelClone.set modelClone.parse response
+  modelClone
 
 backboneSync = Backbone.sync
 onlineSync = (method, model, options) ->
@@ -250,12 +251,13 @@ dualsync = (method, model, options) ->
           localsync('clear', model, options) unless options.add
 
           if _.isArray resp
+            collection = model
             for i in resp
-              model = updateModelWithResponse model, i
-              localsync('create', model, options)
+              responseModel = modelUpdatedWithResponse(new collection.model, resp)
+              localsync('create', responseModel, options)
           else
-            updateModelWithResponse model, resp
-            localsync('create', model, options)
+            responseModel = modelUpdatedWithResponse(new model.constructor, resp)
+            localsync('create', responseModel, options)
 
           success(resp, status, xhr)
 
@@ -266,8 +268,8 @@ dualsync = (method, model, options) ->
 
     when 'create'
       options.success = (resp, status, xhr) ->
-        updateModelWithResponse model, resp
-        localsync(method, model, options)
+        updatedModel = modelUpdatedWithResponse model, resp
+        localsync(method, updatedModel, options)
         success(resp, status, xhr)
       options.error = (resp) ->
         options.dirty = true
@@ -280,9 +282,9 @@ dualsync = (method, model, options) ->
         originalModel = model.clone()
 
         options.success = (resp, status, xhr) ->
-          updateModelWithResponse model, resp
+          updatedModel = modelUpdatedWithResponse model, resp
           localsync('delete', originalModel, options)
-          localsync('create', model, options)
+          localsync('create', updatedModel, options)
           success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
@@ -292,8 +294,8 @@ dualsync = (method, model, options) ->
         onlineSync('create', model, options)
       else
         options.success = (resp, status, xhr) ->
-          updateModelWithResponse model, resp
-          localsync(method, model, options)
+          updatedModel = modelUpdatedWithResponse model, resp
+          localsync(method, updatedModel, options)
           success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true

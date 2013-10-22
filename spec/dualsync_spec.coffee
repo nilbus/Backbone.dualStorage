@@ -20,15 +20,25 @@ spyOnLocalsync = ->
 
 describe 'delegating to localsync and backboneSync, and calling the model callbacks', ->
   describe 'dual tier storage', ->
-    checkMergedAttributesOn = (method) ->
+    checkMergedAttributesFor = (method, modelToUpdate = model) ->
       spyOnLocalsync()
-      spyOn(window, 'updateModelWithResponse').andCallThrough()
+      originalAttributes = null
       ready = false
       runs ->
-        dualsync(method, model, success: (-> ready = true))
+        modelToUpdate.set updatedAttribute: 'original value'
+        originalAttributes = _.clone(modelToUpdate.attributes)
+        serverResponse = _.extend(model.toJSON(), updatedAttribute: 'updated value', newAttribute: 'new value')
+        dualsync(method, modelToUpdate, success: (-> ready = true), serverResponse: serverResponse)
       waitsFor (-> ready), "The success callback should have been called", 100
       runs ->
-        expect(window.updateModelWithResponse).toHaveBeenCalled()
+        expect(modelToUpdate.attributes).toEqual originalAttributes
+        localsyncedAttributes = _(localsync.calls).map((call) -> call.args[1].attributes)
+        updatedAttributes =
+          id: 12
+          position: 'arm'
+          updatedAttribute: 'updated value'
+          newAttribute: 'new value'
+        expect(localsyncedAttributes).toContain updatedAttributes
 
     describe 'create', ->
       it 'delegates to both localsync and backboneSync', ->
@@ -45,7 +55,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
       it 'merges the response attributes into the model attributes', ->
-        checkMergedAttributesOn 'create'
+        checkMergedAttributesFor 'create'
 
     describe 'read', ->
       it 'delegates to both localsync and backboneSync', ->
@@ -61,8 +71,21 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(_(localsync.calls).any((call) -> call.args[0] == 'create')).toBeTruthy()
           expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
-      it 'merges the response attributes into the model attributes', ->
-        checkMergedAttributesOn 'read'
+      describe 'for collections', ->
+        it 'calls localsync create once for each model', ->
+          spyOnLocalsync()
+          ready = false
+          collectionResponse = [{id: 12, position: 'arm'}, {id: 13, position: 'a new model'}]
+          runs ->
+            dualsync('read', collection, success: (-> ready = true), serverResponse: collectionResponse)
+          waitsFor (-> ready), "The success callback should have been called", 100
+          runs ->
+            expect(backboneSync).toHaveBeenCalled()
+            expect(_(backboneSync.calls).any((call) -> call.args[0] == 'read')).toBeTruthy()
+            expect(localsync).toHaveBeenCalled()
+            createCalls = _(localsync.calls).select((call) -> call.args[0] == 'create')
+            expect(createCalls.length).toEqual 2
+            expect(_(createCalls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
     describe 'update', ->
       it 'delegates to both localsync and backboneSync', ->
@@ -79,7 +102,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
       it 'merges the response attributes into the model attributes', ->
-        checkMergedAttributesOn 'update'
+        checkMergedAttributesFor 'update'
 
     describe 'delete', ->
       it 'delegates to both localsync and backboneSync', ->
@@ -189,37 +212,3 @@ describe 'dualStorage hooks', ->
     waitsFor (-> response), "The success callback should have been called", 100
     runs ->
       expect(response[0].get('parsedRemote') || response[1].get('parsedRemote')).toBeTruthy()
-
-describe 'merge local model with remote response', ->
-  {newModel, localModel, remoteModel, changeTriggered} = {}
-  changeTriggered = false
-
-  beforeEach ->
-    localModel = new Backbone.Model
-      id: 1
-      name: 'model'
-      origin: 'local'
-
-    remoteModel = new Backbone.Model
-      id: 1
-      name: 'model'
-      origin: 'remote'
-      extra: 'extra'
-
-    Backbone.listenTo localModel, 'change', ->
-      changeTriggered = true
-
-    remoteResponse = remoteModel.toJSON()
-    newModel = updateModelWithResponse localModel, remoteResponse
-
-  afterEach ->
-    Backbone.stopListening localModel, 'change'
-
-  it 'should not trigger change event on model', ->
-    expect(changeTriggered).toBe false
-
-  it 'should return a model with updated attributes', ->
-    expect(newModel.get 'name').toEqual 'model'
-    expect(newModel.get 'origin').toEqual 'remote'
-    expect(newModel.get 'extra').toEqual 'extra'
-

@@ -31,24 +31,48 @@
 
   describe('delegating to localsync and backboneSync, and calling the model callbacks', function() {
     describe('dual tier storage', function() {
-      var checkMergedAttributesOn;
-      checkMergedAttributesOn = function(method) {
-        var ready;
+      var checkMergedAttributesFor;
+      checkMergedAttributesFor = function(method, modelToUpdate) {
+        var originalAttributes, ready;
+        if (modelToUpdate == null) {
+          modelToUpdate = model;
+        }
         spyOnLocalsync();
-        spyOn(window, 'updateModelWithResponse').andCallThrough();
+        originalAttributes = null;
         ready = false;
         runs(function() {
-          return dualsync(method, model, {
+          var serverResponse;
+          modelToUpdate.set({
+            updatedAttribute: 'original value'
+          });
+          originalAttributes = _.clone(modelToUpdate.attributes);
+          serverResponse = _.extend(model.toJSON(), {
+            updatedAttribute: 'updated value',
+            newAttribute: 'new value'
+          });
+          return dualsync(method, modelToUpdate, {
             success: (function() {
               return ready = true;
-            })
+            }),
+            serverResponse: serverResponse
           });
         });
         waitsFor((function() {
           return ready;
         }), "The success callback should have been called", 100);
         return runs(function() {
-          return expect(window.updateModelWithResponse).toHaveBeenCalled();
+          var localsyncedAttributes, updatedAttributes;
+          expect(modelToUpdate.attributes).toEqual(originalAttributes);
+          localsyncedAttributes = _(localsync.calls).map(function(call) {
+            return call.args[1].attributes;
+          });
+          updatedAttributes = {
+            id: 12,
+            position: 'arm',
+            updatedAttribute: 'updated value',
+            newAttribute: 'new value'
+          };
+          return expect(localsyncedAttributes).toContain(updatedAttributes);
         });
       };
       describe('create', function() {
@@ -77,7 +101,7 @@
           });
         });
         return it('merges the response attributes into the model attributes', function() {
-          return checkMergedAttributesOn('create');
+          return checkMergedAttributesFor('create');
         });
       });
       describe('read', function() {
@@ -109,8 +133,47 @@
             })).toBeTruthy();
           });
         });
-        return it('merges the response attributes into the model attributes', function() {
-          return checkMergedAttributesOn('read');
+        return describe('for collections', function() {
+          return it('calls localsync create once for each model', function() {
+            var collectionResponse, ready;
+            spyOnLocalsync();
+            ready = false;
+            collectionResponse = [
+              {
+                id: 12,
+                position: 'arm'
+              }, {
+                id: 13,
+                position: 'a new model'
+              }
+            ];
+            runs(function() {
+              return dualsync('read', collection, {
+                success: (function() {
+                  return ready = true;
+                }),
+                serverResponse: collectionResponse
+              });
+            });
+            waitsFor((function() {
+              return ready;
+            }), "The success callback should have been called", 100);
+            return runs(function() {
+              var createCalls;
+              expect(backboneSync).toHaveBeenCalled();
+              expect(_(backboneSync.calls).any(function(call) {
+                return call.args[0] === 'read';
+              })).toBeTruthy();
+              expect(localsync).toHaveBeenCalled();
+              createCalls = _(localsync.calls).select(function(call) {
+                return call.args[0] === 'create';
+              });
+              expect(createCalls.length).toEqual(2);
+              return expect(_(createCalls).every(function(call) {
+                return call.args[1] instanceof Backbone.Model;
+              })).toBeTruthy();
+            });
+          });
         });
       });
       describe('update', function() {
@@ -143,7 +206,7 @@
           });
         });
         return it('merges the response attributes into the model attributes', function() {
-          return checkMergedAttributesOn('update');
+          return checkMergedAttributesFor('update');
         });
       });
       return describe('delete', function() {
@@ -363,42 +426,6 @@
       return runs(function() {
         return expect(response[0].get('parsedRemote') || response[1].get('parsedRemote')).toBeTruthy();
       });
-    });
-  });
-
-  describe('merge local model with remote response', function() {
-    var changeTriggered, localModel, newModel, remoteModel, _ref1;
-    _ref1 = {}, newModel = _ref1.newModel, localModel = _ref1.localModel, remoteModel = _ref1.remoteModel, changeTriggered = _ref1.changeTriggered;
-    changeTriggered = false;
-    beforeEach(function() {
-      var remoteResponse;
-      localModel = new Backbone.Model({
-        id: 1,
-        name: 'model',
-        origin: 'local'
-      });
-      remoteModel = new Backbone.Model({
-        id: 1,
-        name: 'model',
-        origin: 'remote',
-        extra: 'extra'
-      });
-      Backbone.listenTo(localModel, 'change', function() {
-        return changeTriggered = true;
-      });
-      remoteResponse = remoteModel.toJSON();
-      return newModel = updateModelWithResponse(localModel, remoteResponse);
-    });
-    afterEach(function() {
-      return Backbone.stopListening(localModel, 'change');
-    });
-    it('should not trigger change event on model', function() {
-      return expect(changeTriggered).toBe(false);
-    });
-    return it('should return a model with updated attributes', function() {
-      expect(newModel.get('name')).toEqual('model');
-      expect(newModel.get('origin')).toEqual('remote');
-      return expect(newModel.get('extra')).toEqual('extra');
     });
   });
 
