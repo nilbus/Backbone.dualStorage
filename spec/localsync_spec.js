@@ -298,7 +298,7 @@
         });
       });
     });
-    return describe('callbacks', function() {
+    describe('callbacks', function() {
       it("sends the models's attributes as the callback response", function() {
         var model, response, _ref;
         _ref = {}, model = _ref.model, response = _ref.response;
@@ -354,6 +354,57 @@
         return waitsFor((function() {
           return callback.wasCalled;
         }), 'The callback should have been called', 100);
+      });
+    });
+    return describe('model parameter', function() {
+      beforeEach(function() {
+        return spyOn(Store.prototype, 'create');
+      });
+      it('should not accept objects / attributes as model', function() {
+        var attributes, call;
+        attributes = {};
+        call = function() {
+          return localsync('create', attributes, {
+            ignoreCallbacks: true
+          });
+        };
+        return expect(call).toThrow();
+      });
+      it('should accept a backbone model as model', function() {
+        var call;
+        call = function() {
+          return localsync('create', new Backbone.Model, {
+            ignoreCallbacks: true
+          });
+        };
+        return expect(call).not.toThrow();
+      });
+      it('should accept a backbone collection as model', function() {
+        var call;
+        call = function() {
+          return localsync('create', new Backbone.Collection, {
+            ignoreCallbacks: true
+          });
+        };
+        return expect(call).not.toThrow();
+      });
+      it('should accept any object as model on extra method "clear"', function() {
+        var call;
+        call = function() {
+          return localsync('clear', {}, {
+            ignoreCallbacks: true
+          });
+        };
+        return expect(call).not.toThrow();
+      });
+      return it('should accept any object as model on extra method "hasDirtyOrDestroyed"', function() {
+        var call;
+        call = function() {
+          return localsync('hasDirtyOrDestroyed', {}, {
+            ignoreCallbacks: true
+          });
+        };
+        return expect(call).not.toThrow();
       });
     });
   });

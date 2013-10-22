@@ -9,7 +9,7 @@ as that.
 
 
 (function() {
-  var S4, backboneSync, callbackTranslator, dualsync, localsync, onlineSync, parseRemoteResponse, result;
+  var S4, backboneSync, callbackTranslator, dualsync, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result;
 
   Backbone.Collection.prototype.syncDirty = function() {
     var id, ids, model, store, url, _i, _len, _results;
@@ -194,7 +194,13 @@ as that.
   };
 
   localsync = function(method, model, options) {
-    var preExisting, response, store;
+    var isValidModel, preExisting, response, store;
+    isValidModel = (method === 'clear') || (method === 'hasDirtyOrDestroyed');
+    isValidModel || (isValidModel = model instanceof Backbone.Model);
+    isValidModel || (isValidModel = model instanceof Backbone.Collection);
+    if (!isValidModel) {
+      throw new Error('model parameter is required to be a backbone model or collection.');
+    }
     store = new Store(options.storeName);
     response = (function() {
       switch (method) {
@@ -276,6 +282,13 @@ as that.
     }
   };
 
+  modelUpdatedWithResponse = function(model, response) {
+    var modelClone;
+    modelClone = model.clone();
+    modelClone.set(modelClone.parse(response));
+    return modelClone;
+  };
+
   backboneSync = Backbone.sync;
 
   onlineSync = function(method, model, options) {
@@ -306,18 +319,21 @@ as that.
           return success(localsync(method, model, options));
         } else {
           options.success = function(resp, status, xhr) {
-            var i, _i, _len;
+            var collection, i, responseModel, _i, _len;
             resp = parseRemoteResponse(model, resp);
             if (!options.add) {
               localsync('clear', model, options);
             }
             if (_.isArray(resp)) {
+              collection = model;
               for (_i = 0, _len = resp.length; _i < _len; _i++) {
                 i = resp[_i];
-                localsync('create', i, options);
+                responseModel = modelUpdatedWithResponse(new collection.model, resp);
+                localsync('create', responseModel, options);
               }
             } else {
-              localsync('create', resp, options);
+              responseModel = modelUpdatedWithResponse(new model.constructor, resp);
+              localsync('create', responseModel, options);
             }
             return success(resp, status, xhr);
           };
@@ -329,7 +345,9 @@ as that.
         break;
       case 'create':
         options.success = function(resp, status, xhr) {
-          localsync(method, resp, options);
+          var updatedModel;
+          updatedModel = modelUpdatedWithResponse(model, resp);
+          localsync(method, updatedModel, options);
           return success(resp, status, xhr);
         };
         options.error = function(resp) {
@@ -341,8 +359,10 @@ as that.
         if (_.isString(model.id) && model.id.length === 36) {
           originalModel = model.clone();
           options.success = function(resp, status, xhr) {
+            var updatedModel;
+            updatedModel = modelUpdatedWithResponse(model, resp);
             localsync('delete', originalModel, options);
-            localsync('create', resp, options);
+            localsync('create', updatedModel, options);
             return success(resp, status, xhr);
           };
           options.error = function(resp) {
@@ -355,9 +375,9 @@ as that.
           return onlineSync('create', model, options);
         } else {
           options.success = function(resp, status, xhr) {
-            var updatedAttributes;
-            updatedAttributes = _.extend({}, model.toJSON(), resp);
-            localsync(method, updatedAttributes, options);
+            var updatedModel;
+            updatedModel = modelUpdatedWithResponse(model, resp);
+            localsync(method, updatedModel, options);
             return success(resp, status, xhr);
           };
           options.error = function(resp) {
