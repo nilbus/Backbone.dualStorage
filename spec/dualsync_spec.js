@@ -159,7 +159,7 @@
               return ready;
             }), "The success callback should have been called", 100);
             return runs(function() {
-              var createCalls;
+              var createCalls, createdModelAttributes;
               expect(backboneSync).toHaveBeenCalled();
               expect(_(backboneSync.calls).any(function(call) {
                 return call.args[0] === 'read';
@@ -169,9 +169,20 @@
                 return call.args[0] === 'create';
               });
               expect(createCalls.length).toEqual(2);
-              return expect(_(createCalls).every(function(call) {
+              expect(_(createCalls).every(function(call) {
                 return call.args[1] instanceof Backbone.Model;
               })).toBeTruthy();
+              createdModelAttributes = _(createCalls).map(function(call) {
+                return call.args[1].attributes;
+              });
+              expect(createdModelAttributes[0]).toEqual({
+                id: 12,
+                position: 'arm'
+              });
+              return expect(createdModelAttributes[1]).toEqual({
+                id: 13,
+                position: 'a new model'
+              });
             });
           });
         });

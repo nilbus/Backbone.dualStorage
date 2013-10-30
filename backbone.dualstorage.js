@@ -319,7 +319,7 @@ as that.
           return success(localsync(method, model, options));
         } else {
           options.success = function(resp, status, xhr) {
-            var collection, i, responseModel, _i, _len;
+            var collection, modelAttributes, responseModel, _i, _len;
             resp = parseRemoteResponse(model, resp);
             if (!options.add) {
               localsync('clear', model, options);
@@ -327,8 +327,8 @@ as that.
             if (_.isArray(resp)) {
               collection = model;
               for (_i = 0, _len = resp.length; _i < _len; _i++) {
-                i = resp[_i];
-                responseModel = modelUpdatedWithResponse(new collection.model, resp);
+                modelAttributes = resp[_i];
+                responseModel = modelUpdatedWithResponse(new collection.model, modelAttributes);
                 localsync('create', responseModel, options);
               }
             } else {

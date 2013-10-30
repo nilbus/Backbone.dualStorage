@@ -252,8 +252,8 @@ dualsync = (method, model, options) ->
 
           if _.isArray resp
             collection = model
-            for i in resp
-              responseModel = modelUpdatedWithResponse(new collection.model, resp)
+            for modelAttributes in resp
+              responseModel = modelUpdatedWithResponse(new collection.model, modelAttributes)
               localsync('create', responseModel, options)
           else
             responseModel = modelUpdatedWithResponse(new model.constructor, resp)

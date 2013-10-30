@@ -86,6 +86,9 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
             createCalls = _(localsync.calls).select((call) -> call.args[0] == 'create')
             expect(createCalls.length).toEqual 2
             expect(_(createCalls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
+            createdModelAttributes = _(createCalls).map((call) -> call.args[1].attributes)
+            expect(createdModelAttributes[0]).toEqual id: 12, position: 'arm'
+            expect(createdModelAttributes[1]).toEqual id: 13, position: 'a new model'
 
     describe 'update', ->
       it 'delegates to both localsync and backboneSync', ->
