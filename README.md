@@ -25,6 +25,11 @@ You can also deactivate dualsync to some requests, when you want to sync with th
 
     SomeCollection.create({name: "someone"}, {remote: false});
 
+Usage with RequireJS
+--------------------
+
+Just use the backbone.dualstorage.amd.js instead of backbone.dualstorage.js
+
 Data synchronization
 --------------------
 
