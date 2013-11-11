@@ -76,9 +76,9 @@ This version is compiled automatically when running `make`.
 dualStorage has been tested against Backbone versions 0.9.2 - 1.0.0.
 Test with other versions by altering the version included in `SpecRunner.html`.
 
-Credits
+Authors
 -------
 
-Thanks to [Edward Anderson](https://github.com/nilbus) for the test suite.
+Thanks to [Edward Anderson](https://github.com/nilbus) for the test suite and continued maintenance.
 Thanks to [Lucian Mihaila](https://github.com/lucian1900) for creating Backbone.dualStorage.
 Thanks to [Jerome Gravel-Niquet](https://github.com/jeromegn) for Backbone.localStorage.

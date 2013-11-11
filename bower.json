@@ -4,7 +4,9 @@
   "version": "1.0.2",
   "homepage": "https://github.com/nilbus/Backbone.dualStorage",
   "authors": [
-    "Edward Anderson <nilbus@nilbus.com>"
+    "Edward Anderson <nilbus@nilbus.com>",
+    "Lucian Mihaila",
+    "Jerome Gravel-Niquet"
   ],
   "description": "A dual (localStorage and REST) sync adapter for Backbone.js",
   "keywords": [
