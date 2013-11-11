@@ -17,8 +17,9 @@ Feel free to use Backbone as you usually would; this is a drop-in replacement.
 Keep in mind that Backbone.dualStorage really loves your models. By default it will cache everything that passes through Backbone.sync. You can override this behaviour with the booleans ```remote``` or ```local``` on models and collections:
 
     SomeCollection = Backbone.Collection.extend({
-        local: true  // always fetched and saved only locally, never saves on remote
         remote: true // never cached, dualStorage is bypassed entirely
+        local: true  // always fetched and saved only locally, never saves on remote
+        local: function() { return trueOrFalse; } // local and remote can also be dynamic
     });
 
 You can also deactivate dualsync to some requests, when you want to sync with the server only later.
