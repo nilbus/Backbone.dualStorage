@@ -31,7 +31,9 @@ Backbone.Collection.prototype.syncDirty = function() {
     model = id.length === 36 ? this.where({
       id: id
     })[0] : this.get(id);
-    _results.push(model.save());
+    _results.push(model.save({
+      dualsync: true
+    }));
   }
   return _results;
 };
@@ -311,13 +313,15 @@ dualsync = function(method, model, options) {
   options.storeName = result(model.collection, 'url') || result(model, 'url');
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
   options.error = callbackTranslator.forDualstorageCaller(options.error, model, options);
-  if (result(model, 'remote') || result(model.collection, 'remote')) {
-    return onlineSync(method, model, options);
-  }
-  local = result(model, 'local') || result(model.collection, 'local');
-  options.dirty = options.remote === false && !local;
-  if (options.remote === false || local) {
-    return localsync(method, model, options);
+  if (!options.dualsync) {
+    if (result(model, 'remote') || result(model.collection, 'remote')) {
+      return onlineSync(method, model, options);
+    }
+    local = result(model, 'local') || result(model.collection, 'local');
+    options.dirty = options.remote === false && !local;
+    if (options.remote === false || local) {
+      return localsync(method, model, options);
+    }
   }
   options.ignoreCallbacks = true;
   success = options.success;
