@@ -25,7 +25,7 @@ Backbone.Collection.prototype.syncDestroyed = ->
   for id in ids
     model = new @model({id: id})
     model.collection = @
-    model.destroy()
+    model.destroy dualsync: true
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
   @syncDirty()
@@ -235,9 +235,7 @@ dualsync = (method, model, options) ->
     options.dirty = options.remote is false and not local
     return localsync(method, model, options) if options.remote is false or local
 
-  # execute dual sync
   options.ignoreCallbacks = true
-
   success = options.success
   error = options.error
 
