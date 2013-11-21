@@ -20,9 +20,9 @@ Backbone.Collection.prototype.syncDirty = function() {
     model = id.length === 36 ? this.where({
       id: id
     })[0] : this.get(id);
-    _results.push(model.save({
+    _results.push(model != null ? model.save({
       dualsync: true
-    }));
+    }) : void 0);
   }
   return _results;
 };
@@ -39,7 +39,9 @@ Backbone.Collection.prototype.syncDestroyed = function() {
       id: id
     });
     model.collection = this;
-    _results.push(model.destroy());
+    _results.push(model.destroy({
+      dualsync: true
+    }));
   }
   return _results;
 };

@@ -12,16 +12,16 @@ Backbone.Collection.prototype.syncDirty = ->
   url = result(@, 'url')
   store = localStorage.getItem "#{url}_dirty"
   ids = (store and store.split(',')) or []
-  
+
   for id in ids
     model = if id.length == 36 then @where(id: id)[0] else @get(id)
-    model.save dualsync: true
+    model?.save dualsync: true
 
 Backbone.Collection.prototype.syncDestroyed = ->
   url = result(@, 'url')
   store = localStorage.getItem "#{url}_destroyed"
   ids = (store and store.split(',')) or []
-  
+
   for id in ids
     model = new @model({id: id})
     model.collection = @
