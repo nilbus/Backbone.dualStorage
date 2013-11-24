@@ -222,7 +222,8 @@ onlineSync = (method, model, options) ->
   backboneSync(method, model, options)
 
 dualsync = (method, model, options) ->
-  options.storeName = result(model.collection, 'url') || result(model, 'url')
+  options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') ||
+                      result(model.collection, 'url')       || result(model, 'url')
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
   options.error = callbackTranslator.forDualstorageCaller(options.error, model, options)
 

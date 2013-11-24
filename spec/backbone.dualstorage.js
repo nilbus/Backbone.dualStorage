@@ -297,7 +297,7 @@ onlineSync = function(method, model, options) {
 
 dualsync = function(method, model, options) {
   var error, local, originalModel, success;
-  options.storeName = result(model.collection, 'url') || result(model, 'url');
+  options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') || result(model.collection, 'url') || result(model, 'url');
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
   options.error = callbackTranslator.forDualstorageCaller(options.error, model, options);
   if (result(model, 'remote') || result(model.collection, 'remote')) {
