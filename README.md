@@ -56,6 +56,14 @@ use `parseBeforeLocalSave` to break up the data into an array of records like yo
 * The model's `parse` method still parses data read from localStorage.
 * The model's `parseBeforeLocalSave` method parses data read from the remote _before_ it is saved to localStorage on read.
 
+Local data storage
+------------------
+
+dualStorage stores the local cache in localStorage.
+Each collection's (or model's) `url` property is used as the storage namespace to separate different collections of data.
+This can be overridden by defining a `storeName` property on your model or collection.
+Defining storeName can be useful when your url is dynamic or when your models do not have the collection set but should be treated as part of that collection in the local cache.
+
 Compiling
 ---------
 

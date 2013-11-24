@@ -1,3 +1,7 @@
+### master / unreleased
+
+* Allow the default url-based storeName to be overriden with a storeName property on the model or collection
+
 ### 1.1.0 / 2013-11-10
 
 * Add support for RequireJS / AMD
