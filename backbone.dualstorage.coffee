@@ -15,7 +15,7 @@ Backbone.Collection.prototype.syncDirty = ->
 
   for id in ids
     model = if id.length == 36 then @where(id: id)[0] else @get(id)
-    model?.save dualsync: true
+    model?.save()
 
 Backbone.Collection.prototype.syncDestroyed = ->
   url = result(@, 'url')
@@ -25,7 +25,7 @@ Backbone.Collection.prototype.syncDestroyed = ->
   for id in ids
     model = new @model({id: id})
     model.collection = @
-    model.destroy dualsync: true
+    model.destroy()
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
   @syncDirty()
@@ -226,16 +226,17 @@ dualsync = (method, model, options) ->
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
   options.error = callbackTranslator.forDualstorageCaller(options.error, model, options)
 
-  unless options.dualsync
-    # execute only online sync
-    return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')
+  # execute only online sync
+  return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')
 
-    # execute only local sync
-    local = result(model, 'local') or result(model.collection, 'local')
-    options.dirty = options.remote is false and not local
-    return localsync(method, model, options) if options.remote is false or local
+  # execute only local sync
+  local = result(model, 'local') or result(model.collection, 'local')
+  options.dirty = options.remote is false and not local
+  return localsync(method, model, options) if options.remote is false or local
 
+  # execute dual sync
   options.ignoreCallbacks = true
+
   success = options.success
   error = options.error
 

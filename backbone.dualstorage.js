@@ -22,9 +22,7 @@ as that.
       model = id.length === 36 ? this.where({
         id: id
       })[0] : this.get(id);
-      _results.push(model != null ? model.save({
-        dualsync: true
-      }) : void 0);
+      _results.push(model != null ? model.save() : void 0);
     }
     return _results;
   };
@@ -41,9 +39,7 @@ as that.
         id: id
       });
       model.collection = this;
-      _results.push(model.destroy({
-        dualsync: true
-      }));
+      _results.push(model.destroy());
     }
     return _results;
   };
@@ -306,15 +302,13 @@ as that.
     options.storeName = result(model.collection, 'url') || result(model, 'url');
     options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
     options.error = callbackTranslator.forDualstorageCaller(options.error, model, options);
-    if (!options.dualsync) {
-      if (result(model, 'remote') || result(model.collection, 'remote')) {
-        return onlineSync(method, model, options);
-      }
-      local = result(model, 'local') || result(model.collection, 'local');
-      options.dirty = options.remote === false && !local;
-      if (options.remote === false || local) {
-        return localsync(method, model, options);
-      }
+    if (result(model, 'remote') || result(model.collection, 'remote')) {
+      return onlineSync(method, model, options);
+    }
+    local = result(model, 'local') || result(model.collection, 'local');
+    options.dirty = options.remote === false && !local;
+    if (options.remote === false || local) {
+      return localsync(method, model, options);
     }
     options.ignoreCallbacks = true;
     success = options.success;

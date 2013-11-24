@@ -1,7 +1,3 @@
-### master / unreleased
-
-* syncDirtyAndDestroyed disregards local/remote options, because this must be a dualsync operation to act as expected
-
 ### 1.1.0 / 2013-11-10
 
 * Add support for RequireJS / AMD
