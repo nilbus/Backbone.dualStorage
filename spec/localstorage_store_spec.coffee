@@ -14,8 +14,19 @@ describe 'window.Store', ->
       expect(store.name).toBe 'convenience store'
 
   describe 'persistence', ->
-    it 'fetches records by id with find', ->
-      expect(store.find(id: 3)).toEqual id: '3', color: 'burgundy'
+    describe 'find', ->
+      it 'fetches records by id', ->
+        expect(store.find(id: 3)).toEqual id: '3', color: 'burgundy'
+
+      # JSON.parse(null) causes error on Android 2.x devices, so it should be avoided
+      it 'does not try to JSON.parse null values', ->
+        spyOn JSON, 'parse'
+        store.find id: 'unpersistedId'
+        expect(JSON.parse).not.toHaveBeenCalledWith(null)
+
+      it 'returns null when not found', ->
+        result = store.find(id: 'unpersistedId')
+        expect(result).toBeNull()
 
     it 'fetches all records with findAll', ->
       expect(store.findAll()).toEqual [id: '3', color: 'burgundy']

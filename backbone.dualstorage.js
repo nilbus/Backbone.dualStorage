@@ -144,7 +144,12 @@ as that.
     };
 
     Store.prototype.find = function(model) {
-      return JSON.parse(localStorage.getItem(this.name + this.sep + model.id));
+      var modelAsJson;
+      modelAsJson = localStorage.getItem(this.name + this.sep + model.id);
+      if (modelAsJson === null) {
+        return null;
+      }
+      return JSON.parse(modelAsJson);
     };
 
     Store.prototype.findAll = function() {
