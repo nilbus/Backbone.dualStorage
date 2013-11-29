@@ -111,7 +111,9 @@ class window.Store
 
   # Retrieve a model from `this.data` by id.
   find: (model) ->
-    JSON.parse localStorage.getItem(@name + @sep + model.id)
+    modelAsJson = localStorage.getItem(@name + @sep + model.id)
+    return null if modelAsJson == null
+    JSON.parse modelAsJson
 
   # Return the array of all models currently in storage.
   findAll: ->
