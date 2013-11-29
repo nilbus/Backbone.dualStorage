@@ -20,12 +20,28 @@
       });
     });
     describe('persistence', function() {
-      it('fetches records by id with find', function() {
-        return expect(store.find({
-          id: 3
-        })).toEqual({
-          id: '3',
-          color: 'burgundy'
+      describe('find', function() {
+        it('fetches records by id', function() {
+          return expect(store.find({
+            id: 3
+          })).toEqual({
+            id: '3',
+            color: 'burgundy'
+          });
+        });
+        it('does not try to JSON.parse null values', function() {
+          spyOn(JSON, 'parse');
+          store.find({
+            id: 'unpersistedId'
+          });
+          return expect(JSON.parse).not.toHaveBeenCalledWith(null);
+        });
+        return it('returns null when not found', function() {
+          var result;
+          result = store.find({
+            id: 'unpersistedId'
+          });
+          return expect(result).toBeNull();
         });
       });
       it('fetches all records with findAll', function() {
