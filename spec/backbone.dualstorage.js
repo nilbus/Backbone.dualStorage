@@ -10,9 +10,10 @@ as that.
 var S4, backboneSync, callbackTranslator, dualsync, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result;
 
 Backbone.Collection.prototype.syncDirty = function() {
-  var id, ids, model, store, url, _i, _len, _results;
+  var id, ids, model, store, storeName, url, _i, _len, _results;
   url = result(this, 'url');
-  store = localStorage.getItem("" + url + "_dirty");
+  storeName = result(this, 'storeName');
+  store = localStorage.getItem(("" + url + "_dirty") || localStorage.getItem("" + storeName + "_dirty"));
   ids = (store && store.split(',')) || [];
   _results = [];
   for (_i = 0, _len = ids.length; _i < _len; _i++) {
@@ -26,9 +27,10 @@ Backbone.Collection.prototype.syncDirty = function() {
 };
 
 Backbone.Collection.prototype.syncDestroyed = function() {
-  var id, ids, model, store, url, _i, _len, _results;
+  var id, ids, model, store, storeName, url, _i, _len, _results;
   url = result(this, 'url');
-  store = localStorage.getItem("" + url + "_destroyed");
+  storeName = result(this, 'storeName');
+  store = localStorage.getItem(("" + url + "_destroyed") || (store = localStorage.getItem("" + storeName + "_destroyed")));
   ids = (store && store.split(',')) || [];
   _results = [];
   for (_i = 0, _len = ids.length; _i < _len; _i++) {
