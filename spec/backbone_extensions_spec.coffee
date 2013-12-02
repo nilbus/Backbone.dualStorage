@@ -9,16 +9,18 @@ describe 'offline localStorage sync', ->
   {collection} = {}
   beforeEach ->
     localStorage.clear()
-    localStorage.setItem 'cats', '2,3,a'
-    localStorage.setItem 'cats_dirty', '2,a'
+    localStorage.setItem 'cats', '2,3,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff'
+    localStorage.setItem 'cats_dirty', '2,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff'
     localStorage.setItem 'cats_destroyed', '3'
     localStorage.setItem 'cats2', '{"id": "2", "color": "auburn"}'
     localStorage.setItem 'cats3', '{"id": "3", "color": "burgundy"}'
     localStorage.setItem 'catsa', '{"id": "a", "color": "scarlet"}'
+    localStorage.setItem 'catsnew', '{"id": "deadbeef-c03d-f00d-aced-dec0ded4b1ff", "color": "pearl"}'
     collection = new Backbone.Collection [
       {id: 2, color: 'auburn'},
       {id: 3, color: 'burgundy'},
       {id: 'a', color: 'scarlet'}
+      {id: 'deadbeef-c03d-f00d-aced-dec0ded4b1ff', color: 'pearl'}
     ]
     collection.url = -> 'cats'
 
