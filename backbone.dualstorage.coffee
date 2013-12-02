@@ -10,7 +10,8 @@ as that.
 # Simply call collection.syncDirtyAndDestroyed()
 Backbone.Collection.prototype.syncDirty = ->
   url = result(@, 'url')
-  store = localStorage.getItem "#{url}_dirty"
+  storeName = result(@, 'storeName')
+  store = localStorage.getItem "#{url}_dirty" || localStorage.getItem "#{storeName}_dirty"
   ids = (store and store.split(',')) or []
 
   for id in ids
@@ -19,7 +20,8 @@ Backbone.Collection.prototype.syncDirty = ->
 
 Backbone.Collection.prototype.syncDestroyed = ->
   url = result(@, 'url')
-  store = localStorage.getItem "#{url}_destroyed"
+  storeName = result(@, 'storeName')
+  store = localStorage.getItem "#{url}_destroyed" || store = localStorage.getItem "#{storeName}_destroyed"
   ids = (store and store.split(',')) or []
 
   for id in ids
