@@ -20,9 +20,9 @@ as that.
     _results = [];
     for (_i = 0, _len = ids.length; _i < _len; _i++) {
       id = ids[_i];
-      model = id.length === 36 ? this.where({
+      model = id.length === 36 ? this.findWhere({
         id: id
-      })[0] : this.get(id);
+      }) : this.get(id);
       _results.push(model != null ? model.save() : void 0);
     }
     return _results;

@@ -15,7 +15,7 @@ Backbone.Collection.prototype.syncDirty = ->
   ids = (store and store.split(',')) or []
 
   for id in ids
-    model = if id.length == 36 then @where(id: id)[0] else @get(id)
+    model = if id.length == 36 then @findWhere(id: id) else @get(id)
     model?.save()
 
 Backbone.Collection.prototype.syncDestroyed = ->
@@ -25,7 +25,7 @@ Backbone.Collection.prototype.syncDestroyed = ->
   ids = (store and store.split(',')) or []
 
   for id in ids
-    model = new @model({id: id})
+    model = new @model(id: id)
     model.collection = @
     model.destroy()
 
