@@ -215,3 +215,57 @@ describe 'dualStorage hooks', ->
     waitsFor (-> response), "The success callback should have been called", 100
     runs ->
       expect(response[0].get('parsedRemote') || response[1].get('parsedRemote')).toBeTruthy()
+
+describe 'storeName selection', ->
+  it 'uses the model url as a store name', ->
+    model = new Backbone.Model()
+    model.local = true
+    model.url = '/bacon/bits'
+    spyOnLocalsync()
+    dualsync(null, model, {})
+    expect(localsync.calls[0].args[2].storeName).toEqual model.url
+
+  it 'prefers the model urlRoot over the url as a store name', ->
+    model = new Backbone.Model()
+    model.local = true
+    model.url = '/bacon/bits'
+    model.urlRoot = '/bacon'
+    spyOnLocalsync()
+    dualsync(null, model, {})
+    expect(localsync.calls[0].args[2].storeName).toEqual model.urlRoot
+
+  it 'prefers the collection url over the model urlRoot as a store name', ->
+    model = new Backbone.Model()
+    model.local = true
+    model.url = '/bacon/bits'
+    model.urlRoot = '/bacon'
+    model.collection = new Backbone.Collection()
+    model.collection.url = '/ranch'
+    spyOnLocalsync()
+    dualsync(null, model, {})
+    expect(localsync.calls[0].args[2].storeName).toEqual model.collection.url
+
+  it 'prefers the model storeName over the collection url as a store name', ->
+    model = new Backbone.Model()
+    model.local = true
+    model.url = '/bacon/bits'
+    model.urlRoot = '/bacon'
+    model.collection = new Backbone.Collection()
+    model.collection.url = '/ranch'
+    model.storeName = 'melted cheddar'
+    spyOnLocalsync()
+    dualsync(null, model, {})
+    expect(localsync.calls[0].args[2].storeName).toEqual model.storeName
+
+  it 'prefers the collection storeName over the model storeName as a store name', ->
+    model = new Backbone.Model()
+    model.local = true
+    model.url = '/bacon/bits'
+    model.urlRoot = '/bacon'
+    model.collection = new Backbone.Collection()
+    model.collection.url = '/ranch'
+    model.storeName = 'melted cheddar'
+    model.collection.storeName = 'ketchup'
+    spyOnLocalsync()
+    dualsync(null, model, {})
+    expect(localsync.calls[0].args[2].storeName).toEqual model.collection.storeName
