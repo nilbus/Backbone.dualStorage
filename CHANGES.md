@@ -1,6 +1,17 @@
 ### master / unreleased
 
-* Allow the default url-based storeName to be overriden with a storeName property on the model or collection
+* Allow the default url-based storeName to be overriden with a `storeName` property on the model or collection
+* Use `model.urlRoot` as the storeName, when available, before `model.url`.
+  This fixes the issue described in #80 where models with the same `urlRoot`
+  that are intended to be part of the same collection end up in different stores
+  when the collection attribute is not set on the model.
+
+  **Existing apps that rely on this incorrect behavior may break.**
+
+  If your app expects models with the same `urlRoot` and differing `url`s to
+  be in different stores locally, use the following workaround in your model:
+
+        storeName: function() { return this.url() }
 
 ### 1.1.0 / 2013-11-10
 
