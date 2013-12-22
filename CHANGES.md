@@ -13,6 +13,10 @@
 
         storeName: function() { return this.url() }
 
+* Ensure models in the dirty list exist before saving.
+  This mitigates concurrency issues noted in #62 until #35 is resolved, which should fix this problem.
+* Guard against JSON.parse(null) for Android browsers
+
 ### 1.1.0 / 2013-11-10
 
 * Add support for RequireJS / AMD
