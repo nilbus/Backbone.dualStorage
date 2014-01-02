@@ -81,11 +81,10 @@ class window.Store
       localStorage.setItem @name + '_destroyed', destroyedRecords.join(',')
     model
 
-  # Add a model, giving it a (hopefully)-unique GUID, if it doesn't already
+  # Add a model, giving it a unique GUID, if it doesn't already
   # have an id of it's own.
   create: (model) ->
     if not _.isObject(model) then return model
-    #if model.attributes? then model = model.attributes #removed to fix issue 14
     if not model.id
       model.id = @generateId()
       model.set model.idAttribute, model.id
