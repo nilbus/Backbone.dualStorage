@@ -300,7 +300,8 @@ parseRemoteResponse = function(object, response) {
 
 modelUpdatedWithResponse = function(model, response) {
   var modelClone;
-  modelClone = model.clone();
+  modelClone = new Backbone.Model(model.attributes);
+  modelClone.idAttribute = model.idAttribute;
   modelClone.set(modelClone.parse(response));
   return modelClone;
 };
