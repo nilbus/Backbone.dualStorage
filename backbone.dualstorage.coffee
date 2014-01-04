@@ -214,8 +214,9 @@ parseRemoteResponse = (object, response) ->
   if _.isFunction(object.parseBeforeLocalSave) then object.parseBeforeLocalSave(response)
 
 modelUpdatedWithResponse = (model, response) ->
-  modelClone = new Backbone.Model(model.attributes)
+  modelClone = new Backbone.Model
   modelClone.idAttribute = model.idAttribute
+  modelClone.set model.attributes
   modelClone.set modelClone.parse response
   modelClone
 
