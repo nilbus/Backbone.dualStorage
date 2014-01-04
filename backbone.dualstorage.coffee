@@ -296,7 +296,7 @@ dualsync = (method, model, options) ->
           options.dirty = true
           success localsync(method, originalModel, options)
 
-        model.set id: null
+        model.set model.idAttribute, null, silent: true
         onlineSync('create', model, options)
       else
         options.success = (resp, status, xhr) ->

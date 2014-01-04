@@ -387,8 +387,8 @@ dualsync = function(method, model, options) {
           options.dirty = true;
           return success(localsync(method, originalModel, options));
         };
-        model.set({
-          id: null
+        model.set(model.idAttribute, null, {
+          silent: true
         });
         return onlineSync('create', model, options);
       } else {
