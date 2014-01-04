@@ -285,16 +285,18 @@ dualsync = (method, model, options) ->
 
     when 'update'
       if _.isString(model.id) and model.id.length == 36
-        originalModel = model.clone()
+        temporaryId = model.id
 
         options.success = (resp, status, xhr) ->
           updatedModel = modelUpdatedWithResponse model, resp
-          localsync('delete', originalModel, options)
+          model.set model.idAttribute, temporaryId, silent: true
+          localsync('delete', model, options)
           localsync('create', updatedModel, options)
           success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
-          success localsync(method, originalModel, options)
+          model.set model.idAttribute, temporaryId, silent: true
+          success localsync(method, model, options)
 
         model.set model.idAttribute, null, silent: true
         onlineSync('create', model, options)

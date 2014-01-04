@@ -305,7 +305,7 @@ onlineSync = function(method, model, options) {
 };
 
 dualsync = function(method, model, options) {
-  var error, local, originalModel, success;
+  var error, local, success, temporaryId;
   options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') || result(model.collection, 'url') || result(model, 'urlRoot') || result(model, 'url');
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
   options.error = callbackTranslator.forDualstorageCaller(options.error, model, options);
@@ -364,17 +364,23 @@ dualsync = function(method, model, options) {
       return onlineSync(method, model, options);
     case 'update':
       if (_.isString(model.id) && model.id.length === 36) {
-        originalModel = model.clone();
+        temporaryId = model.id;
         options.success = function(resp, status, xhr) {
           var updatedModel;
           updatedModel = modelUpdatedWithResponse(model, resp);
-          localsync('delete', originalModel, options);
+          model.set(model.idAttribute, temporaryId, {
+            silent: true
+          });
+          localsync('delete', model, options);
           localsync('create', updatedModel, options);
           return success(resp, status, xhr);
         };
         options.error = function(resp) {
           options.dirty = true;
-          return success(localsync(method, originalModel, options));
+          model.set(model.idAttribute, temporaryId, {
+            silent: true
+          });
+          return success(localsync(method, model, options));
         };
         model.set(model.idAttribute, null, {
           silent: true
