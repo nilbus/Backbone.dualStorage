@@ -258,8 +258,9 @@ dualsync = (method, model, options) ->
 
           if _.isArray resp
             collection = model
+            idAttribute = collection.model.prototype.idAttribute
             for modelAttributes in resp
-              model = collection.get(modelAttributes.id)
+              model = collection.get(modelAttributes[idAttribute])
               if model
                 responseModel = modelUpdatedWithResponse(model, modelAttributes)
               else

@@ -1,11 +1,14 @@
 {Backbone, backboneSync, localsync, localStorage} = window
-{collection, model} = {}
+{collection, model, ModelWithAlternateIdAttribute} = {}
 
 beforeEach ->
   backboneSync.calls = []
   localStorage.clear()
+  ModelWithAlternateIdAttribute = Backbone.Model.extend idAttribute: '_id'
   collection = new Backbone.Collection
-    id: 12
+  collection.model = ModelWithAlternateIdAttribute
+  collection.add
+    _id: 12
     position: 'arm'
   collection.url = 'bones/'
   delete collection.remote
@@ -34,7 +37,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
         expect(modelToUpdate.attributes).toEqual originalAttributes
         localsyncedAttributes = _(localsync.calls).map((call) -> call.args[1].attributes)
         updatedAttributes =
-          id: 12
+          _id: 12
           position: 'arm'
           updatedAttribute: 'updated value'
           newAttribute: 'new value'
@@ -75,7 +78,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
         it 'calls localsync create once for each model', ->
           spyOnLocalsync()
           ready = false
-          collectionResponse = [{id: 12, position: 'arm'}, {id: 13, position: 'a new model'}]
+          collectionResponse = [{_id: 12, position: 'arm'}, {_id: 13, position: 'a new model'}]
           runs ->
             dualsync('read', collection, success: (-> ready = true), serverResponse: collectionResponse)
           waitsFor (-> ready), "The success callback should have been called", 100
@@ -87,8 +90,8 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
             expect(createCalls.length).toEqual 2
             expect(_(createCalls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
             createdModelAttributes = _(createCalls).map((call) -> call.args[1].attributes)
-            expect(createdModelAttributes[0]).toEqual id: 12, position: 'arm'
-            expect(createdModelAttributes[1]).toEqual id: 13, position: 'a new model'
+            expect(createdModelAttributes[0]).toEqual _id: 12, position: 'arm'
+            expect(createdModelAttributes[1]).toEqual _id: 13, position: 'a new model'
 
     describe 'update', ->
       it 'delegates to both localsync and backboneSync', ->
@@ -182,11 +185,11 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           localsync.reset()
           ready = false
           runs ->
-            dualsync('read', model, success: (-> ready = true), serverResponse: {side: 'left', id: 13})
+            dualsync('read', model, success: (-> ready = true), serverResponse: {side: 'left', _id: 13})
           waitsFor (-> ready), "The success callback should have been called", 100
           runs ->
             expect(localsync.calls[2].args[0]).toEqual 'create'
-            expect(localsync.calls[2].args[1].attributes).toEqual position: 'arm', side: 'left', id: 13
+            expect(localsync.calls[2].args[1].attributes).toEqual position: 'arm', side: 'left', _id: 13
 
       describe 'for collections', ->
         it 'gets merged with existing attributes on the model with the same id', ->
@@ -194,11 +197,11 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           localsync.reset()
           ready = false
           runs ->
-            dualsync('read', collection, success: (-> ready = true), serverResponse: [{side: 'left', id: 12}])
+            dualsync('read', collection, success: (-> ready = true), serverResponse: [{side: 'left', _id: 12}])
           waitsFor (-> ready), "The success callback should have been called", 100
           runs ->
             expect(localsync.calls[2].args[0]).toEqual 'create'
-            expect(localsync.calls[2].args[1].attributes).toEqual position: 'arm', side: 'left', id: 12
+            expect(localsync.calls[2].args[1].attributes).toEqual position: 'arm', side: 'left', _id: 12
 
     describe 'on create', ->
       it 'gets merged with existing attributes on a model', ->
@@ -206,11 +209,11 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
         localsync.reset()
         ready = false
         runs ->
-          dualsync('create', model, success: (-> ready = true), serverResponse: {side: 'left', id: 13})
+          dualsync('create', model, success: (-> ready = true), serverResponse: {side: 'left', _id: 13})
         waitsFor (-> ready), "The success callback should have been called", 100
         runs ->
           expect(localsync.calls[0].args[0]).toEqual 'create'
-          expect(localsync.calls[0].args[1].attributes).toEqual position: 'arm', side: 'left', id: 13
+          expect(localsync.calls[0].args[1].attributes).toEqual position: 'arm', side: 'left', _id: 13
 
     describe 'on update', ->
       it 'gets merged with existing attributes on a model', ->
@@ -218,11 +221,11 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
         localsync.reset()
         ready = false
         runs ->
-          dualsync('update', model, success: (-> ready = true), serverResponse: {side: 'left', id: 13})
+          dualsync('update', model, success: (-> ready = true), serverResponse: {side: 'left', _id: 13})
         waitsFor (-> ready), "The success callback should have been called", 100
         runs ->
           expect(localsync.calls[0].args[0]).toEqual 'update'
-          expect(localsync.calls[0].args[1].attributes).toEqual position: 'arm', side: 'left', id: 13
+          expect(localsync.calls[0].args[1].attributes).toEqual position: 'arm', side: 'left', _id: 13
 
 describe 'offline storage', ->
   it 'marks records dirty when options.remote is false, except if the model/collection is marked as local', ->
@@ -251,7 +254,7 @@ describe 'offline storage', ->
 describe 'dualStorage hooks', ->
   beforeEach ->
     model.parseBeforeLocalSave = ->
-      new Backbone.Model(parsedRemote: true)
+      new ModelWithAlternateIdAttribute(parsedRemote: true)
     ready = false
     runs ->
       dualsync 'create', model, success: (-> ready = true)
@@ -268,7 +271,7 @@ describe 'dualStorage hooks', ->
 
 describe 'storeName selection', ->
   it 'uses the model url as a store name', ->
-    model = new Backbone.Model()
+    model = new ModelWithAlternateIdAttribute()
     model.local = true
     model.url = '/bacon/bits'
     spyOnLocalsync()
@@ -276,7 +279,7 @@ describe 'storeName selection', ->
     expect(localsync.calls[0].args[2].storeName).toEqual model.url
 
   it 'prefers the model urlRoot over the url as a store name', ->
-    model = new Backbone.Model()
+    model = new ModelWithAlternateIdAttribute()
     model.local = true
     model.url = '/bacon/bits'
     model.urlRoot = '/bacon'
@@ -285,7 +288,7 @@ describe 'storeName selection', ->
     expect(localsync.calls[0].args[2].storeName).toEqual model.urlRoot
 
   it 'prefers the collection url over the model urlRoot as a store name', ->
-    model = new Backbone.Model()
+    model = new ModelWithAlternateIdAttribute()
     model.local = true
     model.url = '/bacon/bits'
     model.urlRoot = '/bacon'
@@ -296,7 +299,7 @@ describe 'storeName selection', ->
     expect(localsync.calls[0].args[2].storeName).toEqual model.collection.url
 
   it 'prefers the model storeName over the collection url as a store name', ->
-    model = new Backbone.Model()
+    model = new ModelWithAlternateIdAttribute()
     model.local = true
     model.url = '/bacon/bits'
     model.urlRoot = '/bacon'
@@ -308,7 +311,7 @@ describe 'storeName selection', ->
     expect(localsync.calls[0].args[2].storeName).toEqual model.storeName
 
   it 'prefers the collection storeName over the model storeName as a store name', ->
-    model = new Backbone.Model()
+    model = new ModelWithAlternateIdAttribute()
     model.local = true
     model.url = '/bacon/bits'
     model.urlRoot = '/bacon'

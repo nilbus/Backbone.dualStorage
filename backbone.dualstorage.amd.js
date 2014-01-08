@@ -337,16 +337,17 @@ dualsync = function(method, model, options) {
         return success(localsync(method, model, options));
       } else {
         options.success = function(resp, status, xhr) {
-          var collection, modelAttributes, responseModel, _i, _len;
+          var collection, idAttribute, modelAttributes, responseModel, _i, _len;
           resp = parseRemoteResponse(model, resp);
           if (!options.add) {
             localsync('clear', model, options);
           }
           if (_.isArray(resp)) {
             collection = model;
+            idAttribute = collection.model.prototype.idAttribute;
             for (_i = 0, _len = resp.length; _i < _len; _i++) {
               modelAttributes = resp[_i];
-              model = collection.get(modelAttributes.id);
+              model = collection.get(modelAttributes[idAttribute]);
               if (model) {
                 responseModel = modelUpdatedWithResponse(model, modelAttributes);
               } else {
