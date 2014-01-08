@@ -259,10 +259,14 @@ dualsync = (method, model, options) ->
           if _.isArray resp
             collection = model
             for modelAttributes in resp
-              responseModel = modelUpdatedWithResponse(new collection.model, modelAttributes)
+              model = collection.get(modelAttributes.id)
+              if model
+                responseModel = modelUpdatedWithResponse(model, modelAttributes)
+              else
+                responseModel = new collection.model(modelAttributes)
               localsync('create', responseModel, options)
           else
-            responseModel = modelUpdatedWithResponse(new model.constructor, resp)
+            responseModel = modelUpdatedWithResponse(model, resp)
             localsync('create', responseModel, options)
 
           success(resp, status, xhr)

@@ -17,6 +17,7 @@
   This mitigates concurrency issues noted in #62 until #35 is resolved, which should fix this problem.
 * Guard against JSON.parse(null) for Android browsers
 * Remove all usages of Model.clone() to play along with plugins (backbone-relational) that do not work with clone.
+* Fix where fetching models/collections would not merge but overwrite locally stored attributes.
 * Use the model idAttribute when saving models that were created offline.
   In this scenario, an update request (for an object with a temp ID) would be sent on save instead of a create request.
 

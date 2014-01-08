@@ -335,11 +335,16 @@ dualsync = function(method, model, options) {
             collection = model;
             for (_i = 0, _len = resp.length; _i < _len; _i++) {
               modelAttributes = resp[_i];
-              responseModel = modelUpdatedWithResponse(new collection.model, modelAttributes);
+              model = collection.get(modelAttributes.id);
+              if (model) {
+                responseModel = modelUpdatedWithResponse(model, modelAttributes);
+              } else {
+                responseModel = new collection.model(modelAttributes);
+              }
               localsync('create', responseModel, options);
             }
           } else {
-            responseModel = modelUpdatedWithResponse(new model.constructor, resp);
+            responseModel = modelUpdatedWithResponse(model, resp);
             localsync('create', responseModel, options);
           }
           return success(resp, status, xhr);

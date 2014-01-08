@@ -333,7 +333,7 @@
         });
       });
     });
-    return it('respects the remote: false sync option', function() {
+    it('respects the remote: false sync option', function() {
       var ready;
       ready = false;
       runs(function() {
@@ -350,6 +350,132 @@
       }), "The success callback should have been called", 100);
       return runs(function() {
         return expect(backboneSync).not.toHaveBeenCalled();
+      });
+    });
+    return describe('server response', function() {
+      describe('on read', function() {
+        describe('for models', function() {
+          return it('gets merged with existing attributes on a model', function() {
+            var ready;
+            spyOnLocalsync();
+            localsync.reset();
+            ready = false;
+            runs(function() {
+              return dualsync('read', model, {
+                success: (function() {
+                  return ready = true;
+                }),
+                serverResponse: {
+                  side: 'left',
+                  id: 13
+                }
+              });
+            });
+            waitsFor((function() {
+              return ready;
+            }), "The success callback should have been called", 100);
+            return runs(function() {
+              expect(localsync.calls[2].args[0]).toEqual('create');
+              return expect(localsync.calls[2].args[1].attributes).toEqual({
+                position: 'arm',
+                side: 'left',
+                id: 13
+              });
+            });
+          });
+        });
+        return describe('for collections', function() {
+          return it('gets merged with existing attributes on the model with the same id', function() {
+            var ready;
+            spyOnLocalsync();
+            localsync.reset();
+            ready = false;
+            runs(function() {
+              return dualsync('read', collection, {
+                success: (function() {
+                  return ready = true;
+                }),
+                serverResponse: [
+                  {
+                    side: 'left',
+                    id: 12
+                  }
+                ]
+              });
+            });
+            waitsFor((function() {
+              return ready;
+            }), "The success callback should have been called", 100);
+            return runs(function() {
+              expect(localsync.calls[2].args[0]).toEqual('create');
+              return expect(localsync.calls[2].args[1].attributes).toEqual({
+                position: 'arm',
+                side: 'left',
+                id: 12
+              });
+            });
+          });
+        });
+      });
+      describe('on create', function() {
+        return it('gets merged with existing attributes on a model', function() {
+          var ready;
+          spyOnLocalsync();
+          localsync.reset();
+          ready = false;
+          runs(function() {
+            return dualsync('create', model, {
+              success: (function() {
+                return ready = true;
+              }),
+              serverResponse: {
+                side: 'left',
+                id: 13
+              }
+            });
+          });
+          waitsFor((function() {
+            return ready;
+          }), "The success callback should have been called", 100);
+          return runs(function() {
+            expect(localsync.calls[0].args[0]).toEqual('create');
+            return expect(localsync.calls[0].args[1].attributes).toEqual({
+              position: 'arm',
+              side: 'left',
+              id: 13
+            });
+          });
+        });
+      });
+      return describe('on update', function() {
+        return it('gets merged with existing attributes on a model', function() {
+          var ready;
+          spyOnLocalsync();
+          localsync.reset();
+          ready = false;
+          runs(function() {
+            return dualsync('update', model, {
+              success: (function() {
+                return ready = true;
+              }),
+              serverResponse: {
+                side: 'left',
+                id: 13
+              }
+            });
+          });
+          waitsFor((function() {
+            return ready;
+          }), "The success callback should have been called", 100);
+          return runs(function() {
+            expect(localsync.calls[0].args[0]).toEqual('update');
+            return expect(localsync.calls[0].args[1].attributes).toEqual({
+              position: 'arm',
+              side: 'left',
+              id: 13
+            });
+          });
+        });
       });
     });
   });

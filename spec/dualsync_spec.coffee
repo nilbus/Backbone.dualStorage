@@ -174,6 +174,56 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
     runs ->
       expect(backboneSync).not.toHaveBeenCalled()
 
+  describe 'server response', ->
+    describe 'on read', ->
+      describe 'for models', ->
+        it 'gets merged with existing attributes on a model', ->
+          spyOnLocalsync()
+          localsync.reset()
+          ready = false
+          runs ->
+            dualsync('read', model, success: (-> ready = true), serverResponse: {side: 'left', id: 13})
+          waitsFor (-> ready), "The success callback should have been called", 100
+          runs ->
+            expect(localsync.calls[2].args[0]).toEqual 'create'
+            expect(localsync.calls[2].args[1].attributes).toEqual position: 'arm', side: 'left', id: 13
+
+      describe 'for collections', ->
+        it 'gets merged with existing attributes on the model with the same id', ->
+          spyOnLocalsync()
+          localsync.reset()
+          ready = false
+          runs ->
+            dualsync('read', collection, success: (-> ready = true), serverResponse: [{side: 'left', id: 12}])
+          waitsFor (-> ready), "The success callback should have been called", 100
+          runs ->
+            expect(localsync.calls[2].args[0]).toEqual 'create'
+            expect(localsync.calls[2].args[1].attributes).toEqual position: 'arm', side: 'left', id: 12
+
+    describe 'on create', ->
+      it 'gets merged with existing attributes on a model', ->
+        spyOnLocalsync()
+        localsync.reset()
+        ready = false
+        runs ->
+          dualsync('create', model, success: (-> ready = true), serverResponse: {side: 'left', id: 13})
+        waitsFor (-> ready), "The success callback should have been called", 100
+        runs ->
+          expect(localsync.calls[0].args[0]).toEqual 'create'
+          expect(localsync.calls[0].args[1].attributes).toEqual position: 'arm', side: 'left', id: 13
+
+    describe 'on update', ->
+      it 'gets merged with existing attributes on a model', ->
+        spyOnLocalsync()
+        localsync.reset()
+        ready = false
+        runs ->
+          dualsync('update', model, success: (-> ready = true), serverResponse: {side: 'left', id: 13})
+        waitsFor (-> ready), "The success callback should have been called", 100
+        runs ->
+          expect(localsync.calls[0].args[0]).toEqual 'update'
+          expect(localsync.calls[0].args[1].attributes).toEqual position: 'arm', side: 'left', id: 13
+
 describe 'offline storage', ->
   it 'marks records dirty when options.remote is false, except if the model/collection is marked as local', ->
     spyOnLocalsync()
