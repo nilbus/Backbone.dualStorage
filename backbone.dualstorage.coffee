@@ -6,6 +6,9 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
 ###
 
+Backbone.Model.prototype.hasTempId = ->
+  _.isString(@id) and @id.length is 36
+
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
 Backbone.Collection.prototype.syncDirty = ->
@@ -15,8 +18,7 @@ Backbone.Collection.prototype.syncDirty = ->
   ids = (store and store.split(',')) or []
 
   for id in ids
-    model = if id.length == 36 then @findWhere(id: id) else @get(id)
-    model?.save()
+    @get(id)?.save()
 
 Backbone.Collection.prototype.syncDestroyed = ->
   url = result(@, 'url')
@@ -289,7 +291,7 @@ dualsync = (method, model, options) ->
       onlineSync(method, model, options)
 
     when 'update'
-      if _.isString(model.id) and model.id.length == 36
+      if model.hasTempId()
         temporaryId = model.id
 
         options.success = (resp, status, xhr) ->
@@ -317,7 +319,7 @@ dualsync = (method, model, options) ->
         onlineSync(method, model, options)
 
     when 'delete'
-      if _.isString(model.id) and model.id.length == 36
+      if model.hasTempId()
         localsync(method, model, options)
       else
         options.success = (resp, status, xhr) ->
