@@ -6,8 +6,8 @@ describe 'localsync', ->
       it 'creates records', ->
         {ready, create, model} = {}
         runs ->
-          create = spyOn(Store.prototype, 'create')
           model = new Backbone.Model id: 1
+          create = spyOn(Store.prototype, 'create').andReturn $.Deferred().resolve(model)
           localsync 'create', model, {success: (-> ready = true), error: (-> ready = true)}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
@@ -17,8 +17,8 @@ describe 'localsync', ->
         {ready, create} = {}
         runs ->
           ready = false
-          create = spyOn(Store.prototype, 'find').andReturn id: 1
-          create = spyOn(Store.prototype, 'create')
+          create = spyOn(Store.prototype, 'find').andReturn $.Deferred().resolve(id: 1)
+          create = spyOn(Store.prototype, 'create').andReturn $.Deferred().resolve()
           model = new Backbone.Model id: 1
           localsync 'create', model, {success: (-> ready = true), error: (-> ready = true), add: true}
         waitsFor (-> ready), "A callback should have been called", 100
@@ -35,8 +35,8 @@ describe 'localsync', ->
         {ready, create, model, dirty} = {}
         runs ->
           model = new Backbone.Model id: 1
-          create = spyOn(Store.prototype, 'create').andReturn model
-          dirty = spyOn(Store.prototype, 'dirty')
+          create = spyOn(Store.prototype, 'create').andReturn $.Deferred().resolve(model)
+          dirty = spyOn(Store.prototype, 'dirty').andReturn $.Deferred().resolve(model)
           localsync 'create', model, {success: (-> ready = true), error: (-> ready = true), dirty: true}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
@@ -47,8 +47,8 @@ describe 'localsync', ->
       it 'reads models', ->
         {ready, find, model} = {}
         runs ->
-          find = spyOn(Store.prototype, 'find')
           model = new Backbone.Model id: 1
+          find = spyOn(Store.prototype, 'find').andReturn $.Deferred().resolve(model)
           localsync 'read', model, {success: (-> ready = true), error: (-> ready = true)}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
@@ -57,7 +57,7 @@ describe 'localsync', ->
       it 'reads collections', ->
         {ready, findAll} = {}
         runs ->
-          findAll = spyOn(Store.prototype, 'findAll')
+          findAll = spyOn(Store.prototype, 'findAll').andReturn $.Deferred().resolve()
           localsync 'read', new Backbone.Collection, {success: (-> ready = true), error: (-> ready = true)}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
@@ -67,8 +67,8 @@ describe 'localsync', ->
       it 'updates records', ->
         {ready, update, model} = {}
         runs ->
-          update = spyOn(Store.prototype, 'update')
           model = new Backbone.Model id: 1
+          update = spyOn(Store.prototype, 'update').andReturn $.Deferred().resolve(model)
           localsync 'update', model, {success: (-> ready = true), error: (-> ready = true)}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
@@ -78,8 +78,8 @@ describe 'localsync', ->
         {ready, update, model, dirty} = {}
         runs ->
           model = new Backbone.Model id: 1
-          update = spyOn(Store.prototype, 'update')
-          dirty = spyOn(Store.prototype, 'dirty')
+          update = spyOn(Store.prototype, 'update').andReturn $.Deferred().resolve(model)
+          dirty = spyOn(Store.prototype, 'dirty').andReturn $.Deferred().resolve(model)
           localsync 'update', model, {success: (-> ready = true), error: (-> ready = true), dirty: true}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
@@ -90,8 +90,8 @@ describe 'localsync', ->
       it 'deletes records', ->
         {ready, destroy, model} = {}
         runs ->
-          destroy = spyOn(Store.prototype, 'destroy')
           model = new Backbone.Model id: 1
+          destroy = spyOn(Store.prototype, 'destroy').andReturn $.Deferred().resolve(model)
           localsync 'delete', model, {success: (-> ready = true), error: (-> ready = true)}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
@@ -101,8 +101,8 @@ describe 'localsync', ->
         {ready, destroy, destroyed, model} = {}
         runs ->
           model = new Backbone.Model id: 1
-          destroy = spyOn(Store.prototype, 'destroy')
-          destroyed = spyOn(Store.prototype, 'destroyed')
+          destroy = spyOn(Store.prototype, 'destroy').andReturn $.Deferred().resolve(model)
+          destroyed = spyOn(Store.prototype, 'destroyed').andReturn $.Deferred().resolve(model)
           localsync 'delete', model, {success: (-> ready = true), error: (-> ready = true), dirty: true}
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
@@ -112,12 +112,12 @@ describe 'localsync', ->
   describe 'extra methods', ->
     it 'clears out all records from the store', ->
       runs ->
-        clear = spyOn(Store.prototype, 'clear')
+        clear = spyOn(Store.prototype, 'clear').andReturn $.Deferred().resolve()
         localsync 'clear', {}, {success: (-> ready = true), error: (-> ready = true)}
 
     it 'reports whether or not it hasDirtyOrDestroyed', ->
       runs ->
-        clear = spyOn(Store.prototype, 'hasDirtyOrDestroyed')
+        clear = spyOn(Store.prototype, 'hasDirtyOrDestroyed').andReturn $.Deferred().resolve()
         localsync 'hasDirtyOrDestroyed', {}, {success: (-> ready = true), error: (-> ready = true)}
 
   describe 'callbacks', ->
@@ -146,7 +146,7 @@ describe 'localsync', ->
 
   describe 'model parameter', ->
     beforeEach ->
-      spyOn(Store.prototype, 'create')
+      spyOn(Store.prototype, 'create').andReturn $.Deferred().resolve()
 
     it 'should not accept objects / attributes as model', ->
       attributes = {}

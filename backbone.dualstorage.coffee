@@ -3,35 +3,43 @@ Backbone dualStorage Adapter v1.1.0
 
 A simple module to replace `Backbone.sync` with *localStorage*-based
 persistence. Models are given GUIDS, and saved into a JSON object. Simple
-as that.
+as that.co
 ###
+
+class LocaleStorageAdapter
+  setItem: (key, value) ->
+    localStorage.setItem key, value
+    $.Deferred().resolve value
+
+  getItem: (key) ->
+    value = localStorage.getItem key
+    $.Deferred().resolve value
+
+  removeItem: (key) ->
+    localStorage.removeItem key
+    $.Deferred().resolve()
+
+Backbone.storageAdapter = new LocaleStorageAdapter
 
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
 Backbone.Collection.prototype.syncDirty = ->
-  url = result(@, 'url')
-  storeName = result(@, 'storeName')
-  store = localStorage.getItem "#{url}_dirty" || localStorage.getItem "#{storeName}_dirty"
-  ids = (store and store.split(',')) or []
-
-  for id in ids
-    model = if id.length == 36 then @findWhere(id: id) else @get(id)
-    model?.save()
+  storeName = result(@, 'storeName') || result(@, 'url')
+  Backbone.storageAdapter.getItem("#{storeName}_dirty").then (store) =>
+    ids = (store and store.split(',')) or []
+    models = ((if id.length == 36 then @findWhere(id: id) else @get(id)) for id in ids)
+    $.when (model.save() for model in models when model)...
 
 Backbone.Collection.prototype.syncDestroyed = ->
-  url = result(@, 'url')
-  storeName = result(@, 'storeName')
-  store = localStorage.getItem "#{url}_destroyed" || store = localStorage.getItem "#{storeName}_destroyed"
-  ids = (store and store.split(',')) or []
-
-  for id in ids
-    model = new @model(id: id)
-    model.collection = @
-    model.destroy()
+  storeName = result(@, 'storeName') || result(@, 'url')
+  Backbone.storageAdapter.getItem("#{storeName}_destroyed").then (store) =>
+    ids = (store and store.split(',')) or []
+    models = (new @model(id: id) for id in ids)
+    (model.collection = @ for model in models)
+    $.when (model.destroy() for model in models)...
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
-  @syncDirty()
-  @syncDestroyed()
+  @syncDirty().then => @syncDestroyed()
 
 # Generate four random hex digits.
 S4 = ->
@@ -44,7 +52,8 @@ class window.Store
 
   constructor: (name) ->
     @name = name
-    @records = @recordsOn @name
+    @recordsOn(@name).done (result) =>
+      @records = result
 
   # Generates an unique id to use when saving new instances into localstorage
   # by default generates a pseudo-GUID by concatenating random hexadecimal.
@@ -54,81 +63,80 @@ class window.Store
 
   # Save the current state of the **Store** to *localStorage*.
   save: ->
-    localStorage.setItem @name, @records.join(',')
+    Backbone.storageAdapter.setItem @name, @records.join(',')
 
   recordsOn: (key) ->
-    store = localStorage.getItem(key)
-    (store and store.split(',')) or []
+    Backbone.storageAdapter.getItem(key).then (store) ->
+      (store and store.split(',')) or []
 
   dirty: (model) ->
-    dirtyRecords = @recordsOn @name + '_dirty'
-    if not _.include(dirtyRecords, model.id.toString())
-      dirtyRecords.push model.id
-      localStorage.setItem @name + '_dirty', dirtyRecords.join(',')
-    model
+    @recordsOn(@name + '_dirty').then (dirtyRecords) =>
+      if not _.include(dirtyRecords, model.id.toString())
+        dirtyRecords.push model.id.toString()
+        return Backbone.storageAdapter.setItem(@name + '_dirty', dirtyRecords.join(',')).then -> model
+      model
 
   clean: (model, from) ->
     store = "#{@name}_#{from}"
-    dirtyRecords = @recordsOn store
-    if _.include dirtyRecords, model.id.toString()
-      localStorage.setItem store, _.without(dirtyRecords, model.id.toString()).join(',')
-    model
+    @recordsOn(store).then (dirtyRecords) =>
+      if _.include dirtyRecords, model.id.toString()
+        return Backbone.storageAdapter.setItem(store, _.without(dirtyRecords, model.id.toString()).join(',')).then -> model
+      model
 
   destroyed: (model) ->
-    destroyedRecords = @recordsOn @name + '_destroyed'
-    if not _.include destroyedRecords, model.id.toString()
-      destroyedRecords.push model.id
-      localStorage.setItem @name + '_destroyed', destroyedRecords.join(',')
-    model
+    @recordsOn(@name + '_destroyed').then (destroyedRecords) =>
+      if not _.include destroyedRecords, model.id.toString()
+        destroyedRecords.push model.id.toString()
+        Backbone.storageAdapter.setItem(@name + '_destroyed', destroyedRecords.join(',')).then -> model
+      model
 
   # Add a model, giving it a unique GUID, if it doesn't already
   # have an id of it's own.
   create: (model) ->
-    if not _.isObject(model) then return model
+    if not _.isObject(model) then return $.Deferred().resolve(model)
     if not model.id
       model.id = @generateId()
       model.set model.idAttribute, model.id
-    localStorage.setItem @name + @sep + model.id, JSON.stringify(model)
-    @records.push model.id.toString()
-    @save()
-    model
+    Backbone.storageAdapter.setItem(@name + @sep + model.id, JSON.stringify(model)).then =>
+      @records.push model.id.toString()
+      @save().then => model
 
   # Update a model by replacing its copy in `this.data`.
   update: (model) ->
-    localStorage.setItem @name + @sep + model.id, JSON.stringify(model)
-    if not _.include(@records, model.id.toString())
-      @records.push model.id.toString()
-    @save()
-    model
+    Backbone.storageAdapter.setItem(@name + @sep + model.id, JSON.stringify(model)).then =>
+      if not _.include(@records, model.id.toString())
+        @records.push model.id.toString()
+      @save().then => model
 
   clear: ->
-    for id in @records
-      localStorage.removeItem @name + @sep + id
-    @records = []
-    @save()
+    $.when((Backbone.storageAdapter.removeItem(@name + @sep + id) for id in @records)...).then =>
+      @records = []
+      @save()
 
   hasDirtyOrDestroyed: ->
-    not _.isEmpty(localStorage.getItem(@name + '_dirty')) or not _.isEmpty(localStorage.getItem(@name + '_destroyed'))
+    Backbone.storageAdapter.getItem(@name + '_dirty').then (dirty) =>
+      Backbone.storageAdapter.getItem(@name + '_destroyed').then (destroyed) =>
+        not _.isEmpty(dirty) or not _.isEmpty(destroyed)
 
   # Retrieve a model from `this.data` by id.
   find: (model) ->
-    modelAsJson = localStorage.getItem(@name + @sep + model.id)
-    return null if modelAsJson == null
-    JSON.parse modelAsJson
+    Backbone.storageAdapter.getItem(@name + @sep + model.id).then (modelAsJson) ->
+      return null if modelAsJson == null
+      JSON.parse modelAsJson
 
   # Return the array of all models currently in storage.
   findAll: ->
-    for id in @records
-      JSON.parse localStorage.getItem(@name + @sep + id)
+    $.when((Backbone.storageAdapter.getItem(@name + @sep + id) for id in @records)...).then (models...) ->
+      (JSON.parse(model) for model in models)
 
   # Delete a model from `this.data`, returning it.
   destroy: (model) ->
-    localStorage.removeItem @name + @sep + model.id
-    @records = _.reject(@records, (record_id) ->
-      record_id is model.id.toString()
-    )
-    @save()
-    model
+    Backbone.storageAdapter.removeItem(@name + @sep + model.id).then =>
+      @records = _.without @records, model.id.toString()
+      # @records = _.reject(@records, (record_id) ->
+      #   record_id is model.id.toString()
+      # )
+      @save().then -> model
 
 callbackTranslator =
   needsTranslation: Backbone.VERSION == '0.9.10'
@@ -157,7 +165,7 @@ localsync = (method, model, options) ->
 
   store = new Store options.storeName
 
-  response = switch method
+  promise = switch method
     when 'read'
       if model.id
         store.find(model)
@@ -168,36 +176,41 @@ localsync = (method, model, options) ->
     when 'clear'
       store.clear()
     when 'create'
-      unless options.add and not options.merge and (preExisting = store.find(model))
-        model = store.create(model)
-        store.dirty(model) if options.dirty
-        model
-      else
-        preExisting
-    when 'update'
-      store.update(model)
-      if options.dirty
-        store.dirty(model)
-      else
-        store.clean(model, 'dirty')
-    when 'delete'
-      store.destroy(model)
-      if options.dirty
-        store.destroyed(model)
-      else
-        if model.id.toString().length == 36
-          store.clean(model, 'dirty')
+      store.find(model).then (preExisting) ->
+        unless options.add and not options.merge and preExisting
+          store.create(model).then (model) ->
+            if options.dirty
+              return store.dirty(model).then ->
+                model
+            model
         else
-          store.clean(model, 'destroyed')
-  response = response.attributes if response?.attributes
+          preExisting
+    when 'update'
+      store.update(model).then (model) ->
+        if options.dirty
+          store.dirty(model)
+        else
+          store.clean(model, 'dirty')
+    when 'delete'
+      store.destroy(model).then ->
+        if options.dirty
+          store.destroyed(model)
+        else
+          if model.id.toString().length == 36
+            store.clean(model, 'dirty')
+          else
+            store.clean(model, 'destroyed')
 
-  unless options.ignoreCallbacks
-    if response
-      options.success response
-    else
-      options.error 'Record not found'
+  promise.then (response) ->
+    response = response.attributes if response?.attributes
 
-  response
+    unless options.ignoreCallbacks
+      if response
+        options.success response
+      else
+        options.error 'Record not found'
+
+    response
 
 # If the value of the named property is a function then invoke it;
 # otherwise, return it.
@@ -248,43 +261,52 @@ dualsync = (method, model, options) ->
 
   switch method
     when 'read'
-      if localsync('hasDirtyOrDestroyed', model, options)
-        success localsync(method, model, options)
-      else
-        options.success = (resp, status, xhr) ->
-          resp = parseRemoteResponse(model, resp)
-
-          localsync('clear', model, options) unless options.add
-
-          if _.isArray resp
-            collection = model
-            idAttribute = collection.model.prototype.idAttribute
-            for modelAttributes in resp
-              model = collection.get(modelAttributes[idAttribute])
-              if model
-                responseModel = modelUpdatedWithResponse(model, modelAttributes)
-              else
-                responseModel = new collection.model(modelAttributes)
-              localsync('create', responseModel, options)
-          else
-            responseModel = modelUpdatedWithResponse(model, resp)
-            localsync('create', responseModel, options)
-
-          success(resp, status, xhr)
-
-        options.error = (resp) ->
+      localsync('hasDirtyOrDestroyed', model, options).then (hasDirtyOrDestroyed) ->
+        if hasDirtyOrDestroyed
           success localsync(method, model, options)
+        else
+          options.success = (resp, status, xhr) ->
+            resp = parseRemoteResponse(model, resp)
 
-        onlineSync(method, model, options)
+            go = ->
+              if _.isArray resp
+                collection = model
+                idAttribute = collection.model.prototype.idAttribute
+                models = []
+                for modelAttributes in resp
+                  model = collection.get(modelAttributes[idAttribute])
+                  if model
+                    responseModel = modelUpdatedWithResponse(model, modelAttributes)
+                  else
+                    responseModel = new collection.model(modelAttributes)
+                  models.push responseModel
+                $.when((localsync('create', m, options) for m in models)...).then ->
+                  success(resp, status, xhr)
+              else
+                responseModel = modelUpdatedWithResponse(model, resp)
+                localsync('create', responseModel, options).then ->
+                  success(resp, status, xhr)
+
+            if options.add
+              localsync('clear', model, options).then go
+            else
+              go()
+
+          options.error = (resp) ->
+            localsync(method, model, options).then (result) ->
+              success result
+
+          onlineSync(method, model, options)
 
     when 'create'
       options.success = (resp, status, xhr) ->
         updatedModel = modelUpdatedWithResponse model, resp
-        localsync(method, updatedModel, options)
-        success(resp, status, xhr)
+        localsync(method, updatedModel, options).then ->
+          success(resp, status, xhr)
       options.error = (resp) ->
         options.dirty = true
-        success localsync(method, model, options)
+        localsync(method, model, options).then (result) ->
+          success result
 
       onlineSync(method, model, options)
 
@@ -295,24 +317,26 @@ dualsync = (method, model, options) ->
         options.success = (resp, status, xhr) ->
           updatedModel = modelUpdatedWithResponse model, resp
           model.set model.idAttribute, temporaryId, silent: true
-          localsync('delete', model, options)
-          localsync('create', updatedModel, options)
-          success(resp, status, xhr)
+          localsync('delete', model, options).then ->
+            localsync('create', updatedModel, options).then ->
+              success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
           model.set model.idAttribute, temporaryId, silent: true
-          success localsync(method, model, options)
+          localsync(method, model, options).then (result) ->
+            success result
 
         model.set model.idAttribute, null, silent: true
         onlineSync('create', model, options)
       else
         options.success = (resp, status, xhr) ->
           updatedModel = modelUpdatedWithResponse model, resp
-          localsync(method, updatedModel, options)
-          success(resp, status, xhr)
+          localsync(method, updatedModel, options).then ->
+            success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
-          success localsync(method, model, options)
+          localsync(method, model, options).then (result) ->
+            success
 
         onlineSync(method, model, options)
 
@@ -321,11 +345,12 @@ dualsync = (method, model, options) ->
         localsync(method, model, options)
       else
         options.success = (resp, status, xhr) ->
-          localsync(method, model, options)
-          success(resp, status, xhr)
+          localsync(method, model, options).then ->
+            success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
-          success localsync(method, model, options)
+          localsync(method, model, options).then (result) ->
+            success result
 
         onlineSync(method, model, options)
 

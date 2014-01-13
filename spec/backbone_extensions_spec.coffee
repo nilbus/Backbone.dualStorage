@@ -26,8 +26,8 @@ describe 'offline localStorage sync', ->
 
   describe 'syncDirtyAndDestroyed', ->
     it 'calls syncDirty and syncDestroyed', ->
-      syncDirty = spyOn Backbone.Collection.prototype, 'syncDirty'
-      syncDestroyed = spyOn Backbone.Collection.prototype, 'syncDestroyed'
+      syncDirty = spyOn(Backbone.Collection.prototype, 'syncDirty').andReturn $.Deferred().resolve()
+      syncDestroyed = spyOn(Backbone.Collection.prototype, 'syncDestroyed').andReturn $.Deferred().resolve()
       collection.syncDirtyAndDestroyed()
       expect(syncDirty).toHaveBeenCalled()
       expect(syncDestroyed).toHaveBeenCalled()
@@ -48,8 +48,8 @@ describe 'offline localStorage sync', ->
   describe 'syncDestroyed', ->
     it 'finds all models marked as destroyed and destroys them', ->
       destroy = spyOn collection.get(3), 'destroy'
-      collection.syncDestroyed()
-      expect(localStorage.getItem 'cats_destroyed').toBeFalsy()
+      collection.syncDestroyed().then ->
+        expect(localStorage.getItem 'cats_destroyed').toBeFalsy()
 
     it 'works when there are no destroyed records', ->
       localStorage.setItem 'cats_destroyed', ''

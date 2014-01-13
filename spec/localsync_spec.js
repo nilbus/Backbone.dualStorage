@@ -11,10 +11,10 @@
           var create, model, ready, _ref;
           _ref = {}, ready = _ref.ready, create = _ref.create, model = _ref.model;
           runs(function() {
-            create = spyOn(Store.prototype, 'create');
             model = new Backbone.Model({
               id: 1
             });
+            create = spyOn(Store.prototype, 'create').andReturn($.Deferred().resolve(model));
             return localsync('create', model, {
               success: (function() {
                 return ready = true;
@@ -37,10 +37,10 @@
           runs(function() {
             var model;
             ready = false;
-            create = spyOn(Store.prototype, 'find').andReturn({
+            create = spyOn(Store.prototype, 'find').andReturn($.Deferred().resolve({
               id: 1
-            });
-            create = spyOn(Store.prototype, 'create');
+            }));
+            create = spyOn(Store.prototype, 'create').andReturn($.Deferred().resolve());
             model = new Backbone.Model({
               id: 1
             });
@@ -89,8 +89,8 @@
             model = new Backbone.Model({
               id: 1
             });
-            create = spyOn(Store.prototype, 'create').andReturn(model);
-            dirty = spyOn(Store.prototype, 'dirty');
+            create = spyOn(Store.prototype, 'create').andReturn($.Deferred().resolve(model));
+            dirty = spyOn(Store.prototype, 'dirty').andReturn($.Deferred().resolve(model));
             return localsync('create', model, {
               success: (function() {
                 return ready = true;
@@ -115,10 +115,10 @@
           var find, model, ready, _ref;
           _ref = {}, ready = _ref.ready, find = _ref.find, model = _ref.model;
           runs(function() {
-            find = spyOn(Store.prototype, 'find');
             model = new Backbone.Model({
               id: 1
             });
+            find = spyOn(Store.prototype, 'find').andReturn($.Deferred().resolve(model));
             return localsync('read', model, {
               success: (function() {
                 return ready = true;
@@ -139,7 +139,7 @@
           var findAll, ready, _ref;
           _ref = {}, ready = _ref.ready, findAll = _ref.findAll;
           runs(function() {
-            findAll = spyOn(Store.prototype, 'findAll');
+            findAll = spyOn(Store.prototype, 'findAll').andReturn($.Deferred().resolve());
             return localsync('read', new Backbone.Collection, {
               success: (function() {
                 return ready = true;
@@ -162,10 +162,10 @@
           var model, ready, update, _ref;
           _ref = {}, ready = _ref.ready, update = _ref.update, model = _ref.model;
           runs(function() {
-            update = spyOn(Store.prototype, 'update');
             model = new Backbone.Model({
               id: 1
             });
+            update = spyOn(Store.prototype, 'update').andReturn($.Deferred().resolve(model));
             return localsync('update', model, {
               success: (function() {
                 return ready = true;
@@ -189,8 +189,8 @@
             model = new Backbone.Model({
               id: 1
             });
-            update = spyOn(Store.prototype, 'update');
-            dirty = spyOn(Store.prototype, 'dirty');
+            update = spyOn(Store.prototype, 'update').andReturn($.Deferred().resolve(model));
+            dirty = spyOn(Store.prototype, 'dirty').andReturn($.Deferred().resolve(model));
             return localsync('update', model, {
               success: (function() {
                 return ready = true;
@@ -215,10 +215,10 @@
           var destroy, model, ready, _ref;
           _ref = {}, ready = _ref.ready, destroy = _ref.destroy, model = _ref.model;
           runs(function() {
-            destroy = spyOn(Store.prototype, 'destroy');
             model = new Backbone.Model({
               id: 1
             });
+            destroy = spyOn(Store.prototype, 'destroy').andReturn($.Deferred().resolve(model));
             return localsync('delete', model, {
               success: (function() {
                 return ready = true;
@@ -242,8 +242,8 @@
             model = new Backbone.Model({
               id: 1
             });
-            destroy = spyOn(Store.prototype, 'destroy');
-            destroyed = spyOn(Store.prototype, 'destroyed');
+            destroy = spyOn(Store.prototype, 'destroy').andReturn($.Deferred().resolve(model));
+            destroyed = spyOn(Store.prototype, 'destroyed').andReturn($.Deferred().resolve(model));
             return localsync('delete', model, {
               success: (function() {
                 return ready = true;
@@ -268,7 +268,7 @@
       it('clears out all records from the store', function() {
         return runs(function() {
           var clear;
-          clear = spyOn(Store.prototype, 'clear');
+          clear = spyOn(Store.prototype, 'clear').andReturn($.Deferred().resolve());
           return localsync('clear', {}, {
             success: (function() {
               var ready;
@@ -284,7 +284,7 @@
       return it('reports whether or not it hasDirtyOrDestroyed', function() {
         return runs(function() {
           var clear;
-          clear = spyOn(Store.prototype, 'hasDirtyOrDestroyed');
+          clear = spyOn(Store.prototype, 'hasDirtyOrDestroyed').andReturn($.Deferred().resolve());
           return localsync('hasDirtyOrDestroyed', {}, {
             success: (function() {
               var ready;
@@ -358,7 +358,7 @@
     });
     return describe('model parameter', function() {
       beforeEach(function() {
-        return spyOn(Store.prototype, 'create');
+        return spyOn(Store.prototype, 'create').andReturn($.Deferred().resolve());
       });
       it('should not accept objects / attributes as model', function() {
         var attributes, call;

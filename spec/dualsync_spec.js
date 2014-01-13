@@ -28,8 +28,11 @@
   spyOnLocalsync = function() {
     spyOn(window, 'localsync').andCallFake(function(method, model, options) {
       if (!options.ignoreCallbacks) {
-        return typeof options.success === "function" ? options.success() : void 0;
+        if (typeof options.success === "function") {
+          options.success();
+        }
       }
+      return $.Deferred().resolve();
     });
     return localsync = window.localsync;
   };

@@ -4,51 +4,110 @@ Backbone dualStorage Adapter v1.1.0
 
 A simple module to replace `Backbone.sync` with *localStorage*-based
 persistence. Models are given GUIDS, and saved into a JSON object. Simple
-as that.
+as that.co
 */
 
 
 (function() {
-  var S4, backboneSync, callbackTranslator, dualsync, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result;
+  var LocaleStorageAdapter, S4, backboneSync, callbackTranslator, dualsync, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result,
+    __slice = [].slice;
+
+  LocaleStorageAdapter = (function() {
+    function LocaleStorageAdapter() {}
+
+    LocaleStorageAdapter.prototype.setItem = function(key, value) {
+      localStorage.setItem(key, value);
+      return $.Deferred().resolve(value);
+    };
+
+    LocaleStorageAdapter.prototype.getItem = function(key) {
+      var value;
+      value = localStorage.getItem(key);
+      return $.Deferred().resolve(value);
+    };
+
+    LocaleStorageAdapter.prototype.removeItem = function(key) {
+      localStorage.removeItem(key);
+      return $.Deferred().resolve();
+    };
+
+    return LocaleStorageAdapter;
+
+  })();
+
+  Backbone.storageAdapter = new LocaleStorageAdapter;
 
   Backbone.Collection.prototype.syncDirty = function() {
-    var id, ids, model, store, storeName, url, _i, _len, _results;
-    url = result(this, 'url');
-    storeName = result(this, 'storeName');
-    store = localStorage.getItem(("" + url + "_dirty") || localStorage.getItem("" + storeName + "_dirty"));
-    ids = (store && store.split(',')) || [];
-    _results = [];
-    for (_i = 0, _len = ids.length; _i < _len; _i++) {
-      id = ids[_i];
-      model = id.length === 36 ? this.findWhere({
-        id: id
-      }) : this.get(id);
-      _results.push(model != null ? model.save() : void 0);
-    }
-    return _results;
+    var storeName,
+      _this = this;
+    storeName = result(this, 'storeName') || result(this, 'url');
+    return Backbone.storageAdapter.getItem("" + storeName + "_dirty").then(function(store) {
+      var id, ids, model, models;
+      ids = (store && store.split(',')) || [];
+      models = (function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = ids.length; _i < _len; _i++) {
+          id = ids[_i];
+          _results.push(id.length === 36 ? this.findWhere({
+            id: id
+          }) : this.get(id));
+        }
+        return _results;
+      }).call(_this);
+      return $.when.apply($, (function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = models.length; _i < _len; _i++) {
+          model = models[_i];
+          if (model) {
+            _results.push(model.save());
+          }
+        }
+        return _results;
+      })());
+    });
   };
 
   Backbone.Collection.prototype.syncDestroyed = function() {
-    var id, ids, model, store, storeName, url, _i, _len, _results;
-    url = result(this, 'url');
-    storeName = result(this, 'storeName');
-    store = localStorage.getItem(("" + url + "_destroyed") || (store = localStorage.getItem("" + storeName + "_destroyed")));
-    ids = (store && store.split(',')) || [];
-    _results = [];
-    for (_i = 0, _len = ids.length; _i < _len; _i++) {
-      id = ids[_i];
-      model = new this.model({
-        id: id
-      });
-      model.collection = this;
-      _results.push(model.destroy());
-    }
-    return _results;
+    var storeName,
+      _this = this;
+    storeName = result(this, 'storeName') || result(this, 'url');
+    return Backbone.storageAdapter.getItem("" + storeName + "_destroyed").then(function(store) {
+      var id, ids, model, models, _i, _len;
+      ids = (store && store.split(',')) || [];
+      models = (function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = ids.length; _i < _len; _i++) {
+          id = ids[_i];
+          _results.push(new this.model({
+            id: id
+          }));
+        }
+        return _results;
+      }).call(_this);
+      for (_i = 0, _len = models.length; _i < _len; _i++) {
+        model = models[_i];
+        model.collection = _this;
+      }
+      return $.when.apply($, (function() {
+        var _j, _len1, _results;
+        _results = [];
+        for (_j = 0, _len1 = models.length; _j < _len1; _j++) {
+          model = models[_j];
+          _results.push(model.destroy());
+        }
+        return _results;
+      })());
+    });
   };
 
   Backbone.Collection.prototype.syncDirtyAndDestroyed = function() {
-    this.syncDirty();
-    return this.syncDestroyed();
+    var _this = this;
+    return this.syncDirty().then(function() {
+      return _this.syncDestroyed();
+    });
   };
 
   S4 = function() {
@@ -59,8 +118,11 @@ as that.
     Store.prototype.sep = '';
 
     function Store(name) {
+      var _this = this;
       this.name = name;
-      this.records = this.recordsOn(this.name);
+      this.recordsOn(this.name).done(function(result) {
+        return _this.records = result;
+      });
     }
 
     Store.prototype.generateId = function() {
@@ -68,110 +130,151 @@ as that.
     };
 
     Store.prototype.save = function() {
-      return localStorage.setItem(this.name, this.records.join(','));
+      return Backbone.storageAdapter.setItem(this.name, this.records.join(','));
     };
 
     Store.prototype.recordsOn = function(key) {
-      var store;
-      store = localStorage.getItem(key);
-      return (store && store.split(',')) || [];
+      return Backbone.storageAdapter.getItem(key).then(function(store) {
+        return (store && store.split(',')) || [];
+      });
     };
 
     Store.prototype.dirty = function(model) {
-      var dirtyRecords;
-      dirtyRecords = this.recordsOn(this.name + '_dirty');
-      if (!_.include(dirtyRecords, model.id.toString())) {
-        dirtyRecords.push(model.id);
-        localStorage.setItem(this.name + '_dirty', dirtyRecords.join(','));
-      }
-      return model;
+      var _this = this;
+      return this.recordsOn(this.name + '_dirty').then(function(dirtyRecords) {
+        if (!_.include(dirtyRecords, model.id.toString())) {
+          dirtyRecords.push(model.id.toString());
+          return Backbone.storageAdapter.setItem(_this.name + '_dirty', dirtyRecords.join(',')).then(function() {
+            return model;
+          });
+        }
+        return model;
+      });
     };
 
     Store.prototype.clean = function(model, from) {
-      var dirtyRecords, store;
+      var store,
+        _this = this;
       store = "" + this.name + "_" + from;
-      dirtyRecords = this.recordsOn(store);
-      if (_.include(dirtyRecords, model.id.toString())) {
-        localStorage.setItem(store, _.without(dirtyRecords, model.id.toString()).join(','));
-      }
-      return model;
+      return this.recordsOn(store).then(function(dirtyRecords) {
+        if (_.include(dirtyRecords, model.id.toString())) {
+          return Backbone.storageAdapter.setItem(store, _.without(dirtyRecords, model.id.toString()).join(',')).then(function() {
+            return model;
+          });
+        }
+        return model;
+      });
     };
 
     Store.prototype.destroyed = function(model) {
-      var destroyedRecords;
-      destroyedRecords = this.recordsOn(this.name + '_destroyed');
-      if (!_.include(destroyedRecords, model.id.toString())) {
-        destroyedRecords.push(model.id);
-        localStorage.setItem(this.name + '_destroyed', destroyedRecords.join(','));
-      }
-      return model;
+      var _this = this;
+      return this.recordsOn(this.name + '_destroyed').then(function(destroyedRecords) {
+        if (!_.include(destroyedRecords, model.id.toString())) {
+          destroyedRecords.push(model.id.toString());
+          Backbone.storageAdapter.setItem(_this.name + '_destroyed', destroyedRecords.join(',')).then(function() {
+            return model;
+          });
+        }
+        return model;
+      });
     };
 
     Store.prototype.create = function(model) {
+      var _this = this;
       if (!_.isObject(model)) {
-        return model;
+        return $.Deferred().resolve(model);
       }
       if (!model.id) {
         model.id = this.generateId();
         model.set(model.idAttribute, model.id);
       }
-      localStorage.setItem(this.name + this.sep + model.id, JSON.stringify(model));
-      this.records.push(model.id.toString());
-      this.save();
-      return model;
+      return Backbone.storageAdapter.setItem(this.name + this.sep + model.id, JSON.stringify(model)).then(function() {
+        _this.records.push(model.id.toString());
+        return _this.save().then(function() {
+          return model;
+        });
+      });
     };
 
     Store.prototype.update = function(model) {
-      localStorage.setItem(this.name + this.sep + model.id, JSON.stringify(model));
-      if (!_.include(this.records, model.id.toString())) {
-        this.records.push(model.id.toString());
-      }
-      this.save();
-      return model;
+      var _this = this;
+      return Backbone.storageAdapter.setItem(this.name + this.sep + model.id, JSON.stringify(model)).then(function() {
+        if (!_.include(_this.records, model.id.toString())) {
+          _this.records.push(model.id.toString());
+        }
+        return _this.save().then(function() {
+          return model;
+        });
+      });
     };
 
     Store.prototype.clear = function() {
-      var id, _i, _len, _ref;
-      _ref = this.records;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        id = _ref[_i];
-        localStorage.removeItem(this.name + this.sep + id);
-      }
-      this.records = [];
-      return this.save();
+      var id,
+        _this = this;
+      return $.when.apply($, ((function() {
+        var _i, _len, _ref, _results;
+        _ref = this.records;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          id = _ref[_i];
+          _results.push(Backbone.storageAdapter.removeItem(this.name + this.sep + id));
+        }
+        return _results;
+      }).call(this))).then(function() {
+        _this.records = [];
+        return _this.save();
+      });
     };
 
     Store.prototype.hasDirtyOrDestroyed = function() {
-      return !_.isEmpty(localStorage.getItem(this.name + '_dirty')) || !_.isEmpty(localStorage.getItem(this.name + '_destroyed'));
+      var _this = this;
+      return Backbone.storageAdapter.getItem(this.name + '_dirty').then(function(dirty) {
+        return Backbone.storageAdapter.getItem(_this.name + '_destroyed').then(function(destroyed) {
+          return !_.isEmpty(dirty) || !_.isEmpty(destroyed);
+        });
+      });
     };
 
     Store.prototype.find = function(model) {
-      var modelAsJson;
-      modelAsJson = localStorage.getItem(this.name + this.sep + model.id);
-      if (modelAsJson === null) {
-        return null;
-      }
-      return JSON.parse(modelAsJson);
+      return Backbone.storageAdapter.getItem(this.name + this.sep + model.id).then(function(modelAsJson) {
+        if (modelAsJson === null) {
+          return null;
+        }
+        return JSON.parse(modelAsJson);
+      });
     };
 
     Store.prototype.findAll = function() {
-      var id, _i, _len, _ref, _results;
-      _ref = this.records;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        id = _ref[_i];
-        _results.push(JSON.parse(localStorage.getItem(this.name + this.sep + id)));
-      }
-      return _results;
+      var id;
+      return $.when.apply($, ((function() {
+        var _i, _len, _ref, _results;
+        _ref = this.records;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          id = _ref[_i];
+          _results.push(Backbone.storageAdapter.getItem(this.name + this.sep + id));
+        }
+        return _results;
+      }).call(this))).then(function() {
+        var model, models, _i, _len, _results;
+        models = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        _results = [];
+        for (_i = 0, _len = models.length; _i < _len; _i++) {
+          model = models[_i];
+          _results.push(JSON.parse(model));
+        }
+        return _results;
+      });
     };
 
     Store.prototype.destroy = function(model) {
-      localStorage.removeItem(this.name + this.sep + model.id);
-      this.records = _.reject(this.records, function(record_id) {
-        return record_id === model.id.toString();
+      var _this = this;
+      return Backbone.storageAdapter.removeItem(this.name + this.sep + model.id).then(function() {
+        _this.records = _.without(_this.records, model.id.toString());
+        return _this.save().then(function() {
+          return model;
+        });
       });
-      this.save();
-      return model;
     };
 
     return Store;
@@ -201,7 +304,7 @@ as that.
   };
 
   localsync = function(method, model, options) {
-    var isValidModel, preExisting, response, store;
+    var isValidModel, promise, store;
     isValidModel = (method === 'clear') || (method === 'hasDirtyOrDestroyed');
     isValidModel || (isValidModel = model instanceof Backbone.Model);
     isValidModel || (isValidModel = model instanceof Backbone.Collection);
@@ -209,7 +312,7 @@ as that.
       throw new Error('model parameter is required to be a backbone model or collection.');
     }
     store = new Store(options.storeName);
-    response = (function() {
+    promise = (function() {
       switch (method) {
         case 'read':
           if (model.id) {
@@ -223,48 +326,55 @@ as that.
         case 'clear':
           return store.clear();
         case 'create':
-          if (!(options.add && !options.merge && (preExisting = store.find(model)))) {
-            model = store.create(model);
-            if (options.dirty) {
-              store.dirty(model);
-            }
-            return model;
-          } else {
-            return preExisting;
-          }
-          break;
-        case 'update':
-          store.update(model);
-          if (options.dirty) {
-            return store.dirty(model);
-          } else {
-            return store.clean(model, 'dirty');
-          }
-          break;
-        case 'delete':
-          store.destroy(model);
-          if (options.dirty) {
-            return store.destroyed(model);
-          } else {
-            if (model.id.toString().length === 36) {
-              return store.clean(model, 'dirty');
+          return store.find(model).then(function(preExisting) {
+            if (!(options.add && !options.merge && preExisting)) {
+              return store.create(model).then(function(model) {
+                if (options.dirty) {
+                  return store.dirty(model).then(function() {
+                    return model;
+                  });
+                }
+                return model;
+              });
             } else {
-              return store.clean(model, 'destroyed');
+              return preExisting;
             }
-          }
+          });
+        case 'update':
+          return store.update(model).then(function(model) {
+            if (options.dirty) {
+              return store.dirty(model);
+            } else {
+              return store.clean(model, 'dirty');
+            }
+          });
+        case 'delete':
+          return store.destroy(model).then(function() {
+            if (options.dirty) {
+              return store.destroyed(model);
+            } else {
+              if (model.id.toString().length === 36) {
+                return store.clean(model, 'dirty');
+              } else {
+                return store.clean(model, 'destroyed');
+              }
+            }
+          });
       }
     })();
-    if (response != null ? response.attributes : void 0) {
-      response = response.attributes;
-    }
-    if (!options.ignoreCallbacks) {
-      if (response) {
-        options.success(response);
-      } else {
-        options.error('Record not found');
+    return promise.then(function(response) {
+      if (response != null ? response.attributes : void 0) {
+        response = response.attributes;
       }
-    }
-    return response;
+      if (!options.ignoreCallbacks) {
+        if (response) {
+          options.success(response);
+        } else {
+          options.error('Record not found');
+        }
+      }
+      return response;
+    });
   };
 
   result = function(object, property) {
@@ -324,50 +434,74 @@ as that.
     error = options.error;
     switch (method) {
       case 'read':
-        if (localsync('hasDirtyOrDestroyed', model, options)) {
-          return success(localsync(method, model, options));
-        } else {
-          options.success = function(resp, status, xhr) {
-            var collection, idAttribute, modelAttributes, responseModel, _i, _len;
-            resp = parseRemoteResponse(model, resp);
-            if (!options.add) {
-              localsync('clear', model, options);
-            }
-            if (_.isArray(resp)) {
-              collection = model;
-              idAttribute = collection.model.prototype.idAttribute;
-              for (_i = 0, _len = resp.length; _i < _len; _i++) {
-                modelAttributes = resp[_i];
-                model = collection.get(modelAttributes[idAttribute]);
-                if (model) {
-                  responseModel = modelUpdatedWithResponse(model, modelAttributes);
-                } else {
-                  responseModel = new collection.model(modelAttributes);
-                }
-                localsync('create', responseModel, options);
-              }
-            } else {
-              responseModel = modelUpdatedWithResponse(model, resp);
-              localsync('create', responseModel, options);
-            }
-            return success(resp, status, xhr);
-          };
-          options.error = function(resp) {
+        return localsync('hasDirtyOrDestroyed', model, options).then(function(hasDirtyOrDestroyed) {
+          if (hasDirtyOrDestroyed) {
             return success(localsync(method, model, options));
-          };
-          return onlineSync(method, model, options);
-        }
-        break;
+          } else {
+            options.success = function(resp, status, xhr) {
+              var go;
+              resp = parseRemoteResponse(model, resp);
+              go = function() {
+                var collection, idAttribute, m, modelAttributes, models, responseModel, _i, _len;
+                if (_.isArray(resp)) {
+                  collection = model;
+                  idAttribute = collection.model.prototype.idAttribute;
+                  models = [];
+                  for (_i = 0, _len = resp.length; _i < _len; _i++) {
+                    modelAttributes = resp[_i];
+                    model = collection.get(modelAttributes[idAttribute]);
+                    if (model) {
+                      responseModel = modelUpdatedWithResponse(model, modelAttributes);
+                    } else {
+                      responseModel = new collection.model(modelAttributes);
+                    }
+                    models.push(responseModel);
+                  }
+                  return $.when.apply($, ((function() {
+                    var _j, _len1, _results;
+                    _results = [];
+                    for (_j = 0, _len1 = models.length; _j < _len1; _j++) {
+                      m = models[_j];
+                      _results.push(localsync('create', m, options));
+                    }
+                    return _results;
+                  })())).then(function() {
+                    return success(resp, status, xhr);
+                  });
+                } else {
+                  responseModel = modelUpdatedWithResponse(model, resp);
+                  return localsync('create', responseModel, options).then(function() {
+                    return success(resp, status, xhr);
+                  });
+                }
+              };
+              if (options.add) {
+                return localsync('clear', model, options).then(go);
+              } else {
+                return go();
+              }
+            };
+            options.error = function(resp) {
+              return localsync(method, model, options).then(function(result) {
+                return success(result);
+              });
+            };
+            return onlineSync(method, model, options);
+          }
+        });
       case 'create':
         options.success = function(resp, status, xhr) {
           var updatedModel;
           updatedModel = modelUpdatedWithResponse(model, resp);
-          localsync(method, updatedModel, options);
-          return success(resp, status, xhr);
+          return localsync(method, updatedModel, options).then(function() {
+            return success(resp, status, xhr);
+          });
         };
         options.error = function(resp) {
           options.dirty = true;
-          return success(localsync(method, model, options));
+          return localsync(method, model, options).then(function(result) {
+            return success(result);
+          });
         };
         return onlineSync(method, model, options);
       case 'update':
@@ -379,16 +513,20 @@ as that.
             model.set(model.idAttribute, temporaryId, {
               silent: true
             });
-            localsync('delete', model, options);
-            localsync('create', updatedModel, options);
-            return success(resp, status, xhr);
+            return localsync('delete', model, options).then(function() {
+              return localsync('create', updatedModel, options).then(function() {
+                return success(resp, status, xhr);
+              });
+            });
           };
           options.error = function(resp) {
             options.dirty = true;
             model.set(model.idAttribute, temporaryId, {
               silent: true
             });
-            return success(localsync(method, model, options));
+            return localsync(method, model, options).then(function(result) {
+              return success(result);
+            });
           };
           model.set(model.idAttribute, null, {
             silent: true
@@ -398,12 +536,15 @@ as that.
           options.success = function(resp, status, xhr) {
             var updatedModel;
             updatedModel = modelUpdatedWithResponse(model, resp);
-            localsync(method, updatedModel, options);
-            return success(resp, status, xhr);
+            return localsync(method, updatedModel, options).then(function() {
+              return success(resp, status, xhr);
+            });
           };
           options.error = function(resp) {
             options.dirty = true;
-            return success(localsync(method, model, options));
+            return localsync(method, model, options).then(function(result) {
+              return success;
+            });
           };
           return onlineSync(method, model, options);
         }
@@ -413,12 +554,15 @@ as that.
           return localsync(method, model, options);
         } else {
           options.success = function(resp, status, xhr) {
-            localsync(method, model, options);
-            return success(resp, status, xhr);
+            return localsync(method, model, options).then(function() {
+              return success(resp, status, xhr);
+            });
           };
           options.error = function(resp) {
             options.dirty = true;
-            return success(localsync(method, model, options));
+            return localsync(method, model, options).then(function(result) {
+              return success(result);
+            });
           };
           return onlineSync(method, model, options);
         }

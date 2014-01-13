@@ -45,8 +45,8 @@
     describe('syncDirtyAndDestroyed', function() {
       return it('calls syncDirty and syncDestroyed', function() {
         var syncDestroyed, syncDirty;
-        syncDirty = spyOn(Backbone.Collection.prototype, 'syncDirty');
-        syncDestroyed = spyOn(Backbone.Collection.prototype, 'syncDestroyed');
+        syncDirty = spyOn(Backbone.Collection.prototype, 'syncDirty').andReturn($.Deferred().resolve());
+        syncDestroyed = spyOn(Backbone.Collection.prototype, 'syncDestroyed').andReturn($.Deferred().resolve());
         collection.syncDirtyAndDestroyed();
         expect(syncDirty).toHaveBeenCalled();
         return expect(syncDestroyed).toHaveBeenCalled();
@@ -71,8 +71,9 @@
       it('finds all models marked as destroyed and destroys them', function() {
         var destroy;
         destroy = spyOn(collection.get(3), 'destroy');
-        collection.syncDestroyed();
-        return expect(localStorage.getItem('cats_destroyed')).toBeFalsy();
+        return collection.syncDestroyed().then(function() {
+          return expect(localStorage.getItem('cats_destroyed')).toBeFalsy();
+        });
       });
       return it('works when there are no destroyed records', function() {
         localStorage.setItem('cats_destroyed', '');
