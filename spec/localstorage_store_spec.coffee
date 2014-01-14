@@ -7,6 +7,8 @@ describe 'window.Store', ->
     localStorage.setItem 'cats', '3'
     localStorage.setItem 'cats3', '{"id": "3", "color": "burgundy"}'
     store = new Store 'cats'
+    store.initialize()
+    return store
 
   describe 'creation', ->
     it 'takes a name in its constructor', ->

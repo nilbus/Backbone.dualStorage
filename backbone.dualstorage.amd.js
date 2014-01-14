@@ -18,33 +18,39 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.co
 */
 
-var LocaleStorageAdapter, S4, backboneSync, callbackTranslator, dualsync, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result,
+var LocalStorageAdapter, S4, backboneSync, callbackTranslator, dualsync, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result,
   __slice = [].slice;
 
-LocaleStorageAdapter = (function() {
-  function LocaleStorageAdapter() {}
+LocalStorageAdapter = (function() {
+  function LocalStorageAdapter() {}
 
-  LocaleStorageAdapter.prototype.setItem = function(key, value) {
+  LocalStorageAdapter.prototype.initialize = function() {
+    return $.Deferred().resolve;
+  };
+
+  LocalStorageAdapter.prototype.setItem = function(key, value) {
     localStorage.setItem(key, value);
     return $.Deferred().resolve(value);
   };
 
-  LocaleStorageAdapter.prototype.getItem = function(key) {
+  LocalStorageAdapter.prototype.getItem = function(key) {
     var value;
     value = localStorage.getItem(key);
     return $.Deferred().resolve(value);
   };
 
-  LocaleStorageAdapter.prototype.removeItem = function(key) {
+  LocalStorageAdapter.prototype.removeItem = function(key) {
     localStorage.removeItem(key);
     return $.Deferred().resolve();
   };
 
-  return LocaleStorageAdapter;
+  return LocalStorageAdapter;
 
 })();
 
-Backbone.storageAdapter = new LocaleStorageAdapter;
+Backbone.storageAdapter = new LocalStorageAdapter;
+
+Backbone.storageAdapter.initialize();
 
 Backbone.Collection.prototype.syncDirty = function() {
   var storeName,
@@ -127,12 +133,16 @@ window.Store = (function() {
   Store.prototype.sep = '';
 
   function Store(name) {
-    var _this = this;
     this.name = name;
-    this.recordsOn(this.name).done(function(result) {
-      return _this.records = result;
-    });
+    this.records = [];
   }
+
+  Store.prototype.initialize = function() {
+    var _this = this;
+    return this.recordsOn(this.name).done(function(result) {
+      return _this.records = result || [];
+    });
+  };
 
   Store.prototype.generateId = function() {
     return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
@@ -313,7 +323,8 @@ callbackTranslator = {
 };
 
 localsync = function(method, model, options) {
-  var isValidModel, promise, store;
+  var isValidModel, store,
+    _this = this;
   isValidModel = (method === 'clear') || (method === 'hasDirtyOrDestroyed');
   isValidModel || (isValidModel = model instanceof Backbone.Model);
   isValidModel || (isValidModel = model instanceof Backbone.Collection);
@@ -321,68 +332,71 @@ localsync = function(method, model, options) {
     throw new Error('model parameter is required to be a backbone model or collection.');
   }
   store = new Store(options.storeName);
-  promise = (function() {
-    switch (method) {
-      case 'read':
-        if (model.id) {
-          return store.find(model);
-        } else {
-          return store.findAll();
-        }
-        break;
-      case 'hasDirtyOrDestroyed':
-        return store.hasDirtyOrDestroyed();
-      case 'clear':
-        return store.clear();
-      case 'create':
-        return store.find(model).then(function(preExisting) {
-          if (!(options.add && !options.merge && preExisting)) {
-            return store.create(model).then(function(model) {
-              if (options.dirty) {
-                return store.dirty(model).then(function() {
-                  return model;
-                });
-              }
-              return model;
-            });
+  return store.initialize().then(function() {
+    var promise;
+    promise = (function() {
+      switch (method) {
+        case 'read':
+          if (model.id) {
+            return store.find(model);
           } else {
-            return preExisting;
+            return store.findAll();
           }
-        });
-      case 'update':
-        return store.update(model).then(function(model) {
-          if (options.dirty) {
-            return store.dirty(model);
-          } else {
-            return store.clean(model, 'dirty');
-          }
-        });
-      case 'delete':
-        return store.destroy(model).then(function() {
-          if (options.dirty) {
-            return store.destroyed(model);
-          } else {
-            if (model.id.toString().length === 36) {
-              return store.clean(model, 'dirty');
+          break;
+        case 'hasDirtyOrDestroyed':
+          return store.hasDirtyOrDestroyed();
+        case 'clear':
+          return store.clear();
+        case 'create':
+          return store.find(model).then(function(preExisting) {
+            if (!(options.add && !options.merge && preExisting)) {
+              return store.create(model).then(function(model) {
+                if (options.dirty) {
+                  return store.dirty(model).then(function() {
+                    return model;
+                  });
+                }
+                return model;
+              });
             } else {
-              return store.clean(model, 'destroyed');
+              return preExisting;
             }
-          }
-        });
-    }
-  })();
-  return promise.then(function(response) {
-    if (response != null ? response.attributes : void 0) {
-      response = response.attributes;
-    }
-    if (!options.ignoreCallbacks) {
-      if (response) {
-        options.success(response);
-      } else {
-        options.error('Record not found');
+          });
+        case 'update':
+          return store.update(model).then(function(model) {
+            if (options.dirty) {
+              return store.dirty(model);
+            } else {
+              return store.clean(model, 'dirty');
+            }
+          });
+        case 'delete':
+          return store.destroy(model).then(function() {
+            if (options.dirty) {
+              return store.destroyed(model);
+            } else {
+              if (model.id.toString().length === 36) {
+                return store.clean(model, 'dirty');
+              } else {
+                return store.clean(model, 'destroyed');
+              }
+            }
+          });
       }
-    }
-    return response;
+    })();
+    return promise.then(function(response) {
+      if (response != null ? response.attributes : void 0) {
+        response = response.attributes;
+      }
+      if (!options.ignoreCallbacks) {
+        if (response) {
+          options.success(response);
+        } else {
+          options.error('Record not found');
+        }
+      }
+      return response;
+    });
   });
 };
 
@@ -484,7 +498,7 @@ dualsync = function(method, model, options) {
                 });
               }
             };
-            if (options.add) {
+            if (!options.add) {
               return localsync('clear', model, options).then(go);
             } else {
               return go();

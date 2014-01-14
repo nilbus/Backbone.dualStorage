@@ -6,7 +6,10 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.co
 ###
 
-class LocaleStorageAdapter
+class LocalStorageAdapter
+  initialize: ->
+    $.Deferred().resolve
+
   setItem: (key, value) ->
     localStorage.setItem key, value
     $.Deferred().resolve value
@@ -19,7 +22,8 @@ class LocaleStorageAdapter
     localStorage.removeItem key
     $.Deferred().resolve()
 
-Backbone.storageAdapter = new LocaleStorageAdapter
+Backbone.storageAdapter = new LocalStorageAdapter
+Backbone.storageAdapter.initialize()
 
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
@@ -52,8 +56,11 @@ class window.Store
 
   constructor: (name) ->
     @name = name
+    @records = []
+
+  initialize: ->
     @recordsOn(@name).done (result) =>
-      @records = result
+      @records = result || []
 
   # Generates an unique id to use when saving new instances into localstorage
   # by default generates a pseudo-GUID by concatenating random hexadecimal.
@@ -133,9 +140,6 @@ class window.Store
   destroy: (model) ->
     Backbone.storageAdapter.removeItem(@name + @sep + model.id).then =>
       @records = _.without @records, model.id.toString()
-      # @records = _.reject(@records, (record_id) ->
-      #   record_id is model.id.toString()
-      # )
       @save().then -> model
 
 callbackTranslator =
@@ -164,53 +168,54 @@ localsync = (method, model, options) ->
     throw new Error 'model parameter is required to be a backbone model or collection.'
 
   store = new Store options.storeName
+  store.initialize().then =>
 
-  promise = switch method
-    when 'read'
-      if model.id
-        store.find(model)
-      else
-        store.findAll()
-    when 'hasDirtyOrDestroyed'
-      store.hasDirtyOrDestroyed()
-    when 'clear'
-      store.clear()
-    when 'create'
-      store.find(model).then (preExisting) ->
-        unless options.add and not options.merge and preExisting
-          store.create(model).then (model) ->
-            if options.dirty
-              return store.dirty(model).then ->
-                model
-            model
+    promise = switch method
+      when 'read'
+        if model.id
+          store.find(model)
         else
-          preExisting
-    when 'update'
-      store.update(model).then (model) ->
-        if options.dirty
-          store.dirty(model)
-        else
-          store.clean(model, 'dirty')
-    when 'delete'
-      store.destroy(model).then ->
-        if options.dirty
-          store.destroyed(model)
-        else
-          if model.id.toString().length == 36
-            store.clean(model, 'dirty')
+          store.findAll()
+      when 'hasDirtyOrDestroyed'
+        store.hasDirtyOrDestroyed()
+      when 'clear'
+        store.clear()
+      when 'create'
+        store.find(model).then (preExisting) ->
+          unless options.add and not options.merge and preExisting
+            store.create(model).then (model) ->
+              if options.dirty
+                return store.dirty(model).then ->
+                  model
+              model
           else
-            store.clean(model, 'destroyed')
+            preExisting
+      when 'update'
+        store.update(model).then (model) ->
+          if options.dirty
+            store.dirty(model)
+          else
+            store.clean(model, 'dirty')
+      when 'delete'
+        store.destroy(model).then ->
+          if options.dirty
+            store.destroyed(model)
+          else
+            if model.id.toString().length == 36
+              store.clean(model, 'dirty')
+            else
+              store.clean(model, 'destroyed')
 
-  promise.then (response) ->
-    response = response.attributes if response?.attributes
+    promise.then (response) ->
+      response = response.attributes if response?.attributes
 
-    unless options.ignoreCallbacks
-      if response
-        options.success response
-      else
-        options.error 'Record not found'
+      unless options.ignoreCallbacks
+        if response
+          options.success response
+        else
+          options.error 'Record not found'
 
-    response
+      response
 
 # If the value of the named property is a function then invoke it;
 # otherwise, return it.
@@ -287,7 +292,7 @@ dualsync = (method, model, options) ->
                 localsync('create', responseModel, options).then ->
                   success(resp, status, xhr)
 
-            if options.add
+            if not options.add
               localsync('clear', model, options).then go
             else
               go()

@@ -11,7 +11,9 @@
       localStorage.clear();
       localStorage.setItem('cats', '3');
       localStorage.setItem('cats3', '{"id": "3", "color": "burgundy"}');
-      return store = new Store('cats');
+      store = new Store('cats');
+      store.initialize();
+      return store;
     });
     describe('creation', function() {
       return it('takes a name in its constructor', function() {
