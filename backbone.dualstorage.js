@@ -123,6 +123,8 @@ as that.
 
     function Store(name) {
       this.name = name;
+      this.dirtyName = "" + name + "_dirty";
+      this.destroyedName = "" + name + "_destroyed";
       this.records = [];
     }
 
@@ -149,10 +151,10 @@ as that.
 
     Store.prototype.dirty = function(model) {
       var _this = this;
-      return this.recordsOn(this.name + '_dirty').then(function(dirtyRecords) {
+      return this.recordsOn(this.dirtyName).then(function(dirtyRecords) {
         if (!_.include(dirtyRecords, model.id.toString())) {
           dirtyRecords.push(model.id.toString());
-          return Backbone.storageAdapter.setItem(_this.name + '_dirty', dirtyRecords.join(',')).then(function() {
+          return Backbone.storageAdapter.setItem(_this.dirtyName, dirtyRecords.join(',')).then(function() {
             return model;
           });
         }
@@ -176,10 +178,10 @@ as that.
 
     Store.prototype.destroyed = function(model) {
       var _this = this;
-      return this.recordsOn(this.name + '_destroyed').then(function(destroyedRecords) {
+      return this.recordsOn(this.destroyedName).then(function(destroyedRecords) {
         if (!_.include(destroyedRecords, model.id.toString())) {
           destroyedRecords.push(model.id.toString());
-          Backbone.storageAdapter.setItem(_this.name + '_destroyed', destroyedRecords.join(',')).then(function() {
+          Backbone.storageAdapter.setItem(_this.destroyedName, destroyedRecords.join(',')).then(function() {
             return model;
           });
         }
@@ -236,8 +238,8 @@ as that.
 
     Store.prototype.hasDirtyOrDestroyed = function() {
       var _this = this;
-      return Backbone.storageAdapter.getItem(this.name + '_dirty').then(function(dirty) {
-        return Backbone.storageAdapter.getItem(_this.name + '_destroyed').then(function(destroyed) {
+      return Backbone.storageAdapter.getItem(this.dirtyName).then(function(dirty) {
+        return Backbone.storageAdapter.getItem(_this.destroyedName).then(function(destroyed) {
           return !_.isEmpty(dirty) || !_.isEmpty(destroyed);
         });
       });

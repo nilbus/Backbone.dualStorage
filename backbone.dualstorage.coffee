@@ -62,6 +62,8 @@ class window.Store
 
   constructor: (name) ->
     @name = name
+    @dirtyName = "#{name}_dirty"
+    @destroyedName = "#{name}_destroyed"
     @records = []
 
   initialize: ->
@@ -83,10 +85,10 @@ class window.Store
       (store and store.split(',')) or []
 
   dirty: (model) ->
-    @recordsOn(@name + '_dirty').then (dirtyRecords) =>
+    @recordsOn(@dirtyName).then (dirtyRecords) =>
       if not _.include(dirtyRecords, model.id.toString())
         dirtyRecords.push model.id.toString()
-        return Backbone.storageAdapter.setItem(@name + '_dirty', dirtyRecords.join(',')).then -> model
+        return Backbone.storageAdapter.setItem(@dirtyName, dirtyRecords.join(',')).then -> model
       model
 
   clean: (model, from) ->
@@ -97,10 +99,10 @@ class window.Store
       model
 
   destroyed: (model) ->
-    @recordsOn(@name + '_destroyed').then (destroyedRecords) =>
+    @recordsOn(@destroyedName).then (destroyedRecords) =>
       if not _.include destroyedRecords, model.id.toString()
         destroyedRecords.push model.id.toString()
-        Backbone.storageAdapter.setItem(@name + '_destroyed', destroyedRecords.join(',')).then -> model
+        Backbone.storageAdapter.setItem(@destroyedName, destroyedRecords.join(',')).then -> model
       model
 
   # Add a model, giving it a unique GUID, if it doesn't already
@@ -127,8 +129,8 @@ class window.Store
       @save()
 
   hasDirtyOrDestroyed: ->
-    Backbone.storageAdapter.getItem(@name + '_dirty').then (dirty) =>
-      Backbone.storageAdapter.getItem(@name + '_destroyed').then (destroyed) =>
+    Backbone.storageAdapter.getItem(@dirtyName).then (dirty) =>
+      Backbone.storageAdapter.getItem(@destroyedName).then (destroyed) =>
         not _.isEmpty(dirty) or not _.isEmpty(destroyed)
 
   # Retrieve a model from `this.data` by id.
