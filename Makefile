@@ -1,7 +1,8 @@
 compile:
-	coffee -c backbone.dualstorage.coffee spec/*.coffee
-	coffee -cbo spec backbone.dualstorage.coffee
-	cat amd.header.js spec/backbone.dualstorage.js amd.footer.js > backbone.dualstorage.amd.js
+	coffee -cj backbone.dualstorage.js backbone.dualstorage.adapters.coffee backbone.dualstorage.coffee
+	coffee -c spec/*.coffee
+	coffee -cbj spec/backbone.dualstorage.js backbone.dualstorage.adapters.coffee backbone.dualstorage.coffee
+	cat amd.header.js backbone.dualstorage.js amd.footer.js > backbone.dualstorage.amd.js
 
 infinite: compile
 	read # (press Enter to recompile)

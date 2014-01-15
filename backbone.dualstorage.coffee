@@ -6,25 +6,8 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
 ###
 
-# Async storage interface.
-# Dummy implementation with LocalStorage for reference.
-class LocalStorageAdapter
-  initialize: ->
-    $.Deferred().resolve
-
-  setItem: (key, value) ->
-    localStorage.setItem key, value
-    $.Deferred().resolve value
-
-  getItem: (key) ->
-    $.Deferred().resolve localStorage.getItem key
-
-  removeItem: (key) ->
-    localStorage.removeItem key
-    $.Deferred().resolve()
-
 # Use LocalStorageAdapter as default adapter.
-Backbone.storageAdapter = new LocalStorageAdapter
+Backbone.storageAdapter = new Backbone.storageAdapters.LocalStorageAdapter
 
 # LocalStorage is not actually async, so we can call initialize here and
 # continue safely. But when using a real async StorageAdapter, you should
@@ -76,6 +59,10 @@ class window.Store
   generateId: ->
     S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4()
 
+  getStorageKey: (model) ->
+    if _.isObject model then model = model.id
+    @name + @sep + model
+
   # Save the current state of the **Store** to *localStorage*.
   save: ->
     Backbone.storageAdapter.setItem @name, @records.join(',')
@@ -112,19 +99,19 @@ class window.Store
     if not model.id
       model.id = @generateId()
       model.set model.idAttribute, model.id
-    Backbone.storageAdapter.setItem(@name + @sep + model.id, JSON.stringify(model)).then =>
+    Backbone.storageAdapter.setItem(@getStorageKey(model), JSON.stringify(model)).then =>
       @records.push model.id.toString()
       @save().then => model
 
   # Update a model by replacing its copy in `this.data`.
   update: (model) ->
-    Backbone.storageAdapter.setItem(@name + @sep + model.id, JSON.stringify(model)).then =>
+    Backbone.storageAdapter.setItem(@getStorageKey(model), JSON.stringify(model)).then =>
       if not _.include(@records, model.id.toString())
         @records.push model.id.toString()
       @save().then => model
 
   clear: ->
-    $.when((Backbone.storageAdapter.removeItem(@name + @sep + id) for id in @records)...).then =>
+    $.when((Backbone.storageAdapter.removeItem(@getStorageKey id) for id in @records)...).then =>
       @records = []
       @save()
 
@@ -135,18 +122,18 @@ class window.Store
 
   # Retrieve a model from `this.data` by id.
   find: (model) ->
-    Backbone.storageAdapter.getItem(@name + @sep + model.id).then (modelAsJson) ->
+    Backbone.storageAdapter.getItem(@getStorageKey(model)).then (modelAsJson) ->
       return null if modelAsJson == null
       JSON.parse modelAsJson
 
   # Return the array of all models currently in storage.
   findAll: ->
-    $.when((Backbone.storageAdapter.getItem(@name + @sep + id) for id in @records)...).then (models...) ->
+    $.when((Backbone.storageAdapter.getItem(@getStorageKey id) for id in @records)...).then (models...) ->
       (JSON.parse(model) for model in models)
 
   # Delete a model from `this.data`, returning it.
   destroy: (model) ->
-    Backbone.storageAdapter.removeItem(@name + @sep + model.id).then =>
+    Backbone.storageAdapter.removeItem(@getStorageKey(model)).then =>
       @records = _.without @records, model.id.toString()
       @save().then -> model
 
