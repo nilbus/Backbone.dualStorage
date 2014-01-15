@@ -3,9 +3,11 @@ Backbone dualStorage Adapter v1.1.0
 
 A simple module to replace `Backbone.sync` with *localStorage*-based
 persistence. Models are given GUIDS, and saved into a JSON object. Simple
-as that.co
+as that.
 ###
 
+# Async storage interface.
+# Dummy implementation with LocalStorage for reference.
 class LocalStorageAdapter
   initialize: ->
     $.Deferred().resolve
@@ -15,14 +17,18 @@ class LocalStorageAdapter
     $.Deferred().resolve value
 
   getItem: (key) ->
-    value = localStorage.getItem key
-    $.Deferred().resolve value
+    $.Deferred().resolve localStorage.getItem key
 
   removeItem: (key) ->
     localStorage.removeItem key
     $.Deferred().resolve()
 
+# Use LocalStorageAdapter as default adapter.
 Backbone.storageAdapter = new LocalStorageAdapter
+
+# LocalStorage is not actually async, so we can call initialize here and
+# continue safely. But when using a real async StorageAdapter, you should
+# wait for initialize() to resolve before trying to do any sync operation.
 Backbone.storageAdapter.initialize()
 
 # Make it easy for collections to sync dirty and destroyed records
@@ -100,7 +106,7 @@ class window.Store
   # Add a model, giving it a unique GUID, if it doesn't already
   # have an id of it's own.
   create: (model) ->
-    if not _.isObject(model) then return $.Deferred().resolve(model)
+    if not _.isObject(model) then return $.Deferred().resolve model
     if not model.id
       model.id = @generateId()
       model.set model.idAttribute, model.id

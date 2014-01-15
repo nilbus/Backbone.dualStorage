@@ -4,7 +4,7 @@ Backbone dualStorage Adapter v1.1.0
 
 A simple module to replace `Backbone.sync` with *localStorage*-based
 persistence. Models are given GUIDS, and saved into a JSON object. Simple
-as that.co
+as that.
 */
 
 
@@ -25,9 +25,7 @@ as that.co
     };
 
     LocalStorageAdapter.prototype.getItem = function(key) {
-      var value;
-      value = localStorage.getItem(key);
-      return $.Deferred().resolve(value);
+      return $.Deferred().resolve(localStorage.getItem(key));
     };
 
     LocalStorageAdapter.prototype.removeItem = function(key) {
