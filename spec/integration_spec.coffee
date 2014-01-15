@@ -1,9 +1,9 @@
-{backboneSync, localsync, dualSync, localStorage} = window
+{backboneSync, localSync, dualSync, localStorage} = window
 {collection, model} = {}
 
 beforeEach ->
   backboneSync.calls = []
-  localsync 'clear', {}, ignoreCallbacks: true, storeName: 'eyes/'
+  localSync 'clear', {}, ignoreCallbacks: true, storeName: 'eyes/'
   collection = new Backbone.Collection
     id: 123
     vision: 'crystal'
@@ -18,7 +18,7 @@ describe 'using Backbone.sync directly', ->
       localStorage.clear()
       successCallback = jasmine.createSpy('success').andCallFake -> saved = true
       errorCallback = jasmine.createSpy('error')
-      dualsync 'create', model, success: successCallback, error: errorCallback
+      dualSync 'create', model, success: successCallback, error: errorCallback
     waitsFor (-> saved), "The success callback for 'create' should have been called", 100
     runs ->
       expect(backboneSync.calls.length).toEqual(1)
@@ -32,7 +32,7 @@ describe 'using Backbone.sync directly', ->
         fetched = true
         expect(resp.vision).toEqual('crystal')
       errorCallback = jasmine.createSpy('error')
-      dualsync 'read', model, success: successCallback, error: errorCallback
+      dualSync 'read', model, success: successCallback, error: errorCallback
     waitsFor (-> fetched), "The success callback for 'read' should have been called", 100
     runs ->
       expect(backboneSync.calls.length).toEqual(2)

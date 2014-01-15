@@ -165,7 +165,7 @@ callbackTranslator =
 
 # Override `Backbone.sync` to use delegate to the model or collection's
 # *localStorage* property, which should be an instance of `Store`.
-localsync = (method, model, options) ->
+localSync = (method, model, options) ->
   isValidModel = (method is 'clear') or (method is 'hasDirtyOrDestroyed')
   isValidModel ||= model instanceof Backbone.Model
   isValidModel ||= model instanceof Backbone.Collection
@@ -250,7 +250,7 @@ onlineSync = (method, model, options) ->
   options.error   = callbackTranslator.forBackboneCaller(options.error)
   backboneSync(method, model, options)
 
-dualsync = (method, model, options) ->
+dualSync = (method, model, options) ->
   options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') ||
                       result(model.collection, 'url')       || result(model, 'urlRoot')   || result(model, 'url')
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
@@ -262,7 +262,7 @@ dualsync = (method, model, options) ->
   # execute only local sync
   local = result(model, 'local') or result(model.collection, 'local')
   options.dirty = options.remote is false and not local
-  return localsync(method, model, options) if options.remote is false or local
+  return localSync(method, model, options) if options.remote is false or local
 
   # execute dual sync
   options.ignoreCallbacks = true
@@ -272,9 +272,9 @@ dualsync = (method, model, options) ->
 
   switch method
     when 'read'
-      localsync('hasDirtyOrDestroyed', model, options).then (hasDirtyOrDestroyed) ->
+      localSync('hasDirtyOrDestroyed', model, options).then (hasDirtyOrDestroyed) ->
         if hasDirtyOrDestroyed
-          success localsync(method, model, options)
+          success localSync(method, model, options)
         else
           options.success = (resp, status, xhr) ->
             resp = parseRemoteResponse(model, resp)
@@ -291,20 +291,20 @@ dualsync = (method, model, options) ->
                   else
                     responseModel = new collection.model(modelAttributes)
                   models.push responseModel
-                $.when((localsync('create', m, options) for m in models)...).then ->
+                $.when((localSync('create', m, options) for m in models)...).then ->
                   success(resp, status, xhr)
               else
                 responseModel = modelUpdatedWithResponse(model, resp)
-                localsync('create', responseModel, options).then ->
+                localSync('create', responseModel, options).then ->
                   success(resp, status, xhr)
 
             if not options.add
-              localsync('clear', model, options).then go
+              localSync('clear', model, options).then go
             else
               go()
 
           options.error = (resp) ->
-            localsync(method, model, options).then (result) ->
+            localSync(method, model, options).then (result) ->
               success result
 
           onlineSync(method, model, options)
@@ -312,11 +312,11 @@ dualsync = (method, model, options) ->
     when 'create'
       options.success = (resp, status, xhr) ->
         updatedModel = modelUpdatedWithResponse model, resp
-        localsync(method, updatedModel, options).then ->
+        localSync(method, updatedModel, options).then ->
           success(resp, status, xhr)
       options.error = (resp) ->
         options.dirty = true
-        localsync(method, model, options).then (result) ->
+        localSync(method, model, options).then (result) ->
           success result
 
       onlineSync(method, model, options)
@@ -328,13 +328,13 @@ dualsync = (method, model, options) ->
         options.success = (resp, status, xhr) ->
           updatedModel = modelUpdatedWithResponse model, resp
           model.set model.idAttribute, temporaryId, silent: true
-          localsync('delete', model, options).then ->
-            localsync('create', updatedModel, options).then ->
+          localSync('delete', model, options).then ->
+            localSync('create', updatedModel, options).then ->
               success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
           model.set model.idAttribute, temporaryId, silent: true
-          localsync(method, model, options).then (result) ->
+          localSync(method, model, options).then (result) ->
             success result
 
         model.set model.idAttribute, null, silent: true
@@ -342,27 +342,27 @@ dualsync = (method, model, options) ->
       else
         options.success = (resp, status, xhr) ->
           updatedModel = modelUpdatedWithResponse model, resp
-          localsync(method, updatedModel, options).then ->
+          localSync(method, updatedModel, options).then ->
             success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
-          localsync(method, model, options).then (result) ->
+          localSync(method, model, options).then (result) ->
             success
 
         onlineSync(method, model, options)
 
     when 'delete'
       if _.isString(model.id) and model.id.length == 36
-        localsync(method, model, options)
+        localSync(method, model, options)
       else
         options.success = (resp, status, xhr) ->
-          localsync(method, model, options).then ->
+          localSync(method, model, options).then ->
             success(resp, status, xhr)
         options.error = (resp) ->
           options.dirty = true
-          localsync(method, model, options).then (result) ->
+          localSync(method, model, options).then (result) ->
             success result
 
         onlineSync(method, model, options)
 
-Backbone.sync = dualsync
+Backbone.sync = dualSync

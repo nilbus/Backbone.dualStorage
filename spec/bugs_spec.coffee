@@ -1,4 +1,4 @@
-{Store, backboneSync, localsync} = window
+{Store, backboneSync, localSync} = window
 
 describe 'bugs, that once fixed, should be moved to the proper spec file and modified to test their inverse', ->
   it 'fails to throw an error when no storeName is provided to the Store constructor,
@@ -12,7 +12,7 @@ describe 'bugs, that once fixed, should be moved to the proper spec file and mod
 
     beforeEach ->
       backboneSync.calls = []
-      localsync 'clear', {}, success: (->), error: (->)
+      localSync 'clear', {}, success: (->), error: (->)
       collection = new Backbone.Collection
       collection.url = 'eyes/'
       model = new Backbone.Model

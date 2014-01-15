@@ -7,7 +7,7 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
 */
 
-var LocalStorageAdapter, S4, backboneSync, callbackTranslator, dualsync, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result,
+var LocalStorageAdapter, S4, backboneSync, callbackTranslator, dualSync, localSync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result,
   __slice = [].slice;
 
 LocalStorageAdapter = (function() {
@@ -309,7 +309,7 @@ callbackTranslator = {
   }
 };
 
-localsync = function(method, model, options) {
+localSync = function(method, model, options) {
   var isValidModel, store,
     _this = this;
   isValidModel = (method === 'clear') || (method === 'hasDirtyOrDestroyed');
@@ -426,7 +426,7 @@ onlineSync = function(method, model, options) {
   return backboneSync(method, model, options);
 };
 
-dualsync = function(method, model, options) {
+dualSync = function(method, model, options) {
   var error, local, success, temporaryId;
   options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') || result(model.collection, 'url') || result(model, 'urlRoot') || result(model, 'url');
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
@@ -437,16 +437,16 @@ dualsync = function(method, model, options) {
   local = result(model, 'local') || result(model.collection, 'local');
   options.dirty = options.remote === false && !local;
   if (options.remote === false || local) {
-    return localsync(method, model, options);
+    return localSync(method, model, options);
   }
   options.ignoreCallbacks = true;
   success = options.success;
   error = options.error;
   switch (method) {
     case 'read':
-      return localsync('hasDirtyOrDestroyed', model, options).then(function(hasDirtyOrDestroyed) {
+      return localSync('hasDirtyOrDestroyed', model, options).then(function(hasDirtyOrDestroyed) {
         if (hasDirtyOrDestroyed) {
-          return success(localsync(method, model, options));
+          return success(localSync(method, model, options));
         } else {
           options.success = function(resp, status, xhr) {
             var go;
@@ -472,7 +472,7 @@ dualsync = function(method, model, options) {
                   _results = [];
                   for (_j = 0, _len1 = models.length; _j < _len1; _j++) {
                     m = models[_j];
-                    _results.push(localsync('create', m, options));
+                    _results.push(localSync('create', m, options));
                   }
                   return _results;
                 })())).then(function() {
@@ -480,19 +480,19 @@ dualsync = function(method, model, options) {
                 });
               } else {
                 responseModel = modelUpdatedWithResponse(model, resp);
-                return localsync('create', responseModel, options).then(function() {
+                return localSync('create', responseModel, options).then(function() {
                   return success(resp, status, xhr);
                 });
               }
             };
             if (!options.add) {
-              return localsync('clear', model, options).then(go);
+              return localSync('clear', model, options).then(go);
             } else {
               return go();
             }
           };
           options.error = function(resp) {
-            return localsync(method, model, options).then(function(result) {
+            return localSync(method, model, options).then(function(result) {
               return success(result);
             });
           };
@@ -503,13 +503,13 @@ dualsync = function(method, model, options) {
       options.success = function(resp, status, xhr) {
         var updatedModel;
         updatedModel = modelUpdatedWithResponse(model, resp);
-        return localsync(method, updatedModel, options).then(function() {
+        return localSync(method, updatedModel, options).then(function() {
           return success(resp, status, xhr);
         });
       };
       options.error = function(resp) {
         options.dirty = true;
-        return localsync(method, model, options).then(function(result) {
+        return localSync(method, model, options).then(function(result) {
           return success(result);
         });
       };
@@ -523,8 +523,8 @@ dualsync = function(method, model, options) {
           model.set(model.idAttribute, temporaryId, {
             silent: true
           });
-          return localsync('delete', model, options).then(function() {
-            return localsync('create', updatedModel, options).then(function() {
+          return localSync('delete', model, options).then(function() {
+            return localSync('create', updatedModel, options).then(function() {
               return success(resp, status, xhr);
             });
           });
@@ -534,7 +534,7 @@ dualsync = function(method, model, options) {
           model.set(model.idAttribute, temporaryId, {
             silent: true
           });
-          return localsync(method, model, options).then(function(result) {
+          return localSync(method, model, options).then(function(result) {
             return success(result);
           });
         };
@@ -546,13 +546,13 @@ dualsync = function(method, model, options) {
         options.success = function(resp, status, xhr) {
           var updatedModel;
           updatedModel = modelUpdatedWithResponse(model, resp);
-          return localsync(method, updatedModel, options).then(function() {
+          return localSync(method, updatedModel, options).then(function() {
             return success(resp, status, xhr);
           });
         };
         options.error = function(resp) {
           options.dirty = true;
-          return localsync(method, model, options).then(function(result) {
+          return localSync(method, model, options).then(function(result) {
             return success;
           });
         };
@@ -561,16 +561,16 @@ dualsync = function(method, model, options) {
       break;
     case 'delete':
       if (_.isString(model.id) && model.id.length === 36) {
-        return localsync(method, model, options);
+        return localSync(method, model, options);
       } else {
         options.success = function(resp, status, xhr) {
-          return localsync(method, model, options).then(function() {
+          return localSync(method, model, options).then(function() {
             return success(resp, status, xhr);
           });
         };
         options.error = function(resp) {
           options.dirty = true;
-          return localsync(method, model, options).then(function(result) {
+          return localSync(method, model, options).then(function(result) {
             return success(result);
           });
         };
@@ -579,4 +579,4 @@ dualsync = function(method, model, options) {
   }
 };
 
-Backbone.sync = dualsync;
+Backbone.sync = dualSync;
