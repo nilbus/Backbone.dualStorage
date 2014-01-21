@@ -18,7 +18,7 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
 */
 
-var S4, backboneSync, callbackTranslator, dualsync, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result;
+var S4, backboneSync, callbackTranslator, dualsync, isLocallyCached, isModelPersisted, localSyncFirst, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, remoteSyncFirst, result;
 
 Backbone.Collection.prototype.syncDirty = function() {
   var id, ids, model, store, storeName, url, _i, _len, _results;
@@ -32,6 +32,9 @@ Backbone.Collection.prototype.syncDirty = function() {
     model = id.length === 36 ? this.findWhere({
       id: id
     }) : this.get(id);
+    if (result(model, 'localFirst') || result(model.collection, 'localFirst')) {
+      model.remoteFirst = true;
+    }
     _results.push(model != null ? model.save() : void 0);
   }
   return _results;
@@ -50,6 +53,9 @@ Backbone.Collection.prototype.syncDestroyed = function() {
       id: id
     });
     model.collection = this;
+    if (result(model, 'localFirst') || result(model.collection, 'localFirst')) {
+      model.remoteFirst = true;
+    }
     _results.push(model.destroy());
   }
   return _results;
@@ -298,6 +304,14 @@ parseRemoteResponse = function(object, response) {
   }
 };
 
+isModelPersisted = function(model) {
+  return !(_.isString(model.id) && model.id.length === 36);
+};
+
+isLocallyCached = function(storeName) {
+  return localStorage.getItem(storeName);
+};
+
 modelUpdatedWithResponse = function(model, response) {
   var modelClone;
   modelClone = new Backbone.Model;
@@ -316,19 +330,38 @@ onlineSync = function(method, model, options) {
 };
 
 dualsync = function(method, model, options) {
-  var error, local, success, temporaryId;
+  var local;
   options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') || result(model.collection, 'url') || result(model, 'urlRoot') || result(model, 'url');
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
   options.error = callbackTranslator.forDualstorageCaller(options.error, model, options);
   if (result(model, 'remote') || result(model.collection, 'remote')) {
     return onlineSync(method, model, options);
   }
+  if ((result(model, 'localFirst') || result(model.collection, 'localFirst')) && !result(model, 'remoteFirst')) {
+    return localSyncFirst(method, model, options);
+  }
   local = result(model, 'local') || result(model.collection, 'local');
   options.dirty = options.remote === false && !local;
   if (options.remote === false || local) {
     return localsync(method, model, options);
   }
+  return remoteSyncFirst(method, model, options);
+};
+
+localSyncFirst = function(method, model, options) {
+  if (!isLocallyCached(options.storeName)) {
+    return remoteSyncFirst(method, model, options);
+  }
+  options.dirty = true;
+  return localsync(method, model, options);
+};
+
+remoteSyncFirst = function(method, model, options) {
+  var error, success, temporaryId;
   options.ignoreCallbacks = true;
+  if (model.remoteFirst != null) {
+    delete model.remoteFirst;
+  }
   success = options.success;
   error = options.error;
   switch (method) {
