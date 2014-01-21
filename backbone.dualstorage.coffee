@@ -16,7 +16,7 @@ Backbone.Collection.prototype.syncDirty = ->
 
   for id in ids
     model = if id.length == 36 then @findWhere(id: id) else @get(id)
-    model.remoteFirst = true if (result(model, 'localFirst') or result(model.collection, 'localFirst'))
+    model.remoteFirst = (result(model, 'localFirst') or result(model.collection, 'localFirst'))
     model?.save()
 
 Backbone.Collection.prototype.syncDestroyed = ->
@@ -28,7 +28,7 @@ Backbone.Collection.prototype.syncDestroyed = ->
   for id in ids
     model = new @model(id: id)
     model.collection = @
-    model.remoteFirst = true if (result(model, 'localFirst') or result(model.collection, 'localFirst'))
+    model.remoteFirst = (result(model, 'localFirst') or result(model.collection, 'localFirst'))
     model.destroy()
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
@@ -241,7 +241,7 @@ dualsync = (method, model, options) ->
                       result(model.collection, 'url')       || result(model, 'urlRoot')   || result(model, 'url')
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
   options.error   = callbackTranslator.forDualstorageCaller(options.error, model, options)
-               
+  
   # execute only online sync
   return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')
 

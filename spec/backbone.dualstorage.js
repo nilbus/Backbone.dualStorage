@@ -21,9 +21,7 @@ Backbone.Collection.prototype.syncDirty = function() {
     model = id.length === 36 ? this.findWhere({
       id: id
     }) : this.get(id);
-    if (result(model, 'localFirst') || result(model.collection, 'localFirst')) {
-      model.remoteFirst = true;
-    }
+    model.remoteFirst = result(model, 'localFirst') || result(model.collection, 'localFirst');
     _results.push(model != null ? model.save() : void 0);
   }
   return _results;
@@ -42,9 +40,7 @@ Backbone.Collection.prototype.syncDestroyed = function() {
       id: id
     });
     model.collection = this;
-    if (result(model, 'localFirst') || result(model.collection, 'localFirst')) {
-      model.remoteFirst = true;
-    }
+    model.remoteFirst = result(model, 'localFirst') || result(model.collection, 'localFirst');
     _results.push(model.destroy());
   }
   return _results;
