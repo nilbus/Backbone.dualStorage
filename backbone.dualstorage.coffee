@@ -259,9 +259,54 @@ dualsync = (method, model, options) ->
   return remoteSyncFirst(method,model,options)
 
 localSyncFirst = (method, model, options) ->
-  if not isLocallyCached(options.storeName) then return remoteSyncFirst(method, model, options)
-  options.dirty = true;
-  return localsync(method, model, options);
+  
+  switch method
+    when 'read'
+      if localsync('hasDirtyOrDestroyed', model, {ignoreCallbacks: true})
+        localSyncFirstOptions.success localsync(method, model, options)
+      else
+        # helper functions
+        storeServerResponse = (resp) ->
+          localsyncOptions = _.clone(options)
+          localsyncOptions.ignoreCallbacks = true
+          resp = parseRemoteResponse(model, resp)
+          localsync('clear', model, localsyncOptions) unless options.add
+          if _.isArray resp
+            collection = model
+            idAttribute = collection.model.prototype.idAttribute
+            for modelAttributes in resp
+              model = collection.get(modelAttributes[idAttribute])
+              if model
+                responseModel = modelUpdatedWithResponse(model, modelAttributes)
+              else
+                responseModel = new collection.model(modelAttributes)
+              localsync('create', responseModel, localsyncOptions)
+          else
+            responseModel = modelUpdatedWithResponse(model, resp)
+            localsync('create', responseModel, localsyncOptions)     
+        onlineSyncSuccess = (resp, status, xhr) ->
+          storeServerResponse resp, status, xhr
+          options.success resp, status, xhr
+        
+        # online sync and then save to local store if no data is locally available
+        return onlineSync method, model, {success: onlineSyncSuccess} unless isLocallyCached options.storeName
+
+        # localsync setup
+        localsyncOptions = _.clone(options)
+        localsyncOptions.dirty = true
+        
+        # localsync callbacks
+        localsyncOptions.success = (resp, status, xhr) ->
+          options.success resp, status, xhr
+          onlineSync method, model, {success: storeServerResponse}
+        localsyncOptions.error = (resp, status, xhr) ->
+          onlineSync method, model, {success: onlineSyncSuccess}
+     
+        # Do the sync
+        localsync(method, model, localsyncOptions)
+  
+    
+      
 
 remoteSyncFirst = (method, model, options) ->
   # execute standard dual sync
