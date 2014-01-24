@@ -270,7 +270,7 @@ localSyncFirst = (method, model, options) ->
           localsyncOptions = _.clone(options)
           localsyncOptions.ignoreCallbacks = true
           resp = parseRemoteResponse(model, resp)
-          localsync('clear', model, localsyncOptions) unless options.add
+          localsync('clear', model, localsyncOptions) # unless options.add
           if _.isArray resp
             collection = model
             idAttribute = collection.model.prototype.idAttribute
@@ -293,12 +293,62 @@ localSyncFirst = (method, model, options) ->
 
         # localsync setup
         localsyncOptions = _.clone(options)
-        localsyncOptions.dirty = true
-        
+
         # localsync callbacks
         localsyncOptions.success = (resp, status, xhr) ->
           options.success resp, status, xhr
           onlineSync method, model, {success: storeServerResponse}
+        localsyncOptions.error = (resp, status, xhr) ->
+          onlineSync method, model, {success: onlineSyncSuccess}
+     
+        # Do the sync
+        localsync(method, model, localsyncOptions)
+
+    when 'create'
+        # helper functions
+        storeServerResponse = (resp) ->
+          localsyncOptions = _.clone(options)
+          localsyncOptions.ignoreCallbacks = true
+          resp = parseRemoteResponse(model, resp)
+          localsync('clear', model, localsyncOptions) unless options.add
+          if _.isArray resp
+            collection = model
+            idAttribute = collection.model.prototype.idAttribute
+            for modelAttributes in resp
+              model = collection.get(modelAttributes[idAttribute])
+              if model
+                responseModel = modelUpdatedWithResponse(model, modelAttributes)
+              else
+                responseModel = new collection.model(modelAttributes)
+              localsync('create', responseModel, localsyncOptions)
+          else
+            responseModel = modelUpdatedWithResponse(model, resp)
+            localsync('create', responseModel, localsyncOptions)     
+        onlineSyncSuccess = (resp, status, xhr) ->
+          storeServerResponse resp, status, xhr
+          options.success resp, status, xhr
+
+        # localsync setup
+        localsyncOptions = _.clone(options)
+        localsyncOptions.dirty = true
+        
+        # store model (if it hasn't been synced to server before) in a closure for eventual deletion
+        originalModel = do (model) -> model
+        storeName = options.storeName
+        originalStoreName = do (storeName) -> 
+          return storeName
+
+        # localsync callbacks
+        localsyncOptions.success = (resp, status, xhr) ->
+          options.success resp, status, xhr
+          onlineSync method, model, {
+            success: (resp, status, xhr) -> 
+              storeServerResponse(resp, status, xhr)
+              localsync('delete', originalModel, {
+                  ignoreCallbacks: true,
+                  storeName: originalStoreName
+                })
+          }
         localsyncOptions.error = (resp, status, xhr) ->
           onlineSync method, model, {success: onlineSyncSuccess}
      
