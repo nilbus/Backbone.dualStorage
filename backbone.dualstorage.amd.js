@@ -41,7 +41,7 @@ Backbone.Collection.prototype.syncDestroyed = function() {
   var id, ids, model, store, storeName, url, _i, _len, _results;
   url = result(this, 'url');
   storeName = result(this, 'storeName');
-  store = localStorage.getItem("" + url + "_destroyed") || localStorage.getItem("" + storeName + "_destroyed");
+  store = localStorage.getItem("" + url + "_destroyed") || (store = localStorage.getItem("" + storeName + "_destroyed"));
   ids = (store && store.split(',')) || [];
   _results = [];
   for (_i = 0, _len = ids.length; _i < _len; _i++) {
