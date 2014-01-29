@@ -14,10 +14,11 @@ Include Backbone.dualStorage after having included Backbone.js:
 Create your models and collections in the usual way.
 Feel free to use Backbone as you usually would; this is a drop-in replacement.
 
-Keep in mind that Backbone.dualStorage really loves your models. By default it will cache everything that passes through Backbone.sync. You can override this behaviour with the booleans ```remote``` or ```local``` on models and collections:
+Keep in mind that Backbone.dualStorage really loves your models. By default it will cache everything that passes through Backbone.sync. The default sync process waits for the remote response before updating localStorage. You can override the default behaviour with the booleans ```remote```,```local``` or ```localFirst``` on models and collections:
 
     SomeCollection = Backbone.Collection.extend({
         remote: true // never cached, dualStorage is bypassed entirely
+        localFirst: true // localStorage is updated first and will return successful immediately. Remote sync will only occur when `syncDirtyAndDestroyed()` is called. 
         local: true  // always fetched and saved only locally, never saves on remote
         local: function() { return trueOrFalse; } // local and remote can also be dynamic
     });

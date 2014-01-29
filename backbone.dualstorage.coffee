@@ -16,6 +16,7 @@ Backbone.Collection.prototype.syncDirty = ->
 
   for id in ids
     model = if id.length == 36 then @findWhere(id: id) else @get(id)
+    model.remoteFirst = true if (result(model, 'localFirst') or result(model.collection, 'localFirst'))
     model?.save()
 
 Backbone.Collection.prototype.syncDestroyed = ->
@@ -27,6 +28,7 @@ Backbone.Collection.prototype.syncDestroyed = ->
   for id in ids
     model = new @model(id: id)
     model.collection = @
+    model.remoteFirst = true if (result(model, 'localFirst') or result(model.collection, 'localFirst'))
     model.destroy()
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
@@ -213,6 +215,14 @@ parseRemoteResponse = (object, response) ->
   if not (object and object.parseBeforeLocalSave) then return response
   if _.isFunction(object.parseBeforeLocalSave) then object.parseBeforeLocalSave(response)
 
+# Right now Backbone.dualStorage infers a model is persisted if
+# it's id length is NOT 36 characters
+isModelPersisted = (model) ->
+  return not (_.isString(model.id) and model.id.length == 36)
+
+isLocallyCached = (storeName) ->
+  return localStorage.getItem(storeName);
+
 modelUpdatedWithResponse = (model, response) ->
   modelClone = new Backbone.Model
   modelClone.idAttribute = model.idAttribute
@@ -231,17 +241,33 @@ dualsync = (method, model, options) ->
                       result(model.collection, 'url')       || result(model, 'urlRoot')   || result(model, 'url')
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
   options.error   = callbackTranslator.forDualstorageCaller(options.error, model, options)
-
+               
   # execute only online sync
   return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')
+
+  # execute localSyncFirst but skip if 'localFirst' has been explicitly set to false
+  # TO DO: This check seems smelly. REFACTOR.
+  #if not (result(model, 'localFirst') == false || result(model.collection, 'localFirst') == false)
+  return localSyncFirst(method, model, options) if (result(model, 'localFirst') or result(model.collection, 'localFirst')) and not result(model, 'remoteFirst')
 
   # execute only local sync
   local = result(model, 'local') or result(model.collection, 'local')
   options.dirty = options.remote is false and not local
   return localsync(method, model, options) if options.remote is false or local
 
-  # execute dual sync
+  # Execute remoteSyncFirst
+  return remoteSyncFirst(method,model,options)
+
+localSyncFirst = (method, model, options) ->
+  if not isLocallyCached(options.storeName) then return remoteSyncFirst(method, model, options)
+  options.dirty = true;
+  return localsync(method, model, options);
+
+remoteSyncFirst = (method, model, options) ->
+  # execute standard dual sync
   options.ignoreCallbacks = true
+
+  delete model.remoteFirst if model.remoteFirst?
 
   success = options.success
   error = options.error
