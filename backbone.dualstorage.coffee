@@ -8,7 +8,7 @@ as that.
 
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
-Backbone.Collection.prototype.syncDirty = ->
+Backbone.Collection.prototype.syncDirty = (callback) ->
   url = result(@, 'url')
   storeName = result(@, 'storeName')
   store = localStorage.getItem "#{url}_dirty" || localStorage.getItem "#{storeName}_dirty"
@@ -16,7 +16,6 @@ Backbone.Collection.prototype.syncDirty = ->
 
   for id in ids
     model = if id.length == 36 then @findWhere(id: id) else @get(id)
-    model.remoteFirst = (result(model, 'localFirst') or result(model.collection, 'localFirst'))
     model?.save()
 
 Backbone.Collection.prototype.syncDestroyed = ->
@@ -28,7 +27,6 @@ Backbone.Collection.prototype.syncDestroyed = ->
   for id in ids
     model = new @model(id: id)
     model.collection = @
-    model.remoteFirst = (result(model, 'localFirst') or result(model.collection, 'localFirst'))
     model.destroy()
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
@@ -150,6 +148,7 @@ callbackTranslator =
 # Override `Backbone.sync` to use delegate to the model or collection's
 # *localStorage* property, which should be an instance of `Store`.
 localsync = (method, model, options) ->
+  console.log "CALL: localsync", method, options
   isValidModel = (method is 'clear') or (method is 'hasDirtyOrDestroyed')
   isValidModel ||= model instanceof Backbone.Model
   isValidModel ||= model instanceof Backbone.Collection
@@ -226,17 +225,20 @@ isLocallyCached = (storeName) ->
 modelUpdatedWithResponse = (model, response) ->
   modelClone = new Backbone.Model
   modelClone.idAttribute = model.idAttribute
+  modelClone.urlRoot = model.collection.url
   modelClone.set model.attributes
   modelClone.set modelClone.parse response
   modelClone
 
 backboneSync = Backbone.sync
 onlineSync = (method, model, options) ->
+  console.log "CALL: onlineSync", method, model.id
   options.success = callbackTranslator.forBackboneCaller(options.success)
   options.error   = callbackTranslator.forBackboneCaller(options.error)
   backboneSync(method, model, options)
 
 dualsync = (method, model, options) ->
+  console.log "CALL: dualsync", method, model.id
   options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') ||
                       result(model.collection, 'url')       || result(model, 'urlRoot')   || result(model, 'url')
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
@@ -248,7 +250,7 @@ dualsync = (method, model, options) ->
   # execute localSyncFirst but skip if 'localFirst' has been explicitly set to false
   # TO DO: This check seems smelly. REFACTOR.
   #if not (result(model, 'localFirst') == false || result(model.collection, 'localFirst') == false)
-  return localSyncFirst(method, model, options) if (result(model, 'localFirst') or result(model.collection, 'localFirst')) and not result(model, 'remoteFirst')
+  return localSyncFirst(method, model, options) if (result(model, 'localFirst') or result(model.collection, 'localFirst'))
 
   # execute only local sync
   local = result(model, 'local') or result(model.collection, 'local')
@@ -259,7 +261,7 @@ dualsync = (method, model, options) ->
   return remoteSyncFirst(method,model,options)
 
 localSyncFirst = (method, model, options) ->
-  
+  console.log "CALL: localSyncFirst", method, model.id
   switch method
     when 'read'
       if localsync('hasDirtyOrDestroyed', model, {ignoreCallbacks: true})
@@ -270,20 +272,25 @@ localSyncFirst = (method, model, options) ->
           localsyncOptions = _.clone(options)
           localsyncOptions.ignoreCallbacks = true
           resp = parseRemoteResponse(model, resp)
-          localsync('clear', model, localsyncOptions) # unless options.add
+          
           if _.isArray resp
             collection = model
             idAttribute = collection.model.prototype.idAttribute
-            for modelAttributes in resp
-              model = collection.get(modelAttributes[idAttribute])
-              if model
-                responseModel = modelUpdatedWithResponse(model, modelAttributes)
-              else
-                responseModel = new collection.model(modelAttributes)
-              localsync('create', responseModel, localsyncOptions)
+
+            # update backbone collection
+            backboneModelMethod = if localsyncOptions.reset then 'reset' else 'set'
+            collection[backboneModelMethod](resp, options);
+
+            localsync('clear', model, localsyncOptions)
+            for model in collection.models
+              localsync 'create', model, localsyncOptions
           else
-            responseModel = modelUpdatedWithResponse(model, resp)
-            localsync('create', responseModel, localsyncOptions)     
+            model[backboneModelMethod](resp, options)
+            localsync('clear', model, localsyncOptions)
+            localsync 'create', model, localsyncOptions
+
+          model.trigger('sync', model, resp, options);
+
         onlineSyncSuccess = (resp, status, xhr) ->
           storeServerResponse resp, status, xhr
           options.success resp, status, xhr
@@ -297,72 +304,153 @@ localSyncFirst = (method, model, options) ->
         # localsync callbacks
         localsyncOptions.success = (resp, status, xhr) ->
           options.success resp, status, xhr
-          onlineSync method, model, {success: storeServerResponse}
+          onlineSync method, model, success: storeServerResponse
+          #onlineSync method, model, success: options.success
         localsyncOptions.error = (resp, status, xhr) ->
-          onlineSync method, model, {success: onlineSyncSuccess}
+          onlineSync method, model, success: onlineSyncSuccess
      
         # Do the sync
         localsync(method, model, localsyncOptions)
 
     when 'create'
-        # helper functions
-        storeServerResponse = (resp) ->
-          localsyncOptions = _.clone(options)
-          localsyncOptions.ignoreCallbacks = true
-          resp = parseRemoteResponse(model, resp)
-          localsync('clear', model, localsyncOptions) unless options.add
-          if _.isArray resp
-            collection = model
-            idAttribute = collection.model.prototype.idAttribute
-            for modelAttributes in resp
-              model = collection.get(modelAttributes[idAttribute])
-              if model
-                responseModel = modelUpdatedWithResponse(model, modelAttributes)
-              else
-                responseModel = new collection.model(modelAttributes)
-              localsync('create', responseModel, localsyncOptions)
-          else
-            responseModel = modelUpdatedWithResponse(model, resp)
-            localsync('create', responseModel, localsyncOptions)     
-        onlineSyncSuccess = (resp, status, xhr) ->
-          storeServerResponse resp, status, xhr
-          options.success resp, status, xhr
-
-        # localsync setup
+      # helper functions
+      storeServerResponse = (resp, status, xhr) ->
         localsyncOptions = _.clone(options)
-        localsyncOptions.dirty = true
+        localsyncOptions.ignoreCallbacks = true
         
-        # store model (if it hasn't been synced to server before) in a closure for eventual deletion
-        originalModel = do (model) -> model
-        storeName = options.storeName
-        originalStoreName = do (storeName) -> 
-          return storeName
+        # delete the old model
+        localsync('delete', model, localsyncOptions) 
+        
+        # parse the response
+        resp = parseRemoteResponse(model, resp)
+        
+        # refresh the model with the response
+        options.success(resp)
 
+        # save the new model to the local store
+        localsync(method, model, localsyncOptions)
+
+      onlineSyncSuccess = (resp, status, xhr) ->
+        storeServerResponse resp, status, xhr
+        options.success resp, status, xhr
+
+      # localsync setup
+      localsyncOptions = _.clone(options)
+      localsyncOptions.dirty = true
+
+      # localsync callbacks
+      localsyncOptions.success = (resp, status, xhr) ->
+        options.success resp, status, xhr
+        # make sure the original model doesn't have an id set to make #isNew() true.
+        modelToSend = modelUpdatedWithResponse model, resp
+        modelToSend.set model.idAttribute, null, silent: true
+        
+        onlineSync method, modelToSend, success: storeServerResponse
+      localsyncOptions.error = (resp, status, xhr) ->
+        onlineSync method, model, {success: onlineSyncSuccess}
+   
+      # Do the sync
+      localsync(method, model, localsyncOptions)
+    
+    when 'update'
+      # helper functions
+      storeServerResponseAndUpdateModel = (resp) ->
+        localsyncOptions = _.clone(options)
+        localsyncOptions.ignoreCallbacks = true
+        
+        # delete the old model
+        localsync('delete', model, localsyncOptions) if deleteLocal
+
+        # parse the response
+        resp = parseRemoteResponse(model, resp)
+        
+        # refresh the model with the response
+        options.success(resp)
+
+        # save the new model to the local store
+        localsync(method, model, localsyncOptions)
+
+      onlineSyncSuccess = (resp, status, xhr) ->
+        storeServerResponseAndUpdateModel resp, status, xhr
+        options.success resp, status, xhr
+
+      # localsync setup
+      localsyncOptions = _.clone(options)
+      localsyncOptions.dirty = true
+      deleteLocal = false;
+
+      if isModelPersisted(model)
+      
         # localsync callbacks
         localsyncOptions.success = (resp, status, xhr) ->
           options.success resp, status, xhr
-          onlineSync method, model, {
-            success: (resp, status, xhr) -> 
-              storeServerResponse(resp, status, xhr)
-              localsync('delete', originalModel, {
-                  ignoreCallbacks: true,
-                  storeName: originalStoreName
-                })
-          }
+          onlineSync method, model, success: storeServerResponseAndUpdateModel
         localsyncOptions.error = (resp, status, xhr) ->
-          onlineSync method, model, {success: onlineSyncSuccess}
-     
-        # Do the sync
-        localsync(method, model, localsyncOptions)
-  
-    
+          onlineSync method, model, success: onlineSyncSuccess
       
+      else # Model is not persisted on server
+      
+        # localsync callbacks
+        localsyncOptions.success = (resp, status, xhr) ->
+          options.success resp, status, xhr
+          
+          # make sure that the temp model is deleted from the local store
+          deleteLocal = true;
+
+          # make sure the original model doesn't have an id set to make #isNew() true.
+          modelToSend = modelUpdatedWithResponse model, resp
+          modelToSend.set model.idAttribute, null, silent: true
+          
+          onlineSync method, modelToSend, success: storeServerResponseAndUpdateModel
+        localsyncOptions.error = (resp, status, xhr) ->
+          onlineSync method, model, success: onlineSyncSuccess
+      
+      # Do the sync
+      localsync(method, model, localsyncOptions)
+
+    when 'delete'
+      
+      # helper functions
+      storeServerResponse = (resp) ->
+        localsyncOptions = _.clone(options)
+        localsyncOptions.ignoreCallbacks = true
+        localsyncOptions.dirty = false
+        localsync('delete', model, localsyncOptions)     
+      onlineSyncSuccess = (resp, status, xhr) ->
+        storeServerResponse resp, status, xhr
+        options.success resp, status, xhr
+
+      # localsync setup
+      localsyncOptions = _.clone(options)
+      localsyncOptions.dirty = true
+
+      if isModelPersisted(model)
+      
+        # localsync callbacks
+        localsyncOptions.success = (resp, status, xhr) ->
+          options.success resp, status, xhr
+          onlineSync method, model, success: storeServerResponse
+        localsyncOptions.error = (resp, status, xhr) ->
+          onlineSync method, model, success: onlineSyncSuccess
+      
+      else # Model is not persisted on server
+      
+        # localsync callbacks
+        localsyncOptions.success = (resp, status, xhr) ->
+          options.success resp, status, xhr
+          localsync method, model, ignoreCallbacks:true
+        localsyncOptions.error = (resp, status, xhr) ->
+          message = "Backbone.dualStorage: localSyncFirst DELETE failed."
+          console.error message
+          options.error message: message
+
+       # Do the sync
+      localsync(method, model, localsyncOptions)
 
 remoteSyncFirst = (method, model, options) ->
+  console.log "CALL: remoteSyncFirst", method, model.id
   # execute standard dual sync
   options.ignoreCallbacks = true
-
-  delete model.remoteFirst if model.remoteFirst?
 
   success = options.success
   error = options.error
