@@ -11,8 +11,12 @@ as that.
 (function() {
   var S4, backboneSync, callbackTranslator, dualsync, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result;
 
+  Backbone.Model.prototype.hasTempId = function() {
+    return _.isString(this.id) && this.id.length === 36;
+  };
+
   Backbone.Collection.prototype.syncDirty = function() {
-    var id, ids, model, store, storeName, url, _i, _len, _results;
+    var id, ids, store, storeName, url, _i, _len, _ref, _results;
     url = result(this, 'url');
     storeName = result(this, 'storeName');
     store = localStorage.getItem("" + url + "_dirty") || localStorage.getItem("" + storeName + "_dirty");
@@ -20,10 +24,7 @@ as that.
     _results = [];
     for (_i = 0, _len = ids.length; _i < _len; _i++) {
       id = ids[_i];
-      model = id.length === 36 ? this.findWhere({
-        id: id
-      }) : this.get(id);
-      _results.push(model != null ? model.save() : void 0);
+      _results.push((_ref = this.get(id)) != null ? _ref.save() : void 0);
     }
     return _results;
   };
@@ -371,7 +372,7 @@ as that.
         };
         return onlineSync(method, model, options);
       case 'update':
-        if (_.isString(model.id) && model.id.length === 36) {
+        if (model.hasTempId()) {
           temporaryId = model.id;
           options.success = function(resp, status, xhr) {
             var updatedModel;
@@ -409,7 +410,7 @@ as that.
         }
         break;
       case 'delete':
-        if (_.isString(model.id) && model.id.length === 36) {
+        if (model.hasTempId()) {
           return localsync(method, model, options);
         } else {
           options.success = function(resp, status, xhr) {
