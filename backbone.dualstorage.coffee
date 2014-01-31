@@ -9,21 +9,22 @@ as that.
 Backbone.Model.prototype.hasTempId = ->
   _.isString(@id) and @id.length is 36
 
+getStoreName = (collection, model) ->
+  model ||= collection.model.prototype
+  result(collection, 'storeName') || result(model, 'storeName') ||
+  result(collection, 'url')       || result(model, 'urlRoot')   || result(model, 'url')
+
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
 Backbone.Collection.prototype.syncDirty = ->
-  url = result(@, 'url')
-  storeName = result(@, 'storeName')
-  store = localStorage.getItem("#{url}_dirty") || localStorage.getItem("#{storeName}_dirty")
+  store = localStorage.getItem("#{getStoreName(@)}_dirty")
   ids = (store and store.split(',')) or []
 
   for id in ids
     @get(id)?.save()
 
 Backbone.Collection.prototype.syncDestroyed = ->
-  url = result(@, 'url')
-  storeName = result(@, 'storeName')
-  store = localStorage.getItem("#{url}_destroyed") || store = localStorage.getItem("#{storeName}_destroyed")
+  store = localStorage.getItem("#{getStoreName(@)}_destroyed")
   ids = (store and store.split(',')) or []
 
   for id in ids
@@ -229,8 +230,7 @@ onlineSync = (method, model, options) ->
   backboneSync(method, model, options)
 
 dualsync = (method, model, options) ->
-  options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') ||
-                      result(model.collection, 'url')       || result(model, 'urlRoot')   || result(model, 'url')
+  options.storeName = getStoreName(model.collection, model)
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
   options.error   = callbackTranslator.forDualstorageCaller(options.error, model, options)
 

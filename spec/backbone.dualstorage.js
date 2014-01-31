@@ -7,17 +7,20 @@ A simple module to replace `Backbone.sync` with *localStorage*-based
 persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
  */
-var S4, backboneSync, callbackTranslator, dualsync, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result;
+var S4, backboneSync, callbackTranslator, dualsync, getStoreName, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result;
 
 Backbone.Model.prototype.hasTempId = function() {
   return _.isString(this.id) && this.id.length === 36;
 };
 
+getStoreName = function(collection, model) {
+  model || (model = collection.model.prototype);
+  return result(collection, 'storeName') || result(model, 'storeName') || result(collection, 'url') || result(model, 'urlRoot') || result(model, 'url');
+};
+
 Backbone.Collection.prototype.syncDirty = function() {
-  var id, ids, store, storeName, url, _i, _len, _ref, _results;
-  url = result(this, 'url');
-  storeName = result(this, 'storeName');
-  store = localStorage.getItem("" + url + "_dirty") || localStorage.getItem("" + storeName + "_dirty");
+  var id, ids, store, _i, _len, _ref, _results;
+  store = localStorage.getItem("" + (getStoreName(this)) + "_dirty");
   ids = (store && store.split(',')) || [];
   _results = [];
   for (_i = 0, _len = ids.length; _i < _len; _i++) {
@@ -28,10 +31,8 @@ Backbone.Collection.prototype.syncDirty = function() {
 };
 
 Backbone.Collection.prototype.syncDestroyed = function() {
-  var id, ids, model, store, storeName, url, _i, _len, _results;
-  url = result(this, 'url');
-  storeName = result(this, 'storeName');
-  store = localStorage.getItem("" + url + "_destroyed") || (store = localStorage.getItem("" + storeName + "_destroyed"));
+  var id, ids, model, store, _i, _len, _results;
+  store = localStorage.getItem("" + (getStoreName(this)) + "_destroyed");
   ids = (store && store.split(',')) || [];
   _results = [];
   for (_i = 0, _len = ids.length; _i < _len; _i++) {
@@ -307,7 +308,7 @@ onlineSync = function(method, model, options) {
 
 dualsync = function(method, model, options) {
   var error, local, success, temporaryId;
-  options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') || result(model.collection, 'url') || result(model, 'urlRoot') || result(model, 'url');
+  options.storeName = getStoreName(model.collection, model);
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
   options.error = callbackTranslator.forDualstorageCaller(options.error, model, options);
   if (result(model, 'remote') || result(model.collection, 'remote')) {
