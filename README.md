@@ -1,4 +1,4 @@
-Backbone dualStorage Adapter v1.1.0
+Backbone dualStorage Adapter v1.2.0
 ===================================
 
 A dualStorage adapter for Backbone. It's a drop-in replacement for Backbone.Sync() to handle saving to a localStorage database as a cache for the remote models.
