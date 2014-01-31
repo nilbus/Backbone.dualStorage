@@ -16,15 +16,19 @@
     collection = {}.collection;
     beforeEach(function() {
       localStorage.clear();
-      localStorage.setItem('cats', '2,3,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff');
+      localStorage.setItem('cats', '1,2,3,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff');
       localStorage.setItem('cats_dirty', '2,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff');
       localStorage.setItem('cats_destroyed', '3');
+      localStorage.setItem('cats1', '{"id": "1", "color": "translucent"}');
       localStorage.setItem('cats2', '{"id": "2", "color": "auburn"}');
       localStorage.setItem('cats3', '{"id": "3", "color": "burgundy"}');
       localStorage.setItem('catsa', '{"id": "a", "color": "scarlet"}');
       localStorage.setItem('catsnew', '{"id": "deadbeef-c03d-f00d-aced-dec0ded4b1ff", "color": "pearl"}');
       collection = new Backbone.Collection([
         {
+          id: 1,
+          color: 'translucent'
+        }, {
           id: 2,
           color: 'auburn'
         }, {
@@ -67,7 +71,7 @@
         return collection.syncDirty();
       });
     });
-    return describe('syncDestroyed', function() {
+    describe('syncDestroyed', function() {
       it('finds all models marked as destroyed and destroys them', function() {
         var destroy;
         destroy = spyOn(collection.get(3), 'destroy');
@@ -77,6 +81,18 @@
       return it('works when there are no destroyed records', function() {
         localStorage.setItem('cats_destroyed', '');
         return collection.syncDestroyed();
+      });
+    });
+    describe('dirtyModels', function() {
+      return it('returns the model instances that are dirty', function() {
+        return expect(collection.dirtyModels().map(function(model) {
+          return model.id;
+        })).toEqual([2, 'a', 'deadbeef-c03d-f00d-aced-dec0ded4b1ff']);
+      });
+    });
+    return describe('destoyedModelsIds', function() {
+      return it('returns the ids of models that have been destroyed locally but not synced', function() {
+        return expect(collection.destroyedModelIds()).toEqual(['3']);
       });
     });
   });

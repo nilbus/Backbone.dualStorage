@@ -1,5 +1,6 @@
 ### master / unreleased
 
+* Add dirty/destroyed querying via `Collection.dirtyModels` and `Collection.destroyedModelIds`
 * Allow the default url-based storeName to be overriden with a `storeName` property on the model or collection
 * Use `model.urlRoot` as the storeName, when available, before `model.url`.
   This fixes the issue described in #80 where models with the same `urlRoot`

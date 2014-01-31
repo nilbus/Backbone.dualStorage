@@ -41,6 +41,22 @@ Backbone.Collection.prototype.syncDirty = function() {
   return _results;
 };
 
+Backbone.Collection.prototype.dirtyModels = function() {
+  var id, ids, models, store;
+  store = localStorage.getItem("" + (getStoreName(this)) + "_dirty");
+  ids = (store && store.split(',')) || [];
+  models = (function() {
+    var _i, _len, _results;
+    _results = [];
+    for (_i = 0, _len = ids.length; _i < _len; _i++) {
+      id = ids[_i];
+      _results.push(this.get(id));
+    }
+    return _results;
+  }).call(this);
+  return _(models).compact();
+};
+
 Backbone.Collection.prototype.syncDestroyed = function() {
   var id, ids, model, store, _i, _len, _results;
   store = localStorage.getItem("" + (getStoreName(this)) + "_destroyed");
@@ -55,6 +71,12 @@ Backbone.Collection.prototype.syncDestroyed = function() {
     _results.push(model.destroy());
   }
   return _results;
+};
+
+Backbone.Collection.prototype.destroyedModelIds = function() {
+  var ids, store;
+  store = localStorage.getItem("" + (getStoreName(this)) + "_destroyed");
+  return ids = (store && store.split(',')) || [];
 };
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = function() {

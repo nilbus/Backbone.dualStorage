@@ -23,6 +23,14 @@ Backbone.Collection.prototype.syncDirty = ->
   for id in ids
     @get(id)?.save()
 
+Backbone.Collection.prototype.dirtyModels = ->
+  store = localStorage.getItem("#{getStoreName(@)}_dirty")
+  ids = (store and store.split(',')) or []
+  models = for id in ids
+    @get(id)
+
+  _(models).compact()
+
 Backbone.Collection.prototype.syncDestroyed = ->
   store = localStorage.getItem("#{getStoreName(@)}_destroyed")
   ids = (store and store.split(',')) or []
@@ -31,6 +39,11 @@ Backbone.Collection.prototype.syncDestroyed = ->
     model = new @model(id: id)
     model.collection = @
     model.destroy()
+
+Backbone.Collection.prototype.destroyedModelIds = ->
+  store = localStorage.getItem("#{getStoreName(@)}_destroyed")
+
+  ids = (store and store.split(',')) or []
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
   @syncDirty()
