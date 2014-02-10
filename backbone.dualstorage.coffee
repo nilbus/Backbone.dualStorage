@@ -409,7 +409,10 @@ localSyncFirst = (method, model, options) ->
       localsync(method, model, localsyncOptions)
 
     when 'delete'
-      
+    
+      # Cache the model's urlRoot computed from collection as the model will not be a part of the collection during online sync.
+      url = model.url()
+
       # helper functions
       storeServerResponse = (resp) ->
         localsyncOptions = _.clone(options)
@@ -423,6 +426,8 @@ localSyncFirst = (method, model, options) ->
       # localsync setup
       localsyncOptions = _.clone(options)
       localsyncOptions.dirty = true
+
+      model.url = url;
 
       if isModelPersisted(model)
       
@@ -438,14 +443,14 @@ localSyncFirst = (method, model, options) ->
         # localsync callbacks
         localsyncOptions.success = (resp, status, xhr) ->
           options.success resp, status, xhr
-          localsync method, model, ignoreCallbacks:true
         localsyncOptions.error = (resp, status, xhr) ->
           message = "Backbone.dualStorage: localSyncFirst DELETE failed."
           console.error message
           options.error message: message
 
-       # Do the sync
-      localsync(method, model, localsyncOptions)
+      # Do the sync
+      _.defer localsync, method, model, localsyncOptions
+      
 
 remoteSyncFirst = (method, model, options) ->
   console.log "CALL: remoteSyncFirst", method, model.id
