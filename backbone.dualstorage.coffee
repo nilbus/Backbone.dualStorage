@@ -287,8 +287,8 @@ localSyncFirst = (method, model, options) ->
   console.log "CALL: localSyncFirst", method, model.id
   switch method
     when 'read'
-      if localsync('hasDirtyOrDestroyed', model, {ignoreCallbacks: true})
-        localSyncFirstOptions.success localsync(method, model, options)
+      if localsync('hasDirtyOrDestroyed', model, {ignoreCallbacks: true, storeName: options.storeName})
+        options.success localsync(method, model, options)
       else
         # helper functions
         storeServerResponse = (resp) ->
