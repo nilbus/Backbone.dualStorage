@@ -302,9 +302,23 @@ localSyncFirst = (method, model, options) ->
 
             # update backbone collection
             backboneModelMethod = if localsyncOptions.reset then 'reset' else 'set'
-            collection[backboneModelMethod](resp, options);
 
-            localsync('clear', model, localsyncOptions)
+            # remove persisted models from collection if they are not present in the response
+            _.each(collection.models, (element, index, list) ->
+              # if model in collection is persisted
+              if isModelPersisted(element)
+                # and it's not in the response
+                if not _.findWhere resp, {id: element.get('id')}
+                  # then remove it from the collection
+                  list.remove element
+            )
+
+            # update the collection with new models but don't remove models (done above)
+            setOpts = _.clone(options)
+            setOpts.remove = false
+            collection[backboneModelMethod](resp, setOpts);
+
+            localsync('clear', collection, localsyncOptions)
             for model in collection.models
               localsync 'create', model, localsyncOptions
           else
@@ -312,11 +326,13 @@ localSyncFirst = (method, model, options) ->
             localsync('clear', model, localsyncOptions)
             localsync 'create', model, localsyncOptions
 
-          model.trigger('sync', model, resp, options);
+          updatedResp = JSON.parse(JSON.stringify(collection.models))
+          model.trigger('sync', model, updatedResp, options);
+          updatedResp
 
         onlineSyncSuccess = (resp, status, xhr) ->
-          storeServerResponse resp, status, xhr
-          options.success resp, status, xhr
+          updatedResp = storeServerResponse resp, status, xhr
+          options.success updatedResp, status, xhr
         
         # online sync and then save to local store if no data is locally available
         if not isLocallyCached options.storeName
