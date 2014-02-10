@@ -9,6 +9,7 @@ as that.
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
 Backbone.Collection.prototype.syncDirty = (callback) ->
+  if onlineSyncQueue.isSyncInProgress() then return
   url = result(@, 'url')
   storeName = result(@, 'storeName')
   store = localStorage.getItem "#{url}_dirty" || localStorage.getItem "#{storeName}_dirty"
@@ -19,6 +20,7 @@ Backbone.Collection.prototype.syncDirty = (callback) ->
     model?.save()
 
 Backbone.Collection.prototype.syncDestroyed = ->
+  if onlineSyncQueue.isSyncInProgress() then return
   url = result(@, 'url')
   storeName = result(@, 'storeName')
   store = localStorage.getItem "#{url}_destroyed" || store = localStorage.getItem "#{storeName}_destroyed"
@@ -148,25 +150,38 @@ callbackTranslator =
 # onlineSyncQueue
 onlineSyncQueue = do ->
   tasks = []
-  syncInProgress = false
+  currentTask = null
   reset = ->
     tasks = []
-    syncInProgress = false
+    currentTask = null
   sync = ->
-    nextTask = tasks.shift()
-    if nextTask # we have another task in the queue
-      syncInProgress = true
-      nextTask()
+    currentTask = tasks.shift()
+    if currentTask # we have another task in the queue
+      currentTask.promise = currentTask.task()
+      currentTask.promise
         .done(-> sync())
         .fail(-> reset())
     else # no tasks in the queue
       reset()
+  removeReadTasks = ->
+    tasks = _.reject tasks, ((task) -> task.method is 'read')
+    if currentTask? and (currentTask.method is 'read') then currentTask.promise.abort()  
   
   queue = 
+    isSyncInProgress: -> currentTask?
     length: -> tasks.length
-    push: (task) ->
-      tasks.push(task)
-      sync() unless syncInProgress
+    push: (task, method) ->
+      # remove all previous 'read' tasks to avoid race conditions or out-of-date 'read's
+      removeReadTasks()    
+
+      tasks.push 
+        task: task
+        method: method
+
+      sync() unless @isSyncInProgress()
+
+getOnlineSyncFunc = (method, model, successCallback) ->
+  -> onlineSync method, model, success: successCallback
 
 # Override `Backbone.sync` to use delegate to the model or collection's
 # *localStorage* property, which should be an instance of `Store`.
@@ -288,7 +303,7 @@ localSyncFirst = (method, model, options) ->
   switch method
     when 'read'
       if localsync('hasDirtyOrDestroyed', model, {ignoreCallbacks: true, storeName: options.storeName})
-        options.success localsync(method, model, options)
+        localsync(method, model, options)
       else
         # helper functions
         storeServerResponse = (resp) ->
@@ -303,14 +318,23 @@ localSyncFirst = (method, model, options) ->
             # update backbone collection
             backboneModelMethod = if localsyncOptions.reset then 'reset' else 'set'
 
-            # remove persisted models from collection if they are not present in the response
+            # get persisted models in collection if they are not present in the response
+            modelsToRemove = []
             _.each(collection.models, (element, index, list) ->
               # if model in collection is persisted
               if isModelPersisted(element)
                 # and it's not in the response
                 if not _.findWhere resp, {id: element.get('id')}
-                  # then remove it from the collection
-                  list.remove element
+                  modelsToRemove.push(element)
+            )
+
+            # then remove it from the collection and local store
+            _.each(modelsToRemove, (element) ->
+              localsync 'delete', element, {
+                storeName: options.storeName,
+                ignoreCallbacks: true
+              }
+              collection.remove element
             )
 
             # update the collection with new models but don't remove models (done above)
@@ -336,22 +360,19 @@ localSyncFirst = (method, model, options) ->
         
         # online sync and then save to local store if no data is locally available
         if not isLocallyCached options.storeName
-          return onlineSyncQueue.push do (method, model) -> 
-            -> onlineSync method, model, success: onlineSyncSuccess
+          return onlineSyncQueue.push getOnlineSyncFunc(method, model, onlineSyncSuccess), method
         
-
         # localsync setup
         localsyncOptions = _.clone(options)
 
         # localsync callbacks
         localsyncOptions.success = (resp, status, xhr) ->
           options.success resp, status, xhr
-          onlineSyncQueue.push do (method, model) -> 
-            -> onlineSync method, model, success: storeServerResponse
+          onlineSyncQueue.push getOnlineSyncFunc(method, model, storeServerResponse), method
+            
         
         localsyncOptions.error = (resp, status, xhr) ->
-          onlineSyncQueue.push do (method, model) -> 
-            -> onlineSync method, model, success: onlineSyncSuccess
+          onlineSyncQueue.push getOnlineSyncFunc(method, model, onlineSyncSuccess), method
      
         # Do the sync
         localsync(method, model, localsyncOptions)
@@ -389,12 +410,10 @@ localSyncFirst = (method, model, options) ->
         modelToSend = modelUpdatedWithResponse model, resp
         modelToSend.set model.idAttribute, null, silent: true
         
-        onlineSyncQueue.push do (method, model) -> 
-          -> onlineSync method, modelToSend, success: storeServerResponse
+        onlineSyncQueue.push getOnlineSyncFunc(method, modelToSend, storeServerResponse), method
       localsyncOptions.error = (resp, status, xhr) ->
-        onlineSyncQueue.push do (method, model) -> 
-          -> onlineSync method, model, success: onlineSyncSuccess
-   
+        onlineSyncQueue.push getOnlineSyncFunc(method, model, onlineSyncSuccess), method
+        
       # Do the sync
       localsync(method, model, localsyncOptions)
     
@@ -430,11 +449,9 @@ localSyncFirst = (method, model, options) ->
         # localsync callbacks
         localsyncOptions.success = (resp, status, xhr) ->
           options.success resp, status, xhr
-          onlineSyncQueue.push do (method, model) -> 
-            -> onlineSync method, model, success: storeServerResponseAndUpdateModel
+          onlineSyncQueue.push getOnlineSyncFunc(method, model, storeServerResponseAndUpdateModel), method
         localsyncOptions.error = (resp, status, xhr) ->
-          onlineSyncQueue.push do (method, model) -> 
-            -> onlineSync method, model, success: onlineSyncSuccess
+          onlineSyncQueue.push getOnlineSyncFunc(method, model, onlineSyncSuccess), method
       
       else # Model is not persisted on server
       
@@ -449,11 +466,9 @@ localSyncFirst = (method, model, options) ->
           modelToSend = modelUpdatedWithResponse model, resp
           modelToSend.set model.idAttribute, null, silent: true
           
-          onlineSyncQueue.push do (method, model) -> 
-            -> onlineSync method, modelToSend, success: storeServerResponseAndUpdateModel
+          onlineSyncQueue.push getOnlineSyncFunc('create', modelToSend, storeServerResponseAndUpdateModel), method
         localsyncOptions.error = (resp, status, xhr) ->
-          onlineSyncQueue.push do (method, model) -> 
-            -> onlineSync method, model, success: onlineSyncSuccess
+          onlineSyncQueue.push getOnlineSyncFunc(method, model, onlineSyncSuccess), method
       
       # Do the sync
       localsync(method, model, localsyncOptions)
@@ -484,11 +499,9 @@ localSyncFirst = (method, model, options) ->
         # localsync callbacks
         localsyncOptions.success = (resp, status, xhr) ->
           options.success resp, status, xhr
-          onlineSyncQueue.push do (method, model) -> 
-            -> onlineSync method, model, success: storeServerResponse
+          onlineSyncQueue.push getOnlineSyncFunc(method, model, storeServerResponse), method
         localsyncOptions.error = (resp, status, xhr) ->
-          onlineSyncQueue.push do (method, model) -> 
-            -> onlineSync method, model, success: onlineSyncSuccess
+          onlineSyncQueue.push getOnlineSyncFunc(method, model, onlineSyncSuccess), method
       
       else # Model is not persisted on server
       
