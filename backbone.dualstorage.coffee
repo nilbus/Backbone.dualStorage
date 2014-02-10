@@ -145,6 +145,29 @@ callbackTranslator =
     else
       callback
 
+# onlineSyncQueue
+onlineSyncQueue = do ->
+  tasks = []
+  syncInProgress = false
+  reset = ->
+    tasks = []
+    syncInProgress = false
+  sync = ->
+    nextTask = tasks.shift()
+    if nextTask # we have another task in the queue
+      syncInProgress = true
+      nextTask()
+        .done(-> sync())
+        .fail(-> reset())
+    else # no tasks in the queue
+      reset()
+  
+  queue = 
+    length: -> tasks.length
+    push: (task) ->
+      tasks.push(task)
+      sync() unless syncInProgress
+
 # Override `Backbone.sync` to use delegate to the model or collection's
 # *localStorage* property, which should be an instance of `Store`.
 localsync = (method, model, options) ->
@@ -296,7 +319,10 @@ localSyncFirst = (method, model, options) ->
           options.success resp, status, xhr
         
         # online sync and then save to local store if no data is locally available
-        return onlineSync method, model, {success: onlineSyncSuccess} unless isLocallyCached options.storeName
+        if not isLocallyCached options.storeName
+          return onlineSyncQueue.push do (method, model) -> 
+            -> onlineSync method, model, success: onlineSyncSuccess
+        
 
         # localsync setup
         localsyncOptions = _.clone(options)
@@ -304,10 +330,12 @@ localSyncFirst = (method, model, options) ->
         # localsync callbacks
         localsyncOptions.success = (resp, status, xhr) ->
           options.success resp, status, xhr
-          onlineSync method, model, success: storeServerResponse
-          #onlineSync method, model, success: options.success
+          onlineSyncQueue.push do (method, model) -> 
+            -> onlineSync method, model, success: storeServerResponse
+        
         localsyncOptions.error = (resp, status, xhr) ->
-          onlineSync method, model, success: onlineSyncSuccess
+          onlineSyncQueue.push do (method, model) -> 
+            -> onlineSync method, model, success: onlineSyncSuccess
      
         # Do the sync
         localsync(method, model, localsyncOptions)
@@ -345,9 +373,11 @@ localSyncFirst = (method, model, options) ->
         modelToSend = modelUpdatedWithResponse model, resp
         modelToSend.set model.idAttribute, null, silent: true
         
-        onlineSync method, modelToSend, success: storeServerResponse
+        onlineSyncQueue.push do (method, model) -> 
+          -> onlineSync method, modelToSend, success: storeServerResponse
       localsyncOptions.error = (resp, status, xhr) ->
-        onlineSync method, model, {success: onlineSyncSuccess}
+        onlineSyncQueue.push do (method, model) -> 
+          -> onlineSync method, model, success: onlineSyncSuccess
    
       # Do the sync
       localsync(method, model, localsyncOptions)
@@ -384,9 +414,11 @@ localSyncFirst = (method, model, options) ->
         # localsync callbacks
         localsyncOptions.success = (resp, status, xhr) ->
           options.success resp, status, xhr
-          onlineSync method, model, success: storeServerResponseAndUpdateModel
+          onlineSyncQueue.push do (method, model) -> 
+            -> onlineSync method, model, success: storeServerResponseAndUpdateModel
         localsyncOptions.error = (resp, status, xhr) ->
-          onlineSync method, model, success: onlineSyncSuccess
+          onlineSyncQueue.push do (method, model) -> 
+            -> onlineSync method, model, success: onlineSyncSuccess
       
       else # Model is not persisted on server
       
@@ -401,9 +433,11 @@ localSyncFirst = (method, model, options) ->
           modelToSend = modelUpdatedWithResponse model, resp
           modelToSend.set model.idAttribute, null, silent: true
           
-          onlineSync method, modelToSend, success: storeServerResponseAndUpdateModel
+          onlineSyncQueue.push do (method, model) -> 
+            -> onlineSync method, modelToSend, success: storeServerResponseAndUpdateModel
         localsyncOptions.error = (resp, status, xhr) ->
-          onlineSync method, model, success: onlineSyncSuccess
+          onlineSyncQueue.push do (method, model) -> 
+            -> onlineSync method, model, success: onlineSyncSuccess
       
       # Do the sync
       localsync(method, model, localsyncOptions)
@@ -434,9 +468,11 @@ localSyncFirst = (method, model, options) ->
         # localsync callbacks
         localsyncOptions.success = (resp, status, xhr) ->
           options.success resp, status, xhr
-          onlineSync method, model, success: storeServerResponse
+          onlineSyncQueue.push do (method, model) -> 
+            -> onlineSync method, model, success: storeServerResponse
         localsyncOptions.error = (resp, status, xhr) ->
-          onlineSync method, model, success: onlineSyncSuccess
+          onlineSyncQueue.push do (method, model) -> 
+            -> onlineSync method, model, success: onlineSyncSuccess
       
       else # Model is not persisted on server
       
