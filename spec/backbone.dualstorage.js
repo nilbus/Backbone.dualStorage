@@ -7,10 +7,13 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
 */
 
-var S4, backboneSync, callbackTranslator, dualsync, isLocallyCached, isModelPersisted, localSyncFirst, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, remoteSyncFirst, result;
+var S4, backboneSync, callbackTranslator, dualsync, getOnlineSyncFunc, isLocallyCached, isModelPersisted, localSyncFirst, localsync, modelUpdatedWithResponse, onlineSync, onlineSyncQueue, parseRemoteResponse, remoteSyncFirst, result;
 
-Backbone.Collection.prototype.syncDirty = function() {
+Backbone.Collection.prototype.syncDirty = function(callback) {
   var id, ids, model, store, storeName, url, _i, _len, _results;
+  if (onlineSyncQueue.isSyncInProgress()) {
+    return;
+  }
   url = result(this, 'url');
   storeName = result(this, 'storeName');
   store = localStorage.getItem(("" + url + "_dirty") || localStorage.getItem("" + storeName + "_dirty"));
@@ -21,7 +24,6 @@ Backbone.Collection.prototype.syncDirty = function() {
     model = id.length === 36 ? this.findWhere({
       id: id
     }) : this.get(id);
-    model.remoteFirst = result(model, 'localFirst') || result(model.collection, 'localFirst');
     _results.push(model != null ? model.save() : void 0);
   }
   return _results;
@@ -29,6 +31,9 @@ Backbone.Collection.prototype.syncDirty = function() {
 
 Backbone.Collection.prototype.syncDestroyed = function() {
   var id, ids, model, store, storeName, url, _i, _len, _results;
+  if (onlineSyncQueue.isSyncInProgress()) {
+    return;
+  }
   url = result(this, 'url');
   storeName = result(this, 'storeName');
   store = localStorage.getItem(("" + url + "_destroyed") || (store = localStorage.getItem("" + storeName + "_destroyed")));
@@ -40,7 +45,6 @@ Backbone.Collection.prototype.syncDestroyed = function() {
       id: id
     });
     model.collection = this;
-    model.remoteFirst = result(model, 'localFirst') || result(model.collection, 'localFirst');
     _results.push(model.destroy());
   }
   return _results;
@@ -200,8 +204,70 @@ callbackTranslator = {
   }
 };
 
+onlineSyncQueue = (function() {
+  var currentTask, isReadTaskInStore, queue, removeReadTasksFromStore, reset, sync, tasks;
+  tasks = [];
+  currentTask = null;
+  reset = function() {
+    tasks = [];
+    return currentTask = null;
+  };
+  sync = function() {
+    currentTask = tasks.shift();
+    if (currentTask) {
+      currentTask.promise = currentTask.task();
+      return currentTask.promise.done(function() {
+        return sync();
+      }).fail(function() {
+        return reset();
+      });
+    } else {
+      return reset();
+    }
+  };
+  isReadTaskInStore = function(task, storeName) {
+    return (task.method === 'read') && (task.storeName === storeName);
+  };
+  removeReadTasksFromStore = function(storeName) {
+    tasks = _.reject(tasks, (function(task) {
+      return isReadTaskInStore(task, storeName);
+    }));
+    if ((currentTask != null) && isReadTaskInStore(currentTask, storeName)) {
+      return currentTask.promise.abort();
+    }
+  };
+  return queue = {
+    isSyncInProgress: function() {
+      return currentTask != null;
+    },
+    length: function() {
+      return tasks.length;
+    },
+    push: function(task, method, storeName) {
+      removeReadTasksFromStore(storeName);
+      tasks.push({
+        task: task,
+        method: method,
+        storeName: storeName
+      });
+      if (!this.isSyncInProgress()) {
+        return sync();
+      }
+    }
+  };
+})();
+
+getOnlineSyncFunc = function(method, model, successCallback) {
+  return function() {
+    return onlineSync(method, model, {
+      success: successCallback
+    });
+  };
+};
+
 localsync = function(method, model, options) {
   var isValidModel, preExisting, response, store;
+  console.log("CALL: localsync", method, options);
   isValidModel = (method === 'clear') || (method === 'hasDirtyOrDestroyed');
   isValidModel || (isValidModel = model instanceof Backbone.Model);
   isValidModel || (isValidModel = model instanceof Backbone.Collection);
@@ -301,6 +367,7 @@ modelUpdatedWithResponse = function(model, response) {
   var modelClone;
   modelClone = new Backbone.Model;
   modelClone.idAttribute = model.idAttribute;
+  modelClone.urlRoot = model.collection.url;
   modelClone.set(model.attributes);
   modelClone.set(modelClone.parse(response));
   return modelClone;
@@ -309,6 +376,7 @@ modelUpdatedWithResponse = function(model, response) {
 backboneSync = Backbone.sync;
 
 onlineSync = function(method, model, options) {
+  console.log("CALL: onlineSync", method, model.id);
   options.success = callbackTranslator.forBackboneCaller(options.success);
   options.error = callbackTranslator.forBackboneCaller(options.error);
   return backboneSync(method, model, options);
@@ -316,13 +384,14 @@ onlineSync = function(method, model, options) {
 
 dualsync = function(method, model, options) {
   var local;
+  console.log("CALL: dualsync", method, model.id);
   options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') || result(model.collection, 'url') || result(model, 'urlRoot') || result(model, 'url');
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
   options.error = callbackTranslator.forDualstorageCaller(options.error, model, options);
   if (result(model, 'remote') || result(model.collection, 'remote')) {
     return onlineSync(method, model, options);
   }
-  if ((result(model, 'localFirst') || result(model.collection, 'localFirst')) && !result(model, 'remoteFirst')) {
+  if (result(model, 'localFirst') || result(model.collection, 'localFirst')) {
     return localSyncFirst(method, model, options);
   }
   local = result(model, 'local') || result(model.collection, 'local');
@@ -334,19 +403,193 @@ dualsync = function(method, model, options) {
 };
 
 localSyncFirst = function(method, model, options) {
-  if (!isLocallyCached(options.storeName)) {
-    return remoteSyncFirst(method, model, options);
+  var deleteLocal, localsyncOptions, onlineSyncSuccess, storeServerResponse, storeServerResponseAndUpdateModel, url;
+  console.log("CALL: localSyncFirst", method, model.id);
+  switch (method) {
+    case 'read':
+      if (localsync('hasDirtyOrDestroyed', model, {
+        ignoreCallbacks: true,
+        storeName: options.storeName
+      })) {
+        return localsync(method, model, options);
+      } else {
+        storeServerResponse = function(resp) {
+          var backboneModelMethod, collection, idAttribute, localsyncOptions, modelsToRemove, setOpts, updatedResp, _i, _len, _ref;
+          localsyncOptions = _.clone(options);
+          localsyncOptions.ignoreCallbacks = true;
+          resp = parseRemoteResponse(model, resp);
+          if (_.isArray(resp)) {
+            collection = model;
+            idAttribute = collection.model.prototype.idAttribute;
+            backboneModelMethod = localsyncOptions.reset ? 'reset' : 'set';
+            modelsToRemove = [];
+            _.each(collection.models, function(element, index, list) {
+              if (isModelPersisted(element)) {
+                if (!_.findWhere(resp, {
+                  id: element.get('id')
+                })) {
+                  return modelsToRemove.push(element);
+                }
+              }
+            });
+            _.each(modelsToRemove, function(element) {
+              localsync('delete', element, {
+                storeName: options.storeName,
+                ignoreCallbacks: true
+              });
+              return collection.remove(element);
+            });
+            setOpts = _.clone(options);
+            setOpts.remove = false;
+            collection[backboneModelMethod](resp, setOpts);
+            localsync('clear', collection, localsyncOptions);
+            _ref = collection.models;
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              model = _ref[_i];
+              localsync('create', model, localsyncOptions);
+            }
+          } else {
+            model[backboneModelMethod](resp, options);
+            localsync('clear', model, localsyncOptions);
+            localsync('create', model, localsyncOptions);
+          }
+          updatedResp = JSON.parse(JSON.stringify(collection.models));
+          model.trigger('sync', model, updatedResp, options);
+          return updatedResp;
+        };
+        onlineSyncSuccess = function(resp, status, xhr) {
+          var updatedResp;
+          updatedResp = storeServerResponse(resp, status, xhr);
+          return options.success(updatedResp, status, xhr);
+        };
+        if (!isLocallyCached(options.storeName)) {
+          return onlineSyncQueue.push(getOnlineSyncFunc(method, model, onlineSyncSuccess), method, options.storeName);
+        }
+        localsyncOptions = _.clone(options);
+        localsyncOptions.success = function(resp, status, xhr) {
+          options.success(resp, status, xhr);
+          return onlineSyncQueue.push(getOnlineSyncFunc(method, model, storeServerResponse), method, options.storeName);
+        };
+        localsyncOptions.error = function(resp, status, xhr) {
+          return onlineSyncQueue.push(getOnlineSyncFunc(method, model, onlineSyncSuccess), method, options.storeName);
+        };
+        return localsync(method, model, localsyncOptions);
+      }
+      break;
+    case 'create':
+      storeServerResponse = function(resp, status, xhr) {
+        localsyncOptions = _.clone(options);
+        localsyncOptions.ignoreCallbacks = true;
+        localsync('delete', model, localsyncOptions);
+        resp = parseRemoteResponse(model, resp);
+        options.success(resp);
+        return localsync(method, model, localsyncOptions);
+      };
+      onlineSyncSuccess = function(resp, status, xhr) {
+        storeServerResponse(resp, status, xhr);
+        return options.success(resp, status, xhr);
+      };
+      localsyncOptions = _.clone(options);
+      localsyncOptions.dirty = true;
+      localsyncOptions.success = function(resp, status, xhr) {
+        var modelToSend;
+        options.success(resp, status, xhr);
+        modelToSend = modelUpdatedWithResponse(model, resp);
+        modelToSend.set(model.idAttribute, null, {
+          silent: true
+        });
+        return onlineSyncQueue.push(getOnlineSyncFunc(method, modelToSend, storeServerResponse), method, options.storeName);
+      };
+      localsyncOptions.error = function(resp, status, xhr) {
+        return onlineSyncQueue.push(getOnlineSyncFunc(method, model, onlineSyncSuccess), method, options.storeName);
+      };
+      return localsync(method, model, localsyncOptions);
+    case 'update':
+      storeServerResponseAndUpdateModel = function(resp) {
+        localsyncOptions = _.clone(options);
+        localsyncOptions.ignoreCallbacks = true;
+        if (deleteLocal) {
+          localsync('delete', model, localsyncOptions);
+        }
+        resp = parseRemoteResponse(model, resp);
+        options.success(resp);
+        return localsync(method, model, localsyncOptions);
+      };
+      onlineSyncSuccess = function(resp, status, xhr) {
+        storeServerResponseAndUpdateModel(resp, status, xhr);
+        return options.success(resp, status, xhr);
+      };
+      localsyncOptions = _.clone(options);
+      localsyncOptions.dirty = true;
+      deleteLocal = false;
+      if (isModelPersisted(model)) {
+        localsyncOptions.success = function(resp, status, xhr) {
+          options.success(resp, status, xhr);
+          return onlineSyncQueue.push(getOnlineSyncFunc(method, model, storeServerResponseAndUpdateModel), method, options.storeName);
+        };
+        localsyncOptions.error = function(resp, status, xhr) {
+          return onlineSyncQueue.push(getOnlineSyncFunc(method, model, onlineSyncSuccess), method, options.storeName);
+        };
+      } else {
+        localsyncOptions.success = function(resp, status, xhr) {
+          var modelToSend;
+          options.success(resp, status, xhr);
+          deleteLocal = true;
+          modelToSend = modelUpdatedWithResponse(model, resp);
+          modelToSend.set(model.idAttribute, null, {
+            silent: true
+          });
+          return onlineSyncQueue.push(getOnlineSyncFunc('create', modelToSend, storeServerResponseAndUpdateModel), method, options.storeName);
+        };
+        localsyncOptions.error = function(resp, status, xhr) {
+          return onlineSyncQueue.push(getOnlineSyncFunc(method, model, onlineSyncSuccess), method, options.storeName);
+        };
+      }
+      return localsync(method, model, localsyncOptions);
+    case 'delete':
+      url = model.url();
+      storeServerResponse = function(resp) {
+        localsyncOptions = _.clone(options);
+        localsyncOptions.ignoreCallbacks = true;
+        localsyncOptions.dirty = false;
+        return localsync('delete', model, localsyncOptions);
+      };
+      onlineSyncSuccess = function(resp, status, xhr) {
+        storeServerResponse(resp, status, xhr);
+        return options.success(resp, status, xhr);
+      };
+      localsyncOptions = _.clone(options);
+      localsyncOptions.dirty = true;
+      model.url = url;
+      if (isModelPersisted(model)) {
+        localsyncOptions.success = function(resp, status, xhr) {
+          options.success(resp, status, xhr);
+          return onlineSyncQueue.push(getOnlineSyncFunc(method, model, storeServerResponse), method, options.storeName);
+        };
+        localsyncOptions.error = function(resp, status, xhr) {
+          return onlineSyncQueue.push(getOnlineSyncFunc(method, model, onlineSyncSuccess), method, options.storeName);
+        };
+      } else {
+        localsyncOptions.success = function(resp, status, xhr) {
+          return options.success(resp, status, xhr);
+        };
+        localsyncOptions.error = function(resp, status, xhr) {
+          var message;
+          message = "Backbone.dualStorage: localSyncFirst DELETE failed.";
+          console.error(message);
+          return options.error({
+            message: message
+          });
+        };
+      }
+      return _.defer(localsync, method, model, localsyncOptions);
   }
-  options.dirty = true;
-  return localsync(method, model, options);
 };
 
 remoteSyncFirst = function(method, model, options) {
   var error, success, temporaryId;
+  console.log("CALL: remoteSyncFirst", method, model.id);
   options.ignoreCallbacks = true;
-  if (model.remoteFirst != null) {
-    delete model.remoteFirst;
-  }
   success = options.success;
   error = options.error;
   switch (method) {
