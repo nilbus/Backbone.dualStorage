@@ -256,14 +256,14 @@ localsync = function(method, model, options) {
       case 'clear':
         return store.clear();
       case 'create':
-        if (!(options.add && !options.merge && (preExisting = store.find(model)))) {
+        if (options.add && !options.merge && (preExisting = store.find(model))) {
+          return preExisting;
+        } else {
           model = store.create(model);
           if (options.dirty) {
             store.dirty(model);
           }
           return model;
-        } else {
-          return preExisting;
         }
         break;
       case 'update':
