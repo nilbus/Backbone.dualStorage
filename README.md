@@ -77,8 +77,6 @@ Compile the coffeescript into javascript with `make`. This requires that node.js
 
     make
 
-During development, use `make watch` to compile as you make changes.
-
 Testing
 -------
 
