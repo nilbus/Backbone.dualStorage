@@ -269,11 +269,10 @@ dualsync = (method, model, options) ->
         options.success = (resp, status, xhr) ->
           resp = parseRemoteResponse(model, resp)
 
-          localsync('clear', model, options) unless options.add
-
           if model instanceof Backbone.Collection
             collection = model
             idAttribute = collection.model.prototype.idAttribute
+            localsync('clear', collection, options) unless options.add
             for modelAttributes in resp
               model = collection.get(modelAttributes[idAttribute])
               if model

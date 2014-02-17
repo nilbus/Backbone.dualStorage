@@ -354,12 +354,12 @@ as that.
           options.success = function(resp, status, xhr) {
             var collection, idAttribute, modelAttributes, responseModel, _i, _len;
             resp = parseRemoteResponse(model, resp);
-            if (!options.add) {
-              localsync('clear', model, options);
-            }
             if (model instanceof Backbone.Collection) {
               collection = model;
               idAttribute = collection.model.prototype.idAttribute;
+              if (!options.add) {
+                localsync('clear', collection, options);
+              }
               for (_i = 0, _len = resp.length; _i < _len; _i++) {
                 modelAttributes = resp[_i];
                 model = collection.get(modelAttributes[idAttribute]);

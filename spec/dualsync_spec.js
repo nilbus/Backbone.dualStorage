@@ -380,8 +380,8 @@
               return ready;
             }), "The success callback should have been called", 100);
             return runs(function() {
-              expect(localsync.calls[2].args[0]).toEqual('create');
-              return expect(localsync.calls[2].args[1].attributes).toEqual({
+              expect(localsync.calls[1].args[0]).toEqual('create');
+              return expect(localsync.calls[1].args[1].attributes).toEqual({
                 position: 'arm',
                 side: 'left',
                 _id: 13
