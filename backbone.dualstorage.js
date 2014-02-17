@@ -236,7 +236,7 @@ as that.
     response = (function() {
       switch (method) {
         case 'read':
-          if (model.id) {
+          if (model instanceof Backbone.Model) {
             return store.find(model);
           } else {
             return store.findAll();
@@ -357,7 +357,7 @@ as that.
             if (!options.add) {
               localsync('clear', model, options);
             }
-            if (_.isArray(resp)) {
+            if (model instanceof Backbone.Collection) {
               collection = model;
               idAttribute = collection.model.prototype.idAttribute;
               for (_i = 0, _len = resp.length; _i < _len; _i++) {

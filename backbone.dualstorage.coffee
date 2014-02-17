@@ -175,7 +175,7 @@ localsync = (method, model, options) ->
 
   response = switch method
     when 'read'
-      if model.id
+      if model instanceof Backbone.Model
         store.find(model)
       else
         store.findAll()
@@ -271,7 +271,7 @@ dualsync = (method, model, options) ->
 
           localsync('clear', model, options) unless options.add
 
-          if _.isArray resp
+          if model instanceof Backbone.Collection
             collection = model
             idAttribute = collection.model.prototype.idAttribute
             for modelAttributes in resp
