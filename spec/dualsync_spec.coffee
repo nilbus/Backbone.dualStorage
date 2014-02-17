@@ -71,11 +71,11 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
           expect(backboneSync).toHaveBeenCalled()
           expect(_(backboneSync.calls).any((call) -> call.args[0] == 'read')).toBeTruthy()
           expect(localsync).toHaveBeenCalled()
-          expect(_(localsync.calls).any((call) -> call.args[0] == 'create')).toBeTruthy()
+          expect(_(localsync.calls).any((call) -> call.args[0] == 'update')).toBeTruthy()
           expect(_(localsync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
       describe 'for collections', ->
-        it 'calls localsync create once for each model', ->
+        it 'calls localsync update once for each model', ->
           spyOnLocalsync()
           ready = false
           collectionResponse = [{_id: 12, position: 'arm'}, {_id: 13, position: 'a new model'}]
@@ -86,12 +86,12 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
             expect(backboneSync).toHaveBeenCalled()
             expect(_(backboneSync.calls).any((call) -> call.args[0] == 'read')).toBeTruthy()
             expect(localsync).toHaveBeenCalled()
-            createCalls = _(localsync.calls).select((call) -> call.args[0] == 'create')
-            expect(createCalls.length).toEqual 2
-            expect(_(createCalls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
-            createdModelAttributes = _(createCalls).map((call) -> call.args[1].attributes)
-            expect(createdModelAttributes[0]).toEqual _id: 12, position: 'arm'
-            expect(createdModelAttributes[1]).toEqual _id: 13, position: 'a new model'
+            updateCalls = _(localsync.calls).select((call) -> call.args[0] == 'update')
+            expect(updateCalls.length).toEqual 2
+            expect(_(updateCalls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
+            updatedModelAttributes = _(updateCalls).map((call) -> call.args[1].attributes)
+            expect(updatedModelAttributes[0]).toEqual _id: 12, position: 'arm'
+            expect(updatedModelAttributes[1]).toEqual _id: 13, position: 'a new model'
 
     describe 'update', ->
       it 'delegates to both localsync and backboneSync', ->
@@ -188,7 +188,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
             dualsync('read', model, success: (-> ready = true), serverResponse: {side: 'left', _id: 13})
           waitsFor (-> ready), "The success callback should have been called", 100
           runs ->
-            expect(localsync.calls[1].args[0]).toEqual 'create'
+            expect(localsync.calls[1].args[0]).toEqual 'update'
             expect(localsync.calls[1].args[1].attributes).toEqual position: 'arm', side: 'left', _id: 13
 
       describe 'for collections', ->
@@ -200,7 +200,7 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
             dualsync('read', collection, success: (-> ready = true), serverResponse: [{side: 'left', _id: 12}])
           waitsFor (-> ready), "The success callback should have been called", 100
           runs ->
-            expect(localsync.calls[2].args[0]).toEqual 'create'
+            expect(localsync.calls[2].args[0]).toEqual 'update'
             expect(localsync.calls[2].args[1].attributes).toEqual position: 'arm', side: 'left', _id: 12
 
     describe 'on create', ->

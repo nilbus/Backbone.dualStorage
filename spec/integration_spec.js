@@ -72,7 +72,7 @@
   });
 
   describe('using backbone models and retrieving from local storage', function() {
-    it("fetches a model after saving it", function() {
+    it("fetches a model offline after saving it online", function() {
       var fetched, retrievedModel, saved;
       saved = false;
       runs(function() {

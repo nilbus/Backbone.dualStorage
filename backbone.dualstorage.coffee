@@ -279,10 +279,10 @@ dualsync = (method, model, options) ->
                 responseModel = modelUpdatedWithResponse(model, modelAttributes)
               else
                 responseModel = new collection.model(modelAttributes)
-              localsync('create', responseModel, options)
+              localsync('update', responseModel, options)
           else
             responseModel = modelUpdatedWithResponse(model, resp)
-            localsync('create', responseModel, options)
+            localsync('update', responseModel, options)
 
           success(resp, status, xhr)
 

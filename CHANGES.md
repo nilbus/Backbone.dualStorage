@@ -3,6 +3,7 @@
 * Fix #78: Do not clear local collection cache when a model is fetched
 * Add `make watch` for continual coffeescript compilation during development
 * `make` compiles sourcemaps between coffeescript and javascript
+* Prevent id duplication in the internal list of model ids for a collection when a model is fetched
 
 ### 1.2.0 / 2014-01-31
 

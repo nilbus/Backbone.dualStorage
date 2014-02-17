@@ -131,7 +131,7 @@
             })).toBeTruthy();
             expect(localsync).toHaveBeenCalled();
             expect(_(localsync.calls).any(function(call) {
-              return call.args[0] === 'create';
+              return call.args[0] === 'update';
             })).toBeTruthy();
             return expect(_(localsync.calls).every(function(call) {
               return call.args[1] instanceof Backbone.Model;
@@ -139,7 +139,7 @@
           });
         });
         return describe('for collections', function() {
-          return it('calls localsync create once for each model', function() {
+          return it('calls localsync update once for each model', function() {
             var collectionResponse, ready;
             spyOnLocalsync();
             ready = false;
@@ -164,27 +164,27 @@
               return ready;
             }), "The success callback should have been called", 100);
             return runs(function() {
-              var createCalls, createdModelAttributes;
+              var updateCalls, updatedModelAttributes;
               expect(backboneSync).toHaveBeenCalled();
               expect(_(backboneSync.calls).any(function(call) {
                 return call.args[0] === 'read';
               })).toBeTruthy();
               expect(localsync).toHaveBeenCalled();
-              createCalls = _(localsync.calls).select(function(call) {
-                return call.args[0] === 'create';
+              updateCalls = _(localsync.calls).select(function(call) {
+                return call.args[0] === 'update';
               });
-              expect(createCalls.length).toEqual(2);
-              expect(_(createCalls).every(function(call) {
+              expect(updateCalls.length).toEqual(2);
+              expect(_(updateCalls).every(function(call) {
                 return call.args[1] instanceof Backbone.Model;
               })).toBeTruthy();
-              createdModelAttributes = _(createCalls).map(function(call) {
+              updatedModelAttributes = _(updateCalls).map(function(call) {
                 return call.args[1].attributes;
               });
-              expect(createdModelAttributes[0]).toEqual({
+              expect(updatedModelAttributes[0]).toEqual({
                 _id: 12,
                 position: 'arm'
               });
-              return expect(createdModelAttributes[1]).toEqual({
+              return expect(updatedModelAttributes[1]).toEqual({
                 _id: 13,
                 position: 'a new model'
               });
@@ -380,7 +380,7 @@
               return ready;
             }), "The success callback should have been called", 100);
             return runs(function() {
-              expect(localsync.calls[1].args[0]).toEqual('create');
+              expect(localsync.calls[1].args[0]).toEqual('update');
               return expect(localsync.calls[1].args[1].attributes).toEqual({
                 position: 'arm',
                 side: 'left',
@@ -412,7 +412,7 @@
               return ready;
             }), "The success callback should have been called", 100);
             return runs(function() {
-              expect(localsync.calls[2].args[0]).toEqual('create');
+              expect(localsync.calls[2].args[0]).toEqual('update');
               return expect(localsync.calls[2].args[1].attributes).toEqual({
                 position: 'arm',
                 side: 'left',

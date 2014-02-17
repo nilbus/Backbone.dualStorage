@@ -377,11 +377,11 @@ dualsync = function(method, model, options) {
               } else {
                 responseModel = new collection.model(modelAttributes);
               }
-              localsync('create', responseModel, options);
+              localsync('update', responseModel, options);
             }
           } else {
             responseModel = modelUpdatedWithResponse(model, resp);
-            localsync('create', responseModel, options);
+            localsync('update', responseModel, options);
           }
           return success(resp, status, xhr);
         };
