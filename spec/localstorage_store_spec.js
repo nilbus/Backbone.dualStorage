@@ -165,3 +165,5 @@
   });
 
 }).call(this);
+
+//# sourceMappingURL=localstorage_store_spec.map

@@ -1,10 +1,10 @@
 compile:
-	coffee -c backbone.dualstorage.coffee spec/*.coffee
-	coffee -cbo spec backbone.dualstorage.coffee
+	coffee -mc backbone.dualstorage.coffee spec/*.coffee
+	coffee -mcbo spec backbone.dualstorage.coffee
 	cat amd.header.js spec/backbone.dualstorage.js amd.footer.js > backbone.dualstorage.amd.js
 
 watch:
-	coffee -wc backbone.dualstorage.coffee spec/*.coffee &
-	coffee -wcbo spec backbone.dualstorage.coffee &
+	coffee -wmc backbone.dualstorage.coffee spec/*.coffee &
+	coffee -wmcbo spec backbone.dualstorage.coffee &
 	# Press ^C to exit
 	while true; do sleep 100; done

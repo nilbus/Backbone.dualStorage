@@ -1,6 +1,7 @@
 ### master / unreleased
 
 * Add `make watch` for continual coffeescript compilation during development
+* `make` compiles sourcemaps between coffeescript and javascript
 
 ### 1.2.0 / 2014-01-31
 

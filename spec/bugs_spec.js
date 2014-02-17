@@ -43,3 +43,5 @@
   });
 
 }).call(this);
+
+//# sourceMappingURL=bugs_spec.map

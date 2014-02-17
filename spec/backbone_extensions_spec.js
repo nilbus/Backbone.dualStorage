@@ -98,3 +98,5 @@
   });
 
 }).call(this);
+
+//# sourceMappingURL=backbone_extensions_spec.map
