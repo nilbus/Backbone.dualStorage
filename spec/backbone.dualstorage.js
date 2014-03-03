@@ -53,9 +53,8 @@ Backbone.Collection.prototype.syncDestroyed = function() {
   _results = [];
   for (_i = 0, _len = ids.length; _i < _len; _i++) {
     id = ids[_i];
-    model = new this.model({
-      id: id
-    });
+    model = new this.model;
+    model.id = id;
     model.collection = this;
     _results.push(model.destroy());
   }

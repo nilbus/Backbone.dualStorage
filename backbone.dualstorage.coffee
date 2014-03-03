@@ -36,7 +36,8 @@ Backbone.Collection.prototype.syncDestroyed = ->
   ids = (store and store.split(',')) or []
 
   for id in ids
-    model = new @model(id: id)
+    model = new @model
+    model.id = id
     model.collection = @
     model.destroy()
 
