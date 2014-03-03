@@ -150,6 +150,9 @@ class window.Store
     @save()
     model
 
+
+window.Store.exists = (storeName) -> localStorage.getItem(storeName) isnt null
+
 callbackTranslator =
   needsTranslation: Backbone.VERSION == '0.9.10'
 
@@ -240,6 +243,7 @@ onlineSync = (method, model, options) ->
 
 dualsync = (method, model, options) ->
   options.storeName = getStoreName(model.collection, model)
+  options.storeExists = Store.exists(options.storeName)
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
   options.error   = callbackTranslator.forDualstorageCaller(options.error, model, options)
 
@@ -294,7 +298,10 @@ dualsync = (method, model, options) ->
           success(resp, status, xhr)
 
         options.error = (resp) ->
-          relayErrorCallback resp
+	        if options.storeExists
+            relayErrorCallback resp
+      	  else
+	          error(resp)
 
         onlineSync(method, model, options)
 
