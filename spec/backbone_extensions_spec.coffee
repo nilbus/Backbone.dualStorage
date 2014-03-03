@@ -7,24 +7,29 @@ describe 'monkey patching', ->
 
 describe 'offline localStorage sync', ->
   {collection} = {}
+  {model} = {}
+  model = Backbone.Model.extend
+    idAttribute:'_id'
   beforeEach ->
     localStorage.clear()
     localStorage.setItem 'cats', '1,2,3,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff'
     localStorage.setItem 'cats_dirty', '2,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff'
     localStorage.setItem 'cats_destroyed', '3'
-    localStorage.setItem 'cats1', '{"id": "1", "color": "translucent"}'
-    localStorage.setItem 'cats2', '{"id": "2", "color": "auburn"}'
-    localStorage.setItem 'cats3', '{"id": "3", "color": "burgundy"}'
-    localStorage.setItem 'catsa', '{"id": "a", "color": "scarlet"}'
-    localStorage.setItem 'catsnew', '{"id": "deadbeef-c03d-f00d-aced-dec0ded4b1ff", "color": "pearl"}'
-    collection = new Backbone.Collection [
-      {id: 1, color: 'translucent'},
-      {id: 2, color: 'auburn'},
-      {id: 3, color: 'burgundy'},
-      {id: 'a', color: 'scarlet'}
-      {id: 'deadbeef-c03d-f00d-aced-dec0ded4b1ff', color: 'pearl'}
+    localStorage.setItem 'cats1', '{"_id": "1", "color": "translucent"}'
+    localStorage.setItem 'cats2', '{"_id": "2", "color": "auburn"}'
+    localStorage.setItem 'cats3', '{"_id": "3", "color": "burgundy"}'
+    localStorage.setItem 'catsa', '{"_id": "a", "color": "scarlet"}'
+    localStorage.setItem 'catsnew', '{"_id": "deadbeef-c03d-f00d-aced-dec0ded4b1ff", "color": "pearl"}'
+    collectionProto = Backbone.Collection.extend
+      model:model
+      url: 'cats'
+    collection = new collectionProto [
+      {_id: 1, color: 'translucent'},
+      {_id: 2, color: 'auburn'},
+      {_id: 3, color: 'burgundy'},
+      {_id: 'a', color: 'scarlet'}
+      {_id: 'deadbeef-c03d-f00d-aced-dec0ded4b1ff', color: 'pearl'}
     ]
-    collection.url = -> 'cats'
 
   describe 'syncDirtyAndDestroyed', ->
     it 'calls syncDirty and syncDestroyed', ->
