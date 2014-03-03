@@ -65,7 +65,6 @@
     describe('syncDirty', function() {
       it('finds and saves all dirty models', function() {
         var saveInteger, saveString;
-        console.log(collection);
         saveInteger = spyOn(collection.get(2), 'save').andCallThrough();
         saveString = spyOn(collection.get('a'), 'save').andCallThrough();
         collection.syncDirty();

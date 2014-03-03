@@ -41,7 +41,6 @@ describe 'offline localStorage sync', ->
 
   describe 'syncDirty', ->
     it 'finds and saves all dirty models', ->
-      console.log collection
       saveInteger = spyOn(collection.get(2), 'save').andCallThrough()
       saveString = spyOn(collection.get('a'), 'save').andCallThrough()
       collection.syncDirty()
