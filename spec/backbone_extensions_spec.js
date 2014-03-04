@@ -19,7 +19,7 @@
       idAttribute: '_id'
     });
     beforeEach(function() {
-      var collectionProto;
+      var Collection;
       localStorage.clear();
       localStorage.setItem('cats', '1,2,3,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff');
       localStorage.setItem('cats_dirty', '2,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff');
@@ -29,11 +29,11 @@
       localStorage.setItem('cats3', '{"_id": "3", "color": "burgundy"}');
       localStorage.setItem('catsa', '{"_id": "a", "color": "scarlet"}');
       localStorage.setItem('catsnew', '{"_id": "deadbeef-c03d-f00d-aced-dec0ded4b1ff", "color": "pearl"}');
-      collectionProto = Backbone.Collection.extend({
+      Collection = Backbone.Collection.extend({
         model: model,
         url: 'cats'
       });
-      return collection = new collectionProto([
+      return collection = new Collection([
         {
           _id: 1,
           color: 'translucent'
