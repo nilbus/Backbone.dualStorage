@@ -360,6 +360,70 @@
     return describe('server response', function() {
       describe('on read', function() {
         describe('for models', function() {
+	  it('errors if server errors and no existing local Store is found', function() {
+	    var ready;
+	    spyOnLocalsync();
+	    backboneSync.reset();
+	    localsync.reset();
+	    ready = false;
+	    runs(function() {
+	      return dualsync('read', model, {
+		error: (function() {
+		  return ready = true;
+		}),
+		serverResponse: {
+		  side: 'left',
+		  _id: 13
+		},
+		serverResponseCode: 500
+	      });
+	    });
+	    waitsFor((function() {
+	      return ready;
+	    }), "The error callback should have been called", 100);
+	    return runs(function() {
+	      expect(backboneSync.calls[0].args[0]).toEqual('read');
+	      return expect(backboneSync.calls[0].args[2].storeExists).toEqual(false);
+	    });
+	  });
+	  it('success if server errors and Store exists but empty data', function() {
+	    var ready;
+	    spyOnLocalsync();
+	    backboneSync.reset();
+	    localsync.reset();
+	    ready = false;
+	    runs(function() {
+	      var failSecondCall;
+	      failSecondCall = function() {
+		return dualsync('read', model, {
+		  success: (function() {
+		    return ready = true;
+		  }),
+		  serverResponse: {
+		    side: 'left',
+		    _id: 13
+		  },
+		  serverResponseCode: 500
+		});
+	      };
+	      return dualsync('read', model, {
+		success: (function() {
+		  return failSecondCall();
+		}),
+		serverResponse: {
+		  side: 'left',
+		  _id: 13
+		}
+	      });
+	    });
+	    waitsFor((function() {
+	      return ready;
+	    }), "The success callback should have been called", 100);
+	    return runs(function() {
+	      expect(backboneSync.calls[0].args[0]).toEqual('read');
+	      return expect(backboneSync.calls[0].args[2].storeExists).toEqual(false);
+	    });
+	  });
           return it('gets merged with existing attributes on a model', function() {
             var ready;
             spyOnLocalsync();
