@@ -1,7 +1,7 @@
 compile:
 	coffee -mc backbone.dualstorage.coffee spec/*.coffee
 	coffee -mcbo spec backbone.dualstorage.coffee
-	cat amd.header.js spec/backbone.dualstorage.js amd.footer.js > backbone.dualstorage.amd.js
+	cat amd.header spec/backbone.dualstorage.js amd.footer > backbone.dualstorage.amd.js
 
 watch:
 	coffee -wmc backbone.dualstorage.coffee spec/*.coffee &
