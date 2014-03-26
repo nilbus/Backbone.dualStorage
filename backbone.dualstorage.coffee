@@ -243,6 +243,11 @@ onlineSync = (method, model, options) ->
   options.error   = callbackTranslator.forBackboneCaller(options.error)
   backboneSync(method, model, options)
 
+bubbleError = (response, options) ->
+  inspector = options.inspector or Backbone.inspector;
+  if inspector then return inspector response
+  return false
+
 dualsync = (method, model, options) ->
   options.storeName = getStoreName(model.collection, model)
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
@@ -288,7 +293,10 @@ dualsync = (method, model, options) ->
           success(resp, status, xhr)
 
         options.error = (resp) ->
-          success localsync(method, model, options)
+          if bubbleError resp, options
+            error resp
+          else
+            success localsync(method, model, options)
 
         onlineSync(method, model, options)
 
@@ -298,8 +306,11 @@ dualsync = (method, model, options) ->
         localsync(method, updatedModel, options)
         success(resp, status, xhr)
       options.error = (resp) ->
-        options.dirty = true
-        success localsync(method, model, options)
+        if bubbleError resp, options
+          error resp
+        else
+          options.dirty = true
+          success localsync(method, model, options)
 
       onlineSync(method, model, options)
 
@@ -314,9 +325,12 @@ dualsync = (method, model, options) ->
           localsync('create', updatedModel, options)
           success(resp, status, xhr)
         options.error = (resp) ->
-          options.dirty = true
-          model.set model.idAttribute, temporaryId, silent: true
-          success localsync(method, model, options)
+          if bubbleError resp, options
+            error resp
+          else
+            options.dirty = true
+            model.set model.idAttribute, temporaryId, silent: true
+            success localsync(method, model, options)
 
         model.set model.idAttribute, null, silent: true
         onlineSync('create', model, options)
@@ -326,8 +340,11 @@ dualsync = (method, model, options) ->
           localsync(method, updatedModel, options)
           success(resp, status, xhr)
         options.error = (resp) ->
-          options.dirty = true
-          success localsync(method, model, options)
+          if bubbleError resp, options
+            error resp
+          else
+            options.dirty = true
+            success localsync(method, model, options)
 
         onlineSync(method, model, options)
 
@@ -339,8 +356,11 @@ dualsync = (method, model, options) ->
           localsync(method, model, options)
           success(resp, status, xhr)
         options.error = (resp) ->
-          options.dirty = true
-          success localsync(method, model, options)
+          if bubbleError resp, options
+            error resp
+          else
+            options.dirty = true
+            success localsync(method, model, options)
 
         onlineSync(method, model, options)
 
