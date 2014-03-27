@@ -244,9 +244,13 @@ onlineSync = (method, model, options) ->
   backboneSync(method, model, options)
 
 bubbleError = (response, options) ->
-  inspector = options.inspector or Backbone.inspector;
-  if inspector then return inspector response
-  return false
+  if response.status and offline = options.offline or Backbone.offline
+    if typeof offline is 'function'
+      return not offline response
+    else
+      return response.status not in offline
+  else
+    return false
 
 dualsync = (method, model, options) ->
   options.storeName = getStoreName(model.collection, model)
