@@ -244,7 +244,7 @@ onlineSync = (method, model, options) ->
   backboneSync(method, model, options)
 
 bubbleError = (response, options) ->
-  if response.status and offline = options.offline or Backbone.offline
+  if response.status and offline = options.offline or Backbone.DualStorage.offline
     if typeof offline is 'function'
       return not offline response
     else
