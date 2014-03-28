@@ -274,13 +274,20 @@ dualsync = (method, model, options) ->
             collection = model
             idAttribute = collection.model.prototype.idAttribute
             localsync('clear', collection, options) unless options.add
-            for modelAttributes in resp
-              model = collection.get(modelAttributes[idAttribute])
-              if model
-                responseModel = modelUpdatedWithResponse(model, modelAttributes)
-              else
-                responseModel = new collection.model(modelAttributes)
-              localsync('update', responseModel, options)
+            
+            setResp = (resp) ->
+              for modelAttributes in resp
+                model = collection.get(modelAttributes[idAttribute])
+                if model
+                  responseModel = modelUpdatedWithResponse(model, modelAttributes)
+                else
+                  responseModel = new collection.model(modelAttributes)
+                localsync('update', responseModel, options)
+
+            try 
+              resp.done (data) -> setResp data
+            catch error
+              setResp resp
           else
             responseModel = modelUpdatedWithResponse(model, resp)
             localsync('update', responseModel, options)
