@@ -62,6 +62,25 @@ It is possible to tell whether the operation succeeded remotely or locally by ex
 		}
 	});
 
+Offline state detection
+-----------------------
+dualStorage **always** treats an Ajax status code of `0` as an indication it is working offline. Additional status codes can be added by setting `offlineStatusCodes` to either an array:
+
+    Backbone.DualStorage.offlineStatusCodes = [408];
+
+or a function that accepts the `response` object and returns an array:
+
+    Backbone.DualStorage.offlineStatusCodes = function(response) {
+        var codes = [];
+
+        if (...) {
+            codes.push(response.status);
+        }
+        
+        return codes;
+    }
+
+
 Data parsing
 ------------
 

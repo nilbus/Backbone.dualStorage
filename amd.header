@@ -7,4 +7,3 @@
     factory(root.Backbone);
   }
 })(this, function(Backbone) {
-Backbone.DualStorage = {};
