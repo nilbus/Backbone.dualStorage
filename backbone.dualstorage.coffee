@@ -6,7 +6,9 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
 ###
 
-Backbone.DualStorage = {}
+Backbone.DualStorage = {
+	defaultOfflineStatusCodes: [408, 502]
+}
 
 Backbone.Model.prototype.hasTempId = ->
   _.isString(@id) and @id.length is 36
@@ -266,9 +268,9 @@ dualsync = (method, model, options) ->
 
   relayErrorCallback = (response) ->
     relay = false
-    if response.status and offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes
+    if response.status and offlineStatusCodes = (Backbone.DualStorage.offlineStatusCodes or Backbone.DualStorage.defaultOfflineStatusCodes)
       if _.isFunction(offlineStatusCodes)
-      	offlineStatusCodes = offlineStatusCodes response
+        offlineStatusCodes = offlineStatusCodes response
       relay = response.status not in offlineStatusCodes
     if relay
       error resp
