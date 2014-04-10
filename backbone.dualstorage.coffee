@@ -279,6 +279,7 @@ dualsync = (method, model, options) ->
   switch method
     when 'read'
       if localsync('hasDirtyOrDestroyed', model, options)
+        options.dirty = true
         success localsync(method, model, options)
       else
         options.success = (resp, status, xhr) ->
