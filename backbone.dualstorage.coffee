@@ -273,7 +273,7 @@ dualsync = (method, model, options) ->
         offlineStatusCodes = offlineStatusCodes response
       relay = response.status not in offlineStatusCodes
     if relay
-      error resp
+      error response
     else
       options.dirty = true unless method is 'read'
       success localsync(method, model, options)

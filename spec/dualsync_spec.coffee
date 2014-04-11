@@ -322,3 +322,20 @@ describe 'storeName selection', ->
     spyOnLocalsync()
     dualsync(null, model, {})
     expect(localsync.calls[0].args[2].storeName).toEqual model.collection.storeName
+
+describe 'delegating to user-provided error callback', ->
+  it 'should not happen on error status 0', ->
+    ready = false
+    runs ->
+      dualsync('create', model, success: (-> ready = true), errorStatus: 0)
+    waitsFor (-> ready), "The success callback should have been called", 100
+  it 'should not happen on offline error status (e.g. 408)', ->
+    ready = false
+    runs ->
+      dualsync('create', model, success: (-> ready = true), errorStatus: 408)
+    waitsFor (-> ready), "The success callback should have been called", 100
+  it 'should happen on non-offline error status (e.g. 999)', ->
+    ready = false
+    runs ->
+      dualsync('create', model, error: (-> ready = true), errorStatus: 999)
+    waitsFor (-> ready), "The error callback should have been called", 100
