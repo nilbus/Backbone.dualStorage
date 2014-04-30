@@ -378,54 +378,62 @@
 		serverResponseCode: 500
 	      });
 	    });
-	    waitsFor((function() {
+	    return waitsFor((function() {
 	      return ready;
 	    }), "The error callback should have been called", 100);
-	    return runs(function() {
-	      expect(backboneSync.calls[0].args[0]).toEqual('read');
-	      return expect(backboneSync.calls[0].args[2].storeExists).toEqual(false);
-	    });
 	  });
-	  it('success if server errors and Store exists but empty data', function() {
-	    var ready;
+	  it('success if server errors and Store exists with data', function() {
+	    var ready, storeModel;
 	    spyOnLocalsync();
 	    backboneSync.reset();
 	    localsync.reset();
+	    storeModel = model.clone();
+	    storeModel.storeName = 'store-exists';
+	    localStorage.setItem(storeModel.storeName, "1,2,3");
 	    ready = false;
 	    runs(function() {
-	      var failSecondCall;
-	      failSecondCall = function() {
-		return dualsync('read', model, {
-		  success: (function() {
-		    return ready = true;
-		  }),
-		  serverResponse: {
-		    side: 'left',
-		    _id: 13
-		  },
-		  serverResponseCode: 500
-		});
-	      };
-	      return dualsync('read', model, {
+	      return dualsync('read', storeModel, {
 		success: (function() {
-		  return failSecondCall();
+		  return ready = true;
 		}),
 		serverResponse: {
 		  side: 'left',
 		  _id: 13
-		}
+		},
+		serverResponseCode: 500
 	      });
 	    });
-	    waitsFor((function() {
+	    return waitsFor((function() {
 	      return ready;
 	    }), "The success callback should have been called", 100);
-	    return runs(function() {
-	      expect(backboneSync.calls[0].args[0]).toEqual('read');
-	      return expect(backboneSync.calls[0].args[2].storeExists).toEqual(false);
-	    });
 	  });
-          return it('gets merged with existing attributes on a model', function() {
-            var ready;
+	  it('success if server errors and Store exists but empty data', function() {
+	    var ready, storeModel;
+	    spyOnLocalsync();
+	    backboneSync.reset();
+	    localsync.reset();
+	    storeModel = model.clone();
+	    storeModel.storeName = 'store-exists';
+	    localStorage.setItem(storeModel.storeName, "");
+	    ready = false;
+	    runs(function() {
+	      return dualsync('read', storeModel, {
+		success: (function() {
+		  return ready = true;
+		}),
+		serverResponse: {
+		  side: 'left',
+		  _id: 13
+		},
+		serverResponseCode: 500
+	      });
+	    });
+	    return waitsFor((function() {
+	      return ready;
+	    }), "The success callback should have been called", 100);
+	  });
+	  return it('gets merged with existing attributes on a model', function() {
+	    var ready;
             spyOnLocalsync();
             localsync.reset();
             ready = false;

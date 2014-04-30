@@ -192,33 +192,41 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
 	      serverResponseCode: 500
 	    )
 	  waitsFor (-> ready), "The error callback should have been called", 100
+
+	it 'success if server errors and Store exists with data', ->
+	  spyOnLocalsync()
+	  backboneSync.reset()
+	  localsync.reset()
+	  storeModel = model.clone()
+	  storeModel.storeName = 'store-exists'
+	  localStorage.setItem storeModel.storeName, "1,2,3"
+	  ready = false
 	  runs ->
-	    expect(backboneSync.calls[0].args[0]).toEqual 'read'
-	    expect(backboneSync.calls[0].args[2].storeExists).toEqual false
+	    dualsync('read', storeModel,
+	      success: (-> ready = true)
+	      serverResponse: {side: 'left', _id: 13}
+	      serverResponseCode: 500
+	    )
+	  waitsFor (-> ready), "The success callback should have been called", 100
 
 	it 'success if server errors and Store exists but empty data', ->
 	  spyOnLocalsync()
 	  backboneSync.reset()
 	  localsync.reset()
+	  storeModel = model.clone()
+	  storeModel.storeName = 'store-exists'
+	  localStorage.setItem storeModel.storeName, ""
 	  ready = false
 	  runs ->
-	    failSecondCall = ->
-	      dualsync('read', model,
-		success: (-> ready = true)
-		serverResponse: {side: 'left', _id: 13}
-		serverResponseCode: 500
-	      )
-	    dualsync('read', model,
-	      success: (-> failSecondCall())
+	    dualsync('read', storeModel,
+	      success: (-> ready = true)
 	      serverResponse: {side: 'left', _id: 13}
+	      serverResponseCode: 500
 	    )
 	  waitsFor (-> ready), "The success callback should have been called", 100
-	  runs ->
-	    expect(backboneSync.calls[0].args[0]).toEqual 'read'
-	    expect(backboneSync.calls[0].args[2].storeExists).toEqual false
 
-        it 'gets merged with existing attributes on a model', ->
-          spyOnLocalsync()
+	it 'gets merged with existing attributes on a model', ->
+	  spyOnLocalsync()
           localsync.reset()
           ready = false
           runs ->
