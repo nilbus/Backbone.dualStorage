@@ -627,8 +627,8 @@
     });
   });
 
-  describe('delegating to user-provided error callback', function() {
-    it('should not happen on error status 0', function() {
+  describe('when to call user-specified success and error callbacks', function() {
+    it('uses the success callback when the network is down', function() {
       var ready;
       ready = false;
       runs(function() {
@@ -643,7 +643,7 @@
         return ready;
       }), "The success callback should have been called", 100);
     });
-    it('should not happen on offline error status (e.g. 408)', function() {
+    it('uses the success callback when an offline error status is received (e.g. 408)', function() {
       var ready;
       ready = false;
       runs(function() {
@@ -658,7 +658,7 @@
         return ready;
       }), "The success callback should have been called", 100);
     });
-    return it('should happen on non-offline error status (e.g. 999)', function() {
+    return it('uses the error callback when an error status is received (e.g. 500)', function() {
       var ready;
       ready = false;
       runs(function() {
@@ -666,7 +666,7 @@
           error: (function() {
             return ready = true;
           }),
-          errorStatus: 999
+          errorStatus: 500
         });
       });
       return waitsFor((function() {
