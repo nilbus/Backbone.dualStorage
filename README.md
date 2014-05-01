@@ -76,7 +76,7 @@ or a function that accepts the `response` object and returns an array:
         if (...) {
             codes.push(response.status);
         }
-        
+
         return codes;
     }
 

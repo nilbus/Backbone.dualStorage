@@ -11,7 +11,7 @@ var S4, backboneSync, callbackTranslator, dualsync, getStoreName, localsync, mod
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 Backbone.DualStorage = {
-  defaultOfflineStatusCodes: [408, 502]
+  offlineStatusCodes: [408, 502]
 };
 
 Backbone.Model.prototype.hasTempId = function() {
@@ -349,21 +349,19 @@ dualsync = function(method, model, options) {
   success = options.success;
   error = options.error;
   relayErrorCallback = function(response) {
-    var offlineStatusCodes, relay, _ref;
-    relay = false;
-    if (response.status && (offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes || Backbone.DualStorage.defaultOfflineStatusCodes)) {
-      if (_.isFunction(offlineStatusCodes)) {
-        offlineStatusCodes = offlineStatusCodes(response);
-      }
-      relay = (_ref = response.status, __indexOf.call(offlineStatusCodes, _ref) < 0);
+    var offline, offlineStatusCodes, _ref;
+    offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes;
+    if (_.isFunction(offlineStatusCodes)) {
+      offlineStatusCodes = offlineStatusCodes(response);
     }
-    if (relay) {
-      return error(response);
-    } else {
+    offline = response.status === 0 || (_ref = response.status, __indexOf.call(offlineStatusCodes, _ref) >= 0);
+    if (offline) {
       if (method !== 'read') {
         options.dirty = true;
       }
       return success(localsync(method, model, options));
+    } else {
+      return error(response);
     }
   };
   switch (method) {

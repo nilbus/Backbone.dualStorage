@@ -7,7 +7,7 @@ as that.
 ###
 
 Backbone.DualStorage = {
-  defaultOfflineStatusCodes: [408, 502]
+  offlineStatusCodes: [408, 502]
 }
 
 Backbone.Model.prototype.hasTempId = ->
@@ -267,16 +267,14 @@ dualsync = (method, model, options) ->
   error = options.error
 
   relayErrorCallback = (response) ->
-    relay = false
-    if response.status and offlineStatusCodes = (Backbone.DualStorage.offlineStatusCodes or Backbone.DualStorage.defaultOfflineStatusCodes)
-      if _.isFunction(offlineStatusCodes)
-        offlineStatusCodes = offlineStatusCodes response
-      relay = response.status not in offlineStatusCodes
-    if relay
-      error response
-    else
+    offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes
+    offlineStatusCodes = offlineStatusCodes(response) if _.isFunction(offlineStatusCodes)
+    offline = response.status == 0 or response.status in offlineStatusCodes
+    if offline
       options.dirty = true unless method is 'read'
       success localsync(method, model, options)
+    else
+      error response
 
   switch method
     when 'read'
