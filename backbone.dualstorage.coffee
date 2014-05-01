@@ -7,7 +7,7 @@ as that.
 ###
 
 Backbone.DualStorage = {
-	defaultOfflineStatusCodes: [408, 502]
+  defaultOfflineStatusCodes: [408, 502]
 }
 
 Backbone.Model.prototype.hasTempId = ->
