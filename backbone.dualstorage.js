@@ -9,7 +9,12 @@ as that.
  */
 
 (function() {
-  var S4, backboneSync, callbackTranslator, dualsync, getStoreName, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result;
+  var S4, backboneSync, callbackTranslator, dualsync, getStoreName, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result,
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  Backbone.DualStorage = {
+    defaultOfflineStatusCodes: [408, 502]
+  };
 
   Backbone.Model.prototype.hasTempId = function() {
     return _.isString(this.id) && this.id.length === 36;
@@ -330,7 +335,7 @@ as that.
   };
 
   dualsync = function(method, model, options) {
-    var error, local, success, temporaryId;
+    var error, local, relayErrorCallback, success, temporaryId;
     options.storeName = getStoreName(model.collection, model);
     options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
     options.error = callbackTranslator.forDualstorageCaller(options.error, model, options);
@@ -345,6 +350,24 @@ as that.
     options.ignoreCallbacks = true;
     success = options.success;
     error = options.error;
+    relayErrorCallback = function(response) {
+      var offlineStatusCodes, relay, _ref;
+      relay = false;
+      if (response.status && (offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes || Backbone.DualStorage.defaultOfflineStatusCodes)) {
+        if (_.isFunction(offlineStatusCodes)) {
+          offlineStatusCodes = offlineStatusCodes(response);
+        }
+        relay = (_ref = response.status, __indexOf.call(offlineStatusCodes, _ref) < 0);
+      }
+      if (relay) {
+        return error(response);
+      } else {
+        if (method !== 'read') {
+          options.dirty = true;
+        }
+        return success(localsync(method, model, options));
+      }
+    };
     switch (method) {
       case 'read':
         if (localsync('hasDirtyOrDestroyed', model, options)) {
@@ -376,7 +399,7 @@ as that.
             return success(resp, status, xhr);
           };
           options.error = function(resp) {
-            return success(localsync(method, model, options));
+            return relayErrorCallback(resp);
           };
           return onlineSync(method, model, options);
         }
@@ -389,8 +412,7 @@ as that.
           return success(resp, status, xhr);
         };
         options.error = function(resp) {
-          options.dirty = true;
-          return success(localsync(method, model, options));
+          return relayErrorCallback(resp);
         };
         return onlineSync(method, model, options);
       case 'update':
@@ -407,11 +429,10 @@ as that.
             return success(resp, status, xhr);
           };
           options.error = function(resp) {
-            options.dirty = true;
             model.set(model.idAttribute, temporaryId, {
               silent: true
             });
-            return success(localsync(method, model, options));
+            return relayErrorCallback(resp);
           };
           model.set(model.idAttribute, null, {
             silent: true
@@ -425,8 +446,7 @@ as that.
             return success(resp, status, xhr);
           };
           options.error = function(resp) {
-            options.dirty = true;
-            return success(localsync(method, model, options));
+            return relayErrorCallback(resp);
           };
           return onlineSync(method, model, options);
         }
@@ -440,8 +460,7 @@ as that.
             return success(resp, status, xhr);
           };
           options.error = function(resp) {
-            options.dirty = true;
-            return success(localsync(method, model, options));
+            return relayErrorCallback(resp);
           };
           return onlineSync(method, model, options);
         }
