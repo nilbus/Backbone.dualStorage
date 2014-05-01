@@ -1,5 +1,6 @@
 ### master / unreleased
 
+* Merge #104, Fix #67: Instead of treating ajax errors as offline, use the error callback (Elad Efrat)
 * Fix #93: syncDirty works when models use a custom idAttribute (Ben Salinas)
 * Fix #78: Do not clear local collection cache when a model is fetched
 * Add `make watch` for continual coffeescript compilation during development
