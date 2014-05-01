@@ -6,6 +6,10 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
 ###
 
+Backbone.DualStorage = {
+  offlineStatusCodes: [408, 502]
+}
+
 Backbone.Model.prototype.hasTempId = ->
   _.isString(@id) and @id.length is 36
 
@@ -262,6 +266,16 @@ dualsync = (method, model, options) ->
   success = options.success
   error = options.error
 
+  relayErrorCallback = (response) ->
+    offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes
+    offlineStatusCodes = offlineStatusCodes(response) if _.isFunction(offlineStatusCodes)
+    offline = response.status == 0 or response.status in offlineStatusCodes
+    if offline
+      options.dirty = true unless method is 'read'
+      success localsync(method, model, options)
+    else
+      error response
+
   switch method
     when 'read'
       if localsync('hasDirtyOrDestroyed', model, options)
@@ -288,7 +302,7 @@ dualsync = (method, model, options) ->
           success(resp, status, xhr)
 
         options.error = (resp) ->
-          success localsync(method, model, options)
+          relayErrorCallback resp
 
         onlineSync(method, model, options)
 
@@ -298,8 +312,7 @@ dualsync = (method, model, options) ->
         localsync(method, updatedModel, options)
         success(resp, status, xhr)
       options.error = (resp) ->
-        options.dirty = true
-        success localsync(method, model, options)
+        relayErrorCallback resp
 
       onlineSync(method, model, options)
 
@@ -314,9 +327,8 @@ dualsync = (method, model, options) ->
           localsync('create', updatedModel, options)
           success(resp, status, xhr)
         options.error = (resp) ->
-          options.dirty = true
           model.set model.idAttribute, temporaryId, silent: true
-          success localsync(method, model, options)
+          relayErrorCallback resp
 
         model.set model.idAttribute, null, silent: true
         onlineSync('create', model, options)
@@ -326,8 +338,7 @@ dualsync = (method, model, options) ->
           localsync(method, updatedModel, options)
           success(resp, status, xhr)
         options.error = (resp) ->
-          options.dirty = true
-          success localsync(method, model, options)
+          relayErrorCallback resp
 
         onlineSync(method, model, options)
 
@@ -339,8 +350,7 @@ dualsync = (method, model, options) ->
           localsync(method, model, options)
           success(resp, status, xhr)
         options.error = (resp) ->
-          options.dirty = true
-          success localsync(method, model, options)
+          relayErrorCallback resp
 
         onlineSync(method, model, options)
 

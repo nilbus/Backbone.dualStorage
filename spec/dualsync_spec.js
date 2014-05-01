@@ -627,6 +627,54 @@
     });
   });
 
+  describe('when to call user-specified success and error callbacks', function() {
+    it('uses the success callback when the network is down', function() {
+      var ready;
+      ready = false;
+      runs(function() {
+        return dualsync('create', model, {
+          success: (function() {
+            return ready = true;
+          }),
+          errorStatus: 0
+        });
+      });
+      return waitsFor((function() {
+        return ready;
+      }), "The success callback should have been called", 100);
+    });
+    it('uses the success callback when an offline error status is received (e.g. 408)', function() {
+      var ready;
+      ready = false;
+      runs(function() {
+        return dualsync('create', model, {
+          success: (function() {
+            return ready = true;
+          }),
+          errorStatus: 408
+        });
+      });
+      return waitsFor((function() {
+        return ready;
+      }), "The success callback should have been called", 100);
+    });
+    return it('uses the error callback when an error status is received (e.g. 500)', function() {
+      var ready;
+      ready = false;
+      runs(function() {
+        return dualsync('create', model, {
+          error: (function() {
+            return ready = true;
+          }),
+          errorStatus: 500
+        });
+      });
+      return waitsFor((function() {
+        return ready;
+      }), "The error callback should have been called", 100);
+    });
+  });
+
 }).call(this);
 
 //# sourceMappingURL=dualsync_spec.map
