@@ -331,7 +331,7 @@ modelUpdatedWithResponse = function(model, response) {
   modelClone = new Backbone.Model;
   modelClone.idAttribute = model.idAttribute;
   modelClone.set(model.attributes);
-  modelClone.set(modelClone.parse(response));
+  modelClone.set(model.parse(response));
   return modelClone;
 };
 
