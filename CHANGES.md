@@ -1,4 +1,4 @@
-### master / unreleased
+### 1.3.0 / 2014-05-10
 
 * Fix #104, #67: Instead of treating ajax errors as offline, use the error callback (Elad Efrat)
 * Fix #106: Restore proper call to a model's parse method; broken since 1.0.2 (Eduardo Matos)
