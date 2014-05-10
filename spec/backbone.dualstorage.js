@@ -48,7 +48,7 @@ Backbone.Collection.prototype.dirtyModels = function() {
     }
     return _results;
   }).call(this);
-  return _(models).compact();
+  return _.compact(models);
 };
 
 Backbone.Collection.prototype.syncDestroyed = function() {

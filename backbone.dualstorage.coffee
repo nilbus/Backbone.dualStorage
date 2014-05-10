@@ -33,7 +33,7 @@ Backbone.Collection.prototype.dirtyModels = ->
   models = for id in ids
     @get(id)
 
-  _(models).compact()
+  _.compact(models)
 
 Backbone.Collection.prototype.syncDestroyed = ->
   store = localStorage.getItem("#{getStoreName(@)}_destroyed")
