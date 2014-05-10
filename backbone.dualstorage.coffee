@@ -271,7 +271,7 @@ dualsync = (method, model, options) ->
     offlineStatusCodes = offlineStatusCodes(response) if _.isFunction(offlineStatusCodes)
     offline = response.status == 0 or response.status in offlineStatusCodes
     if offline
-      options.dirty = true unless method is 'read'
+      options.dirty = true
       success localsync(method, model, options)
     else
       error response
@@ -279,6 +279,7 @@ dualsync = (method, model, options) ->
   switch method
     when 'read'
       if localsync('hasDirtyOrDestroyed', model, options)
+        options.dirty = true
         success localsync(method, model, options)
       else
         options.success = (resp, status, xhr) ->
