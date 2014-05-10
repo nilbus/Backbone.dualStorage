@@ -1,3 +1,7 @@
+### master / unreleased
+
+* Fix #99: Restore compatibility with lodash; incompatible since 1.2.0 (Aleksandr Motsjonov)
+
 ### 1.3.0 / 2014-05-10
 
 * Fix #104, #67: Instead of treating ajax errors as offline, use the error callback (Elad Efrat)
