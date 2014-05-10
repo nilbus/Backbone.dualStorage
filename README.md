@@ -121,7 +121,7 @@ Note that the tests run against **spec/backbone.dualstorage.js**, not the copy i
 The spec version needs to be unwrapped to allow mocking components for testing.
 This version is compiled automatically when running `make`.
 
-dualStorage has been tested against Backbone versions 0.9.2 - 1.1.0.
+dualStorage has been tested against Backbone versions 0.9.2 - 1.1.2.
 Test with other versions by altering the version included in `SpecRunner.html`.
 
 Authors

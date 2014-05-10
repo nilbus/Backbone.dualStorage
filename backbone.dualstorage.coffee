@@ -41,7 +41,7 @@ Backbone.Collection.prototype.syncDestroyed = ->
 
   for id in ids
     model = new @model
-    model.id = id
+    model.set model.idAttribute, id
     model.collection = @
     model.destroy()
 
@@ -107,8 +107,7 @@ class window.Store
   create: (model) ->
     if not _.isObject(model) then return model
     if not model.id
-      model.id = @generateId()
-      model.set model.idAttribute, model.id
+      model.set model.idAttribute, @generateId()
     localStorage.setItem @name + @sep + model.id, JSON.stringify(model)
     @records.push model.id.toString()
     @save()

@@ -68,7 +68,7 @@ Backbone.Collection.prototype.syncDestroyed = function() {
   for (_i = 0, _len = ids.length; _i < _len; _i++) {
     id = ids[_i];
     model = new this.model;
-    model.id = id;
+    model.set(model.idAttribute, id);
     model.collection = this;
     _results.push(model.destroy());
   }
@@ -147,8 +147,7 @@ window.Store = (function() {
       return model;
     }
     if (!model.id) {
-      model.id = this.generateId();
-      model.set(model.idAttribute, model.id);
+      model.set(model.idAttribute, this.generateId());
     }
     localStorage.setItem(this.name + this.sep + model.id, JSON.stringify(model));
     this.records.push(model.id.toString());
