@@ -358,9 +358,7 @@ as that.
       }
       offline = response.status === 0 || (_ref = response.status, __indexOf.call(offlineStatusCodes, _ref) >= 0);
       if (offline) {
-        if (method !== 'read') {
-          options.dirty = true;
-        }
+        options.dirty = true;
         return success(localsync(method, model, options));
       } else {
         return error(response);
