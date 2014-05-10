@@ -367,6 +367,7 @@ dualsync = function(method, model, options) {
   switch (method) {
     case 'read':
       if (localsync('hasDirtyOrDestroyed', model, options)) {
+        options.dirty = true;
         return success(localsync(method, model, options));
       } else {
         options.success = function(resp, status, xhr) {
