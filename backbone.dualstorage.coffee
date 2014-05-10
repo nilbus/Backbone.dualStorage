@@ -15,8 +15,8 @@ Backbone.Model.prototype.hasTempId = ->
 
 getStoreName = (collection, model) ->
   model ||= collection.model.prototype
-  result(collection, 'storeName') || result(model, 'storeName') ||
-  result(collection, 'url')       || result(model, 'urlRoot')   || result(model, 'url')
+  _.result(collection, 'storeName') || _.result(model, 'storeName') ||
+  _.result(collection, 'url')       || _.result(model, 'urlRoot')   || _.result(model, 'url')
 
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
@@ -220,14 +220,6 @@ localsync = (method, model, options) ->
 
   response
 
-# If the value of the named property is a function then invoke it;
-# otherwise, return it.
-# based on _.result from underscore github
-result = (object, property) ->
-  return null unless object
-  value = object[property]
-  if _.isFunction(value) then value.call(object) else value
-
 # Helper function to run parseBeforeLocalSave() in order to
 # parse a remote JSON response before caching locally
 parseRemoteResponse = (object, response) ->
@@ -253,10 +245,10 @@ dualsync = (method, model, options) ->
   options.error   = callbackTranslator.forDualstorageCaller(options.error, model, options)
 
   # execute only online sync
-  return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')
+  return onlineSync(method, model, options) if _.result(model, 'remote') or _.result(model.collection, 'remote')
 
   # execute only local sync
-  local = result(model, 'local') or result(model.collection, 'local')
+  local = _.result(model, 'local') or _.result(model.collection, 'local')
   options.dirty = options.remote is false and not local
   return localsync(method, model, options) if options.remote is false or local
 

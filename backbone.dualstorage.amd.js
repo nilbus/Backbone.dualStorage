@@ -16,7 +16,7 @@ A simple module to replace `Backbone.sync` with *localStorage*-based
 persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
  */
-var S4, backboneSync, callbackTranslator, dualsync, getStoreName, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse, result,
+var S4, backboneSync, callbackTranslator, dualsync, getStoreName, localsync, modelUpdatedWithResponse, onlineSync, parseRemoteResponse,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 Backbone.DualStorage = {
@@ -29,7 +29,7 @@ Backbone.Model.prototype.hasTempId = function() {
 
 getStoreName = function(collection, model) {
   model || (model = collection.model.prototype);
-  return result(collection, 'storeName') || result(model, 'storeName') || result(collection, 'url') || result(model, 'urlRoot') || result(model, 'url');
+  return _.result(collection, 'storeName') || _.result(model, 'storeName') || _.result(collection, 'url') || _.result(model, 'urlRoot') || _.result(model, 'url');
 };
 
 Backbone.Collection.prototype.syncDirty = function() {
@@ -302,19 +302,6 @@ localsync = function(method, model, options) {
   return response;
 };
 
-result = function(object, property) {
-  var value;
-  if (!object) {
-    return null;
-  }
-  value = object[property];
-  if (_.isFunction(value)) {
-    return value.call(object);
-  } else {
-    return value;
-  }
-};
-
 parseRemoteResponse = function(object, response) {
   if (!(object && object.parseBeforeLocalSave)) {
     return response;
@@ -346,10 +333,10 @@ dualsync = function(method, model, options) {
   options.storeName = getStoreName(model.collection, model);
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
   options.error = callbackTranslator.forDualstorageCaller(options.error, model, options);
-  if (result(model, 'remote') || result(model.collection, 'remote')) {
+  if (_.result(model, 'remote') || _.result(model.collection, 'remote')) {
     return onlineSync(method, model, options);
   }
-  local = result(model, 'local') || result(model.collection, 'local');
+  local = _.result(model, 'local') || _.result(model.collection, 'local');
   options.dirty = options.remote === false && !local;
   if (options.remote === false || local) {
     return localsync(method, model, options);
