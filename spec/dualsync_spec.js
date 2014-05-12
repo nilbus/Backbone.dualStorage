@@ -360,6 +360,78 @@
     return describe('server response', function() {
       describe('on read', function() {
         describe('for models', function() {
+          it('errors if server errors and no existing local Store is found', function() {
+            var ready;
+            spyOnLocalsync();
+            backboneSync.reset();
+            localsync.reset();
+            ready = false;
+            runs(function() {
+              return dualsync('read', model, {
+                error: (function() {
+                  return ready = true;
+                }),
+                serverResponse: {
+                  side: 'left',
+                  _id: 13
+                },
+                errorStatus: 0
+              });
+            });
+            return waitsFor((function() {
+              return ready;
+            }), "The error callback should have been called", 100);
+          });
+          it('success if server errors and Store exists with data', function() {
+            var ready, storeModel;
+            spyOnLocalsync();
+            backboneSync.reset();
+            localsync.reset();
+            storeModel = model.clone();
+            storeModel.storeName = 'store-exists';
+            localStorage.setItem(storeModel.storeName, "1,2,3");
+            ready = false;
+            return runs(function() {
+              dualsync('read', storeModel, {
+                success: (function() {
+                  return ready = true;
+                }),
+                serverResponse: {
+                  side: 'left',
+                  _id: 13
+                },
+                errorStatus: 0
+              });
+              return waitsFor((function() {
+                return ready;
+              }), "The success callback should have been called", 100);
+            });
+          });
+          it('success if server errors and Store exists but empty data', function() {
+            var ready, storeModel;
+            spyOnLocalsync();
+            backboneSync.reset();
+            localsync.reset();
+            storeModel = model.clone();
+            storeModel.storeName = 'store-exists';
+            localStorage.setItem(storeModel.storeName, "");
+            ready = false;
+            return runs(function() {
+              dualsync('read', storeModel, {
+                success: (function() {
+                  return ready = true;
+                }),
+                serverResponse: {
+                  side: 'left',
+                  _id: 13
+                },
+                errorStatus: 0
+              });
+              return waitsFor((function() {
+                return ready;
+              }), "The success callback should have been called", 100);
+            });
+          });
           return it('gets merged with existing attributes on a model', function() {
             var ready;
             spyOnLocalsync();
@@ -631,6 +703,7 @@
     it('uses the success callback when the network is down', function() {
       var ready;
       ready = false;
+      localStorage.setItem('bones/', "1");
       runs(function() {
         return dualsync('create', model, {
           success: (function() {
@@ -646,6 +719,7 @@
     it('uses the success callback when an offline error status is received (e.g. 408)', function() {
       var ready;
       ready = false;
+      localStorage.setItem('bones/', "1");
       runs(function() {
         return dualsync('create', model, {
           success: (function() {

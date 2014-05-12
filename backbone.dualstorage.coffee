@@ -150,6 +150,9 @@ class window.Store
     @save()
     model
 
+
+window.Store.exists = (storeName) -> localStorage.getItem(storeName) isnt null
+
 callbackTranslator =
   needsTranslation: Backbone.VERSION == '0.9.10'
 
@@ -240,6 +243,7 @@ onlineSync = (method, model, options) ->
 
 dualsync = (method, model, options) ->
   options.storeName = getStoreName(model.collection, model)
+  options.storeExists = Store.exists(options.storeName)
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
   options.error   = callbackTranslator.forDualstorageCaller(options.error, model, options)
 
@@ -261,7 +265,7 @@ dualsync = (method, model, options) ->
     offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes
     offlineStatusCodes = offlineStatusCodes(response) if _.isFunction(offlineStatusCodes)
     offline = response.status == 0 or response.status in offlineStatusCodes
-    if offline
+    if offline and options.storeExists
       options.dirty = true
       success localsync(method, model, options)
     else
