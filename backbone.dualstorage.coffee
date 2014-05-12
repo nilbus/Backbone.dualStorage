@@ -265,7 +265,7 @@ dualsync = (method, model, options) ->
     offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes
     offlineStatusCodes = offlineStatusCodes(response) if _.isFunction(offlineStatusCodes)
     offline = response.status == 0 or response.status in offlineStatusCodes
-    if offline
+    if offline and options.storeExists
       options.dirty = true
       success localsync(method, model, options)
     else
@@ -298,10 +298,7 @@ dualsync = (method, model, options) ->
           success(resp, status, xhr)
 
         options.error = (resp) ->
-	        if options.storeExists
-            relayErrorCallback resp
-      	  else
-	          error(resp)
+          relayErrorCallback resp
 
         onlineSync(method, model, options)
 

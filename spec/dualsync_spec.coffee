@@ -180,53 +180,56 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
   describe 'server response', ->
     describe 'on read', ->
       describe 'for models', ->
-	it 'errors if server errors and no existing local Store is found', ->
-	  spyOnLocalsync()
-	  backboneSync.reset()
-	  localsync.reset()
-	  ready = false
-	  runs ->
-	    dualsync('read', model,
-	      error: (-> ready = true)
-	      serverResponse: {side: 'left', _id: 13}
-	      serverResponseCode: 500
-	    )
-	  waitsFor (-> ready), "The error callback should have been called", 100
+        it 'errors if server errors and no existing local Store is found', ->
+          spyOnLocalsync()
+          backboneSync.reset()
+          localsync.reset()
+          ready = false
+          runs ->
+            dualsync('read', model,
+              error: (-> ready = true)
+              serverResponse: {side: 'left', _id: 13}
+              errorStatus: 0
+            )
+          waitsFor (->
+            ready), "The error callback should have been called", 100
 
-	it 'success if server errors and Store exists with data', ->
-	  spyOnLocalsync()
-	  backboneSync.reset()
-	  localsync.reset()
-	  storeModel = model.clone()
-	  storeModel.storeName = 'store-exists'
-	  localStorage.setItem storeModel.storeName, "1,2,3"
-	  ready = false
-	  runs ->
-	    dualsync('read', storeModel,
-	      success: (-> ready = true)
-	      serverResponse: {side: 'left', _id: 13}
-	      serverResponseCode: 500
-	    )
-	  waitsFor (-> ready), "The success callback should have been called", 100
+        it 'success if server errors and Store exists with data', ->
+          spyOnLocalsync()
+          backboneSync.reset()
+          localsync.reset()
+          storeModel = model.clone()
+          storeModel.storeName = 'store-exists'
+          localStorage.setItem storeModel.storeName, "1,2,3"
+          ready = false
+          runs ->
+            dualsync('read', storeModel,
+              success: (->
+                ready = true)
+              serverResponse: {side: 'left', _id: 13}
+              errorStatus: 0
+            )
+            waitsFor (-> ready), "The success callback should have been called", 100
 
-	it 'success if server errors and Store exists but empty data', ->
-	  spyOnLocalsync()
-	  backboneSync.reset()
-	  localsync.reset()
-	  storeModel = model.clone()
-	  storeModel.storeName = 'store-exists'
-	  localStorage.setItem storeModel.storeName, ""
-	  ready = false
-	  runs ->
-	    dualsync('read', storeModel,
-	      success: (-> ready = true)
-	      serverResponse: {side: 'left', _id: 13}
-	      serverResponseCode: 500
-	    )
-	  waitsFor (-> ready), "The success callback should have been called", 100
+        it 'success if server errors and Store exists but empty data', ->
+          spyOnLocalsync()
+          backboneSync.reset()
+          localsync.reset()
+          storeModel = model.clone()
+          storeModel.storeName = 'store-exists'
+          localStorage.setItem storeModel.storeName, ""
+          ready = false
+          runs ->
+            dualsync('read', storeModel,
+              success: (->
+                ready = true)
+              serverResponse: {side: 'left', _id: 13}
+              errorStatus: 0
+            )
+            waitsFor (-> ready), "The success callback should have been called", 100
 
-	it 'gets merged with existing attributes on a model', ->
-	  spyOnLocalsync()
+        it 'gets merged with existing attributes on a model', ->
+          spyOnLocalsync()
           localsync.reset()
           ready = false
           runs ->
@@ -371,14 +374,18 @@ describe 'storeName selection', ->
 describe 'when to call user-specified success and error callbacks', ->
   it 'uses the success callback when the network is down', ->
     ready = false
+    localStorage.setItem 'bones/', "1"
     runs ->
       dualsync('create', model, success: (-> ready = true), errorStatus: 0)
     waitsFor (-> ready), "The success callback should have been called", 100
+
   it 'uses the success callback when an offline error status is received (e.g. 408)', ->
     ready = false
+    localStorage.setItem 'bones/', "1"
     runs ->
       dualsync('create', model, success: (-> ready = true), errorStatus: 408)
     waitsFor (-> ready), "The success callback should have been called", 100
+
   it 'uses the error callback when an error status is received (e.g. 500)', ->
     ready = false
     runs ->
