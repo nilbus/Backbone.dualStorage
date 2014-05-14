@@ -180,54 +180,6 @@ describe 'delegating to localsync and backboneSync, and calling the model callba
   describe 'server response', ->
     describe 'on read', ->
       describe 'for models', ->
-        it 'errors if server errors and no existing local Store is found', ->
-          spyOnLocalsync()
-          backboneSync.reset()
-          localsync.reset()
-          ready = false
-          runs ->
-            dualsync('read', model,
-              error: (-> ready = true)
-              serverResponse: {side: 'left', _id: 13}
-              errorStatus: 0
-            )
-          waitsFor (->
-            ready), "The error callback should have been called", 100
-
-        it 'success if server errors and Store exists with data', ->
-          spyOnLocalsync()
-          backboneSync.reset()
-          localsync.reset()
-          storeModel = model.clone()
-          storeModel.storeName = 'store-exists'
-          localStorage.setItem storeModel.storeName, "1,2,3"
-          ready = false
-          runs ->
-            dualsync('read', storeModel,
-              success: (->
-                ready = true)
-              serverResponse: {side: 'left', _id: 13}
-              errorStatus: 0
-            )
-            waitsFor (-> ready), "The success callback should have been called", 100
-
-        it 'success if server errors and Store exists but empty data', ->
-          spyOnLocalsync()
-          backboneSync.reset()
-          localsync.reset()
-          storeModel = model.clone()
-          storeModel.storeName = 'store-exists'
-          localStorage.setItem storeModel.storeName, ""
-          ready = false
-          runs ->
-            dualsync('read', storeModel,
-              success: (->
-                ready = true)
-              serverResponse: {side: 'left', _id: 13}
-              errorStatus: 0
-            )
-            waitsFor (-> ready), "The success callback should have been called", 100
-
         it 'gets merged with existing attributes on a model', ->
           spyOnLocalsync()
           localsync.reset()
@@ -391,3 +343,37 @@ describe 'when to call user-specified success and error callbacks', ->
     runs ->
       dualsync('create', model, error: (-> ready = true), errorStatus: 500)
     waitsFor (-> ready), "The error callback should have been called", 100
+
+  describe 'when offline', ->
+    it 'uses the error callback if no existing local store is found', ->
+      ready = false
+      runs ->
+        dualsync('read', model,
+          error: (-> ready = true)
+          errorStatus: 0
+        )
+      waitsFor (-> ready), "The error callback should have been called", 100
+
+    it 'uses the success callback if the store exists with data', ->
+      storeModel = model.clone()
+      storeModel.storeName = 'store-exists'
+      localStorage.setItem storeModel.storeName, "1,2,3"
+      ready = false
+      runs ->
+        dualsync('read', storeModel,
+          success: (-> ready = true)
+          errorStatus: 0
+        )
+        waitsFor (-> ready), "The success callback should have been called", 100
+
+    it 'success if server errors and Store exists with no entries', ->
+      storeModel = model.clone()
+      storeModel.storeName = 'store-exists'
+      localStorage.setItem storeModel.storeName, ""
+      ready = false
+      runs ->
+        dualsync('read', storeModel,
+          success: (-> ready = true)
+          errorStatus: 0
+        )
+        waitsFor (-> ready), "The success callback should have been called", 100
