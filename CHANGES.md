@@ -1,6 +1,7 @@
 ### master / unreleased
 
 * Make syncDestroyed compatible with backbone >= 1.1.1
+* Fix #94: Call the error callback when offline if the collection has never been fetched (Dave Taylor)
 * Fix #99: Restore compatibility with lodash; incompatible since 1.2.0 (Aleksandr Motsjonov)
 
 ### 1.3.0 / 2014-05-10

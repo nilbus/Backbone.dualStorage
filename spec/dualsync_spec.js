@@ -631,6 +631,7 @@
     it('uses the success callback when the network is down', function() {
       var ready;
       ready = false;
+      localStorage.setItem('bones/', "1");
       runs(function() {
         return dualsync('create', model, {
           success: (function() {
@@ -646,6 +647,7 @@
     it('uses the success callback when an offline error status is received (e.g. 408)', function() {
       var ready;
       ready = false;
+      localStorage.setItem('bones/', "1");
       runs(function() {
         return dualsync('create', model, {
           success: (function() {
@@ -658,7 +660,7 @@
         return ready;
       }), "The success callback should have been called", 100);
     });
-    return it('uses the error callback when an error status is received (e.g. 500)', function() {
+    it('uses the error callback when an error status is received (e.g. 500)', function() {
       var ready;
       ready = false;
       runs(function() {
@@ -672,6 +674,59 @@
       return waitsFor((function() {
         return ready;
       }), "The error callback should have been called", 100);
+    });
+    return describe('when offline', function() {
+      it('uses the error callback if no existing local store is found', function() {
+        var ready;
+        ready = false;
+        runs(function() {
+          return dualsync('read', model, {
+            error: (function() {
+              return ready = true;
+            }),
+            errorStatus: 0
+          });
+        });
+        return waitsFor((function() {
+          return ready;
+        }), "The error callback should have been called", 100);
+      });
+      it('uses the success callback if the store exists with data', function() {
+        var ready, storeModel;
+        storeModel = model.clone();
+        storeModel.storeName = 'store-exists';
+        localStorage.setItem(storeModel.storeName, "1,2,3");
+        ready = false;
+        return runs(function() {
+          dualsync('read', storeModel, {
+            success: (function() {
+              return ready = true;
+            }),
+            errorStatus: 0
+          });
+          return waitsFor((function() {
+            return ready;
+          }), "The success callback should have been called", 100);
+        });
+      });
+      return it('success if server errors and Store exists with no entries', function() {
+        var ready, storeModel;
+        storeModel = model.clone();
+        storeModel.storeName = 'store-exists';
+        localStorage.setItem(storeModel.storeName, "");
+        ready = false;
+        return runs(function() {
+          dualsync('read', storeModel, {
+            success: (function() {
+              return ready = true;
+            }),
+            errorStatus: 0
+          });
+          return waitsFor((function() {
+            return ready;
+          }), "The success callback should have been called", 100);
+        });
+      });
     });
   });
 

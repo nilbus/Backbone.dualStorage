@@ -205,6 +205,10 @@ as that.
 
   })();
 
+  window.Store.exists = function(storeName) {
+    return localStorage.getItem(storeName) !== null;
+  };
+
   callbackTranslator = {
     needsTranslation: Backbone.VERSION === '0.9.10',
     forBackboneCaller: function(callback) {
@@ -323,6 +327,7 @@ as that.
   dualsync = function(method, model, options) {
     var error, local, relayErrorCallback, success, temporaryId;
     options.storeName = getStoreName(model.collection, model);
+    options.storeExists = Store.exists(options.storeName);
     options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
     options.error = callbackTranslator.forDualstorageCaller(options.error, model, options);
     if (_.result(model, 'remote') || _.result(model.collection, 'remote')) {
@@ -343,7 +348,7 @@ as that.
         offlineStatusCodes = offlineStatusCodes(response);
       }
       offline = response.status === 0 || (_ref = response.status, __indexOf.call(offlineStatusCodes, _ref) >= 0);
-      if (offline) {
+      if (offline && options.storeExists) {
         options.dirty = true;
         return success(localsync(method, model, options));
       } else {
