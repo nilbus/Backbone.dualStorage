@@ -19,7 +19,7 @@ spyOnLocalSync = ->
   spyOn(window, 'localSync')
     .andCallFake (method, model, options) ->
       options.success?() unless options.ignoreCallbacks
-      $.Deferred().resolve();
+      $.Deferred().resolve()
   localSync = window.localSync
 
 describe 'delegating to localSync and backboneSync, and calling the model callbacks', ->

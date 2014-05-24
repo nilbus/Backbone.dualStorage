@@ -1,4 +1,4 @@
-{StickyStorageAdapter} = window.Backbone.storageAdapters;
+{StickyStorageAdapter} = window.Backbone.storageAdapters
 
 describe 'StickyStorageAdapter', ->
   describe 'creation', ->
