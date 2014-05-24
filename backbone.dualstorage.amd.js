@@ -273,16 +273,14 @@
     Store.prototype.clean = function(model, from) {
       var store;
       store = "" + this.name + "_" + from;
-      return this.recordsOn(store).then((function(_this) {
-        return function(dirtyRecords) {
-          if (_.include(dirtyRecords, model.id.toString())) {
-            return Backbone.storageAdapter.setItem(store, _.without(dirtyRecords, model.id.toString()).join(',')).then(function() {
-              return model;
-            });
-          }
-          return model;
-        };
-      })(this));
+      return this.recordsOn(store).then(function(dirtyRecords) {
+        if (_.include(dirtyRecords, model.id.toString())) {
+          return Backbone.storageAdapter.setItem(store, _.without(dirtyRecords, model.id.toString()).join(',')).then(function() {
+            return model;
+          });
+        }
+        return model;
+      });
     };
 
     Store.prototype.destroyed = function(model) {
@@ -442,74 +440,72 @@
       throw new Error('model parameter is required to be a backbone model or collection.');
     }
     store = new Store(options.storeName);
-    return store.initialize().then((function(_this) {
-      return function() {
-        var promise;
-        promise = (function() {
-          switch (method) {
-            case 'read':
-              if (model instanceof Backbone.Model) {
-                return store.find(model);
-              } else {
-                return store.findAll();
-              }
-              break;
-            case 'hasDirtyOrDestroyed':
-              return store.hasDirtyOrDestroyed();
-            case 'clear':
-              return store.clear();
-            case 'create':
-              return store.find(model).then(function(preExisting) {
-                if (options.add && !options.merge && preExisting) {
-                  return preExisting;
-                } else {
-                  return store.create(model).then(function(model) {
-                    if (options.dirty) {
-                      return store.dirty(model).then(function() {
-                        return model;
-                      });
-                    }
-                    return model;
-                  });
-                }
-              });
-            case 'update':
-              return store.update(model).then(function(model) {
-                if (options.dirty) {
-                  return store.dirty(model);
-                } else {
-                  return store.clean(model, 'dirty');
-                }
-              });
-            case 'delete':
-              return store.destroy(model).then(function() {
-                if (options.dirty) {
-                  return store.destroyed(model);
-                } else {
-                  if (model.id.toString().length === 36) {
-                    return store.clean(model, 'dirty');
-                  } else {
-                    return store.clean(model, 'destroyed');
-                  }
-                }
-              });
-          }
-        })();
-        return promise.then(function(response) {
-          if (response != null ? response.attributes : void 0) {
-            response = response.attributes;
-          }
-          if (!options.ignoreCallbacks) {
-            if (response) {
-              options.success(response);
+    return store.initialize().then(function() {
+      var promise;
+      promise = (function() {
+        switch (method) {
+          case 'read':
+            if (model instanceof Backbone.Model) {
+              return store.find(model);
             } else {
-              options.error('Record not found');
+              return store.findAll();
             }
+            break;
+          case 'hasDirtyOrDestroyed':
+            return store.hasDirtyOrDestroyed();
+          case 'clear':
+            return store.clear();
+          case 'create':
+            return store.find(model).then(function(preExisting) {
+              if (options.add && !options.merge && preExisting) {
+                return preExisting;
+              } else {
+                return store.create(model).then(function(model) {
+                  if (options.dirty) {
+                    return store.dirty(model).then(function() {
+                      return model;
+                    });
+                  }
+                  return model;
+                });
+              }
+            });
+          case 'update':
+            return store.update(model).then(function(model) {
+              if (options.dirty) {
+                return store.dirty(model);
+              } else {
+                return store.clean(model, 'dirty');
+              }
+            });
+          case 'delete':
+            return store.destroy(model).then(function() {
+              if (options.dirty) {
+                return store.destroyed(model);
+              } else {
+                if (model.id.toString().length === 36) {
+                  return store.clean(model, 'dirty');
+                } else {
+                  return store.clean(model, 'destroyed');
+                }
+              }
+            });
+        }
+      })();
+      return promise.then(function(response) {
+        if (response != null ? response.attributes : void 0) {
+          response = response.attributes;
+        }
+        if (!options.ignoreCallbacks) {
+          if (response) {
+            options.success(response);
+          } else {
+            options.error('Record not found');
           }
-          return response;
-        });
-      };
-    })(this));
+        }
+        return response;
+      });
+    });
   };
 
   parseRemoteResponse = function(object, response) {

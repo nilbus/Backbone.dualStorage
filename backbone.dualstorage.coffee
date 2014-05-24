@@ -106,7 +106,7 @@ class window.Store
 
   clean: (model, from) ->
     store = "#{@name}_#{from}"
-    @recordsOn(store).then (dirtyRecords) =>
+    @recordsOn(store).then (dirtyRecords) ->
       if _.include dirtyRecords, model.id.toString()
         return Backbone.storageAdapter.setItem(store, _.without(dirtyRecords, model.id.toString()).join(',')).then -> model
       model
@@ -126,14 +126,14 @@ class window.Store
       model.set model.idAttribute, @generateId()
     Backbone.storageAdapter.setItem(@getStorageKey(model), JSON.stringify(model)).then =>
       @records.push model.id.toString()
-      @save().then => model
+      @save().then -> model
 
   # Update a model by replacing its copy in `this.data`.
   update: (model) ->
     Backbone.storageAdapter.setItem(@getStorageKey(model), JSON.stringify(model)).then =>
       if not _.include(@records, model.id.toString())
         @records.push model.id.toString()
-      @save().then => model
+      @save().then -> model
 
   clear: ->
     $.when((Backbone.storageAdapter.removeItem(@getStorageKey id) for id in @records)...).then =>
@@ -142,7 +142,7 @@ class window.Store
 
   hasDirtyOrDestroyed: ->
     Backbone.storageAdapter.getItem(@dirtyName).then (dirty) =>
-      Backbone.storageAdapter.getItem(@destroyedName).then (destroyed) =>
+      Backbone.storageAdapter.getItem(@destroyedName).then (destroyed) ->
         not _.isEmpty(dirty) or not _.isEmpty(destroyed)
 
   # Retrieve a model from `this.data` by id.
@@ -191,7 +191,7 @@ localSync = (method, model, options) ->
     throw new Error 'model parameter is required to be a backbone model or collection.'
 
   store = new Store options.storeName
-  store.initialize().then =>
+  store.initialize().then ->
 
     promise = switch method
       when 'read'
