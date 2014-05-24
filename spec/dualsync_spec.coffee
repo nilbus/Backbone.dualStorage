@@ -189,7 +189,6 @@ describe 'delegating to localSync and backboneSync, and calling the model callba
             dualSync('read', model, success: (-> ready = true), serverResponse: {side: 'left', _id: 13})
           waitsFor (-> ready), "The success callback should have been called", 100
           runs ->
-            window.x = localSync
             expect(localSync.calls[1].args[0]).toEqual 'update'
             expect(localSync.calls[1].args[1].attributes).toEqual position: 'arm', side: 'left', _id: 13
 

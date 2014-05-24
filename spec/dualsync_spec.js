@@ -383,7 +383,6 @@
               return ready;
             }), "The success callback should have been called", 100);
             return runs(function() {
-              window.x = localSync;
               expect(localSync.calls[1].args[0]).toEqual('update');
               return expect(localSync.calls[1].args[1].attributes).toEqual({
                 position: 'arm',
