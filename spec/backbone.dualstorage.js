@@ -200,11 +200,7 @@ Backbone.Collection.prototype.destroyedModelIds = function() {
 };
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = function() {
-  return this.syncDirty().then((function(_this) {
-    return function() {
-      return _this.syncDestroyed();
-    };
-  })(this));
+  return $.when(this.syncDirty(), this.syncDestroyed());
 };
 
 S4 = function() {

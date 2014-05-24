@@ -58,7 +58,7 @@ Backbone.Collection.prototype.destroyedModelIds = ->
     ids = (store and store.split(',')) or []
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
-  @syncDirty().then => @syncDestroyed()
+  $.when @syncDirty(), @syncDestroyed()
 
 # Generate four random hex digits.
 S4 = ->
