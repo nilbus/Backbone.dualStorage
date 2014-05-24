@@ -229,11 +229,11 @@ window.Store = (function() {
     return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
   };
 
-  Store.prototype.getStorageKey = function(model) {
-    if (_.isObject(model)) {
-      model = model.id;
+  Store.prototype.getStorageKey = function(id) {
+    if (_.isObject(id)) {
+      id = id.id;
     }
-    return this.name + this.sep + model;
+    return this.name + this.sep + id;
   };
 
   Store.prototype.save = function() {

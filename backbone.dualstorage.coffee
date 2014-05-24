@@ -85,9 +85,9 @@ class window.Store
   generateId: ->
     S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4()
 
-  getStorageKey: (model) ->
-    if _.isObject model then model = model.id
-    @name + @sep + model
+  getStorageKey: (id) ->
+    if _.isObject id then id = id.id
+    @name + @sep + id
 
   # Save the current state of the **Store** to local storage.
   save: ->
