@@ -6,6 +6,9 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
 ###
 
+# Use Backbone's $ in case it is different than window.$
+$ = Backbone.$
+
 # Use LocalStorageAdapter as default adapter.
 Backbone.storageAdapter = new Backbone.storageAdapters.LocalStorageAdapter
 
