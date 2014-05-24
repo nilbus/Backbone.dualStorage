@@ -121,7 +121,7 @@ class window.Store
   # Add a model, giving it a unique GUID, if it doesn't already
   # have an id of it's own.
   create: (model) ->
-    if not _.isObject(model) then return $.Deferred().resolve model
+    if not _.isObject(model) then return $.Deferred().resolve(model).promise()
     if not model.id
       model.set model.idAttribute, @generateId()
     Backbone.storageAdapter.setItem(@getStorageKey(model), JSON.stringify(model)).then =>
@@ -306,7 +306,7 @@ dualSync = (method, model, options) ->
               collection = model
               idAttribute = collection.model.prototype.idAttribute
               clearIfNeeded = if options.add
-                $.Deferred().resolve() # skip clear
+                $.Deferred().resolve().promise() # skip clear
               else
                 localSync('clear', model, options)
               clearIfNeeded.done ->

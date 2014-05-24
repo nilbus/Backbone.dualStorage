@@ -10,21 +10,21 @@
     function LocalStorageAdapter() {}
 
     LocalStorageAdapter.prototype.initialize = function() {
-      return $.Deferred().resolve;
+      return $.Deferred().resolve().promise();
     };
 
     LocalStorageAdapter.prototype.setItem = function(key, value) {
       localStorage.setItem(key, value);
-      return $.Deferred().resolve(value);
+      return $.Deferred().resolve(value).promise();
     };
 
     LocalStorageAdapter.prototype.getItem = function(key) {
-      return $.Deferred().resolve(localStorage.getItem(key));
+      return $.Deferred().resolve(localStorage.getItem(key)).promise();
     };
 
     LocalStorageAdapter.prototype.removeItem = function(key) {
       localStorage.removeItem(key);
-      return $.Deferred().resolve();
+      return $.Deferred().resolve().promise();
     };
 
     return LocalStorageAdapter;
@@ -37,43 +37,43 @@
     }
 
     StickyStorageAdapter.prototype.initialize = function() {
-      var promise;
-      promise = $.Deferred();
+      var deferred;
+      deferred = $.Deferred();
       this.store = new StickyStore({
         name: this.name,
         adapters: ['indexedDB', 'webSQL', 'localStorage'],
         ready: function() {
-          return promise.resolve();
+          return deferred.resolve();
         }
       });
-      return promise;
+      return deferred.promise();
     };
 
     StickyStorageAdapter.prototype.setItem = function(key, value) {
-      var promise;
-      promise = $.Deferred();
+      var deferred;
+      deferred = $.Deferred();
       this.store.set(key, value, function(storedValue) {
-        return promise.resolve(storedValue);
+        return deferred.resolve(storedValue);
       });
-      return promise;
+      return deferred.promise();
     };
 
     StickyStorageAdapter.prototype.getItem = function(key) {
-      var promise;
-      promise = $.Deferred();
+      var deferred;
+      deferred = $.Deferred();
       this.store.get(key, function(storedValue) {
-        return promise.resolve(storedValue);
+        return deferred.resolve(storedValue);
       });
-      return promise;
+      return deferred.promise();
     };
 
     StickyStorageAdapter.prototype.removeItem = function(key) {
-      var promise;
-      promise = $.Deferred();
+      var deferred;
+      deferred = $.Deferred();
       this.store.remove(key, function() {
-        return promise.resolve();
+        return deferred.resolve();
       });
-      return promise;
+      return deferred.promise();
     };
 
     return StickyStorageAdapter;
@@ -292,7 +292,7 @@
 
     Store.prototype.create = function(model) {
       if (!_.isObject(model)) {
-        return $.Deferred().resolve(model);
+        return $.Deferred().resolve(model).promise();
       }
       if (!model.id) {
         model.set(model.idAttribute, this.generateId());
@@ -578,7 +578,7 @@
               if (model instanceof Backbone.Collection) {
                 collection = model;
                 idAttribute = collection.model.prototype.idAttribute;
-                clearIfNeeded = options.add ? $.Deferred().resolve() : localSync('clear', model, options);
+                clearIfNeeded = options.add ? $.Deferred().resolve().promise() : localSync('clear', model, options);
                 return clearIfNeeded.done(function() {
                   var m, modelAttributes, models, responseModel, _i, _len;
                   models = [];
