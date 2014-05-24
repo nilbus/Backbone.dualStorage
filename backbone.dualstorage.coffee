@@ -306,7 +306,7 @@ dualSync = (method, model, options) ->
               collection = model
               idAttribute = collection.model.prototype.idAttribute
               clearIfNeeded = if options.add
-                $.Deferred().resolve() # not needed
+                $.Deferred().resolve() # skip clear
               else
                 localSync('clear', model, options)
               clearIfNeeded.done ->
