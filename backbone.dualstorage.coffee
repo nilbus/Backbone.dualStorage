@@ -142,8 +142,9 @@ class window.Store
 
   hasDirtyOrDestroyed: ->
     Backbone.storageAdapter.getItem(@dirtyName).then (dirty) =>
-      Backbone.storageAdapter.getItem(@destroyedName).then (destroyed) ->
-        not _.isEmpty(dirty) or not _.isEmpty(destroyed)
+      return true unless _.isEmpty(dirty)
+      Backbone.storageAdapter.getItem(@destroyedName).then (destroyed) =>
+        not _.isEmpty(destroyed)
 
   # Retrieve a model from `this.data` by id.
   find: (model) ->

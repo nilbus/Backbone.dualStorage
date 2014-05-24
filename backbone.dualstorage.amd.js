@@ -349,8 +349,11 @@
     Store.prototype.hasDirtyOrDestroyed = function() {
       return Backbone.storageAdapter.getItem(this.dirtyName).then((function(_this) {
         return function(dirty) {
+          if (!_.isEmpty(dirty)) {
+            return true;
+          }
           return Backbone.storageAdapter.getItem(_this.destroyedName).then(function(destroyed) {
-            return !_.isEmpty(dirty) || !_.isEmpty(destroyed);
+            return !_.isEmpty(destroyed);
           });
         };
       })(this));
