@@ -1,9 +1,12 @@
 compile:
-	coffee -cj backbone.dualstorage.js backbone.dualstorage.adapters.coffee backbone.dualstorage.coffee
-	coffee -c spec/*.coffee
-	coffee -cbj spec/backbone.dualstorage.js backbone.dualstorage.adapters.coffee backbone.dualstorage.coffee
-	cat amd.header.js backbone.dualstorage.js amd.footer.js > backbone.dualstorage.amd.js
+	coffee -mcj backbone.dualstorage.js backbone.dualstorage.adapters.coffee backbone.dualstorage.coffee
+	coffee -mc spec/*.coffee
+	coffee -mcbj spec/backbone.dualstorage.js backbone.dualstorage.adapters.coffee backbone.dualstorage.coffee
+	cat amd.header backbone.dualstorage.js amd.footer > backbone.dualstorage.amd.js
 
-infinite: compile
-	read # (press Enter to recompile)
-	make infinite
+watch:
+	coffee -wmcj backbone.dualstorage.js backbone.dualstorage.adapters.coffee backbone.dualstorage.coffee &
+	coffee -wmc spec/*.coffee &
+	coffee -wmcbj spec/backbone.dualstorage.js backbone.dualstorage.adapters.coffee backbone.dualstorage.coffee &
+	# Press ^C to exit
+	while true; do sleep 100; done

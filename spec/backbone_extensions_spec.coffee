@@ -7,22 +7,29 @@ describe 'monkey patching', ->
 
 describe 'offline localStorage sync', ->
   {collection} = {}
+  {model} = {}
+  model = Backbone.Model.extend
+    idAttribute: '_id'
   beforeEach ->
     localStorage.clear()
-    localStorage.setItem 'cats', '2,3,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff'
+    localStorage.setItem 'cats', '1,2,3,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff'
     localStorage.setItem 'cats_dirty', '2,a,deadbeef-c03d-f00d-aced-dec0ded4b1ff'
     localStorage.setItem 'cats_destroyed', '3'
-    localStorage.setItem 'cats2', '{"id": "2", "color": "auburn"}'
-    localStorage.setItem 'cats3', '{"id": "3", "color": "burgundy"}'
-    localStorage.setItem 'catsa', '{"id": "a", "color": "scarlet"}'
-    localStorage.setItem 'catsnew', '{"id": "deadbeef-c03d-f00d-aced-dec0ded4b1ff", "color": "pearl"}'
-    collection = new Backbone.Collection [
-      {id: 2, color: 'auburn'},
-      {id: 3, color: 'burgundy'},
-      {id: 'a', color: 'scarlet'}
-      {id: 'deadbeef-c03d-f00d-aced-dec0ded4b1ff', color: 'pearl'}
+    localStorage.setItem 'cats1', '{"_id": "1", "color": "translucent"}'
+    localStorage.setItem 'cats2', '{"_id": "2", "color": "auburn"}'
+    localStorage.setItem 'cats3', '{"_id": "3", "color": "burgundy"}'
+    localStorage.setItem 'catsa', '{"_id": "a", "color": "scarlet"}'
+    localStorage.setItem 'catsnew', '{"_id": "deadbeef-c03d-f00d-aced-dec0ded4b1ff", "color": "pearl"}'
+    Collection = Backbone.Collection.extend
+      model: model
+      url: 'cats'
+    collection = new Collection [
+      {_id: 1, color: 'translucent'},
+      {_id: 2, color: 'auburn'},
+      {_id: 3, color: 'burgundy'},
+      {_id: 'a', color: 'scarlet'}
+      {_id: 'deadbeef-c03d-f00d-aced-dec0ded4b1ff', color: 'pearl'}
     ]
-    collection.url = -> 'cats'
 
   describe 'syncDirtyAndDestroyed', ->
     it 'calls syncDirty and syncDestroyed', ->
@@ -54,3 +61,13 @@ describe 'offline localStorage sync', ->
     it 'works when there are no destroyed records', ->
       localStorage.setItem 'cats_destroyed', ''
       collection.syncDestroyed()
+
+  describe 'dirtyModels', ->
+    it 'returns the model instances that are dirty', ->
+      collection.dirtyModels().then (dirtyModels) ->
+        expect(dirtyModels.map((model) -> model.id)).toEqual [2, 'a', 'deadbeef-c03d-f00d-aced-dec0ded4b1ff']
+
+  describe 'destoyedModelsIds', ->
+    it 'returns the ids of models that have been destroyed locally but not synced', ->
+      collection.destroyedModelIds().then (destroyedModelIds) ->
+        expect(destroyedModelIds).toEqual ['3']

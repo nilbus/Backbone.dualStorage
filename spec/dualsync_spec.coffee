@@ -15,7 +15,7 @@ beforeEach ->
   model = collection.models[0]
   delete model.remote
 
-spyOnLocalsync = ->
+spyOnLocalSync = ->
   spyOn(window, 'localSync')
     .andCallFake (method, model, options) ->
       options.success?() unless options.ignoreCallbacks
@@ -25,7 +25,7 @@ spyOnLocalsync = ->
 describe 'delegating to localSync and backboneSync, and calling the model callbacks', ->
   describe 'dual tier storage', ->
     checkMergedAttributesFor = (method, modelToUpdate = model) ->
-      spyOnLocalsync()
+      spyOnLocalSync()
       originalAttributes = null
       ready = false
       runs ->
@@ -46,7 +46,7 @@ describe 'delegating to localSync and backboneSync, and calling the model callba
 
     describe 'create', ->
       it 'delegates to both localSync and backboneSync', ->
-        spyOnLocalsync()
+        spyOnLocalSync()
         ready = false
         runs ->
           dualSync('create', model, success: (-> ready = true))
@@ -63,7 +63,7 @@ describe 'delegating to localSync and backboneSync, and calling the model callba
 
     describe 'read', ->
       it 'delegates to both localSync and backboneSync', ->
-        spyOnLocalsync()
+        spyOnLocalSync()
         ready = false
         runs ->
           dualSync('read', model, success: (-> ready = true))
@@ -72,12 +72,12 @@ describe 'delegating to localSync and backboneSync, and calling the model callba
           expect(backboneSync).toHaveBeenCalled()
           expect(_(backboneSync.calls).any((call) -> call.args[0] == 'read')).toBeTruthy()
           expect(localSync).toHaveBeenCalled()
-          expect(_(localSync.calls).any((call) -> call.args[0] == 'create')).toBeTruthy()
+          expect(_(localSync.calls).any((call) -> call.args[0] == 'update')).toBeTruthy()
           expect(_(localSync.calls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
 
       describe 'for collections', ->
-        it 'calls localSync create once for each model', ->
-          spyOnLocalsync()
+        it 'calls localSync update once for each model', ->
+          spyOnLocalSync()
           ready = false
           collectionResponse = [{_id: 12, position: 'arm'}, {_id: 13, position: 'a new model'}]
           runs ->
@@ -87,16 +87,16 @@ describe 'delegating to localSync and backboneSync, and calling the model callba
             expect(backboneSync).toHaveBeenCalled()
             expect(_(backboneSync.calls).any((call) -> call.args[0] == 'read')).toBeTruthy()
             expect(localSync).toHaveBeenCalled()
-            createCalls = _(localSync.calls).select((call) -> call.args[0] == 'create')
-            expect(createCalls.length).toEqual 2
-            expect(_(createCalls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
-            createdModelAttributes = _(createCalls).map((call) -> call.args[1].attributes)
-            expect(createdModelAttributes[0]).toEqual _id: 12, position: 'arm'
-            expect(createdModelAttributes[1]).toEqual _id: 13, position: 'a new model'
+            updateCalls = _(localSync.calls).select((call) -> call.args[0] == 'update')
+            expect(updateCalls.length).toEqual 2
+            expect(_(updateCalls).every((call) -> call.args[1] instanceof Backbone.Model)).toBeTruthy()
+            updatedModelAttributes = _(updateCalls).map((call) -> call.args[1].attributes)
+            expect(updatedModelAttributes[0]).toEqual _id: 12, position: 'arm'
+            expect(updatedModelAttributes[1]).toEqual _id: 13, position: 'a new model'
 
     describe 'update', ->
       it 'delegates to both localSync and backboneSync', ->
-        spyOnLocalsync()
+        spyOnLocalSync()
         ready = false
         runs ->
           dualSync('update', model, success: (-> ready = true))
@@ -113,7 +113,7 @@ describe 'delegating to localSync and backboneSync, and calling the model callba
 
     describe 'delete', ->
       it 'delegates to both localSync and backboneSync', ->
-        spyOnLocalsync()
+        spyOnLocalSync()
         ready = false
         runs ->
           dualSync('delete', model, success: (-> ready = true))
@@ -148,7 +148,7 @@ describe 'delegating to localSync and backboneSync, and calling the model callba
 
   describe 'respects the local only attribute on models', ->
     it 'delegates for local models', ->
-      spyOnLocalsync()
+      spyOnLocalSync()
       ready = false
       runs ->
         model.local = true
@@ -182,7 +182,7 @@ describe 'delegating to localSync and backboneSync, and calling the model callba
     describe 'on read', ->
       describe 'for models', ->
         it 'gets merged with existing attributes on a model', ->
-          spyOnLocalsync()
+          spyOnLocalSync()
           localSync.reset()
           ready = false
           runs ->
@@ -190,24 +190,24 @@ describe 'delegating to localSync and backboneSync, and calling the model callba
           waitsFor (-> ready), "The success callback should have been called", 100
           runs ->
             window.x = localSync
-            expect(localSync.calls[2].args[0]).toEqual 'create'
-            expect(localSync.calls[2].args[1].attributes).toEqual position: 'arm', side: 'left', _id: 13
+            expect(localSync.calls[1].args[0]).toEqual 'update'
+            expect(localSync.calls[1].args[1].attributes).toEqual position: 'arm', side: 'left', _id: 13
 
       describe 'for collections', ->
         it 'gets merged with existing attributes on the model with the same id', ->
-          spyOnLocalsync()
+          spyOnLocalSync()
           localSync.reset()
           ready = false
           runs ->
             dualSync('read', collection, success: (-> ready = true), serverResponse: [{side: 'left', _id: 12}])
           waitsFor (-> ready), "The success callback should have been called", 100
           runs ->
-            expect(localSync.calls[2].args[0]).toEqual 'create'
+            expect(localSync.calls[2].args[0]).toEqual 'update'
             expect(localSync.calls[2].args[1].attributes).toEqual position: 'arm', side: 'left', _id: 12
 
     describe 'on create', ->
       it 'gets merged with existing attributes on a model', ->
-        spyOnLocalsync()
+        spyOnLocalSync()
         localSync.reset()
         ready = false
         runs ->
@@ -219,7 +219,7 @@ describe 'delegating to localSync and backboneSync, and calling the model callba
 
     describe 'on update', ->
       it 'gets merged with existing attributes on a model', ->
-        spyOnLocalsync()
+        spyOnLocalSync()
         localSync.reset()
         ready = false
         runs ->
@@ -231,7 +231,7 @@ describe 'delegating to localSync and backboneSync, and calling the model callba
 
 describe 'offline storage', ->
   it 'marks records dirty when options.remote is false, except if the model/collection is marked as local', ->
-    spyOnLocalsync()
+    spyOnLocalSync()
     ready = undefined
     runs ->
       ready = false
@@ -276,7 +276,7 @@ describe 'storeName selection', ->
     model = new ModelWithAlternateIdAttribute()
     model.local = true
     model.url = '/bacon/bits'
-    spyOnLocalsync()
+    spyOnLocalSync()
     dualSync(null, model, {})
     expect(localSync.calls[0].args[2].storeName).toEqual model.url
 
@@ -285,7 +285,7 @@ describe 'storeName selection', ->
     model.local = true
     model.url = '/bacon/bits'
     model.urlRoot = '/bacon'
-    spyOnLocalsync()
+    spyOnLocalSync()
     dualSync(null, model, {})
     expect(localSync.calls[0].args[2].storeName).toEqual model.urlRoot
 
@@ -296,7 +296,7 @@ describe 'storeName selection', ->
     model.urlRoot = '/bacon'
     model.collection = new Backbone.Collection()
     model.collection.url = '/ranch'
-    spyOnLocalsync()
+    spyOnLocalSync()
     dualSync(null, model, {})
     expect(localSync.calls[0].args[2].storeName).toEqual model.collection.url
 
@@ -308,7 +308,7 @@ describe 'storeName selection', ->
     model.collection = new Backbone.Collection()
     model.collection.url = '/ranch'
     model.storeName = 'melted cheddar'
-    spyOnLocalsync()
+    spyOnLocalSync()
     dualSync(null, model, {})
     expect(localSync.calls[0].args[2].storeName).toEqual model.storeName
 
@@ -321,6 +321,61 @@ describe 'storeName selection', ->
     model.collection.url = '/ranch'
     model.storeName = 'melted cheddar'
     model.collection.storeName = 'ketchup'
-    spyOnLocalsync()
+    spyOnLocalSync()
     dualSync(null, model, {})
     expect(localSync.calls[0].args[2].storeName).toEqual model.collection.storeName
+
+describe 'when to call user-specified success and error callbacks', ->
+  it 'uses the success callback when the network is down', ->
+    ready = false
+    localStorage.setItem 'bones/', "1"
+    runs ->
+      dualSync('create', model, success: (-> ready = true), errorStatus: 0)
+    waitsFor (-> ready), "The success callback should have been called", 100
+
+  it 'uses the success callback when an offline error status is received (e.g. 408)', ->
+    ready = false
+    localStorage.setItem 'bones/', "1"
+    runs ->
+      dualSync('create', model, success: (-> ready = true), errorStatus: 408)
+    waitsFor (-> ready), "The success callback should have been called", 100
+
+  it 'uses the error callback when an error status is received (e.g. 500)', ->
+    ready = false
+    runs ->
+      dualSync('create', model, error: (-> ready = true), errorStatus: 500)
+    waitsFor (-> ready), "The error callback should have been called", 100
+
+  describe 'when offline', ->
+    it 'uses the error callback if no existing local store is found', ->
+      ready = false
+      runs ->
+        dualSync('read', model,
+          error: (-> ready = true)
+          errorStatus: 0
+        )
+      waitsFor (-> ready), "The error callback should have been called", 100
+
+    it 'uses the success callback if the store exists with data', ->
+      storeModel = model.clone()
+      storeModel.storeName = 'store-exists'
+      localStorage.setItem storeModel.storeName, "1,2,3"
+      ready = false
+      runs ->
+        dualSync('read', storeModel,
+          success: (-> ready = true)
+          errorStatus: 0
+        )
+        waitsFor (-> ready), "The success callback should have been called", 100
+
+    it 'success if server errors and Store exists with no entries', ->
+      storeModel = model.clone()
+      storeModel.storeName = 'store-exists'
+      localStorage.setItem storeModel.storeName, ""
+      ready = false
+      runs ->
+        dualSync('read', storeModel,
+          success: (-> ready = true)
+          errorStatus: 0
+        )
+        waitsFor (-> ready), "The success callback should have been called", 100

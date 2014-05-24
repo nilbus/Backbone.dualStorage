@@ -40,7 +40,7 @@ describe 'using Backbone.sync directly', ->
       expect(errorCallback).not.toHaveBeenCalled()
 
 describe 'using backbone models and retrieving from local storage', ->
-  it "fetches a model after saving it", ->
+  it "fetches a model offline after saving it online", ->
     saved = false
     runs ->
       model.save {}, success: -> saved = true

@@ -1,7 +1,7 @@
 ###
-Backbone dualStorage Adapter v1.1.0
+Backbone dualStorage Adapter v1.3.0
 
-A simple module to replace `Backbone.sync` with *localStorage*-based
+A simple module to replace `Backbone.sync` with local storage based
 persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
 ###
@@ -14,22 +14,45 @@ Backbone.storageAdapter = new Backbone.storageAdapters.LocalStorageAdapter
 # wait for initialize() to resolve before trying to do any sync operation.
 Backbone.storageAdapter.initialize()
 
+Backbone.DualStorage = {
+  offlineStatusCodes: [408, 502]
+}
+
+Backbone.Model.prototype.hasTempId = ->
+  _.isString(@id) and @id.length is 36
+
+getStoreName = (collection, model) ->
+  model ||= collection.model.prototype
+  _.result(collection, 'storeName') || _.result(model, 'storeName') ||
+  _.result(collection, 'url')       || _.result(model, 'urlRoot')   || _.result(model, 'url')
+
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
 Backbone.Collection.prototype.syncDirty = ->
-  storeName = result(@, 'storeName') || result(@, 'url')
-  Backbone.storageAdapter.getItem("#{storeName}_dirty").then (store) =>
+  Backbone.storageAdapter.getItem("#{getStoreName(@)}_dirty").then (store) =>
     ids = (store and store.split(',')) or []
-    models = ((if id.length == 36 then @findWhere(id: id) else @get(id)) for id in ids)
+    models = (@get(id) for id in ids)
     $.when (model.save() for model in models when model)...
 
-Backbone.Collection.prototype.syncDestroyed = ->
-  storeName = result(@, 'storeName') || result(@, 'url')
-  Backbone.storageAdapter.getItem("#{storeName}_destroyed").then (store) =>
+Backbone.Collection.prototype.dirtyModels = ->
+  Backbone.storageAdapter.getItem("#{getStoreName(@)}_dirty").then (store) =>
     ids = (store and store.split(',')) or []
-    models = (new @model(id: id) for id in ids)
-    (model.collection = @ for model in models)
+    models = (@get(id) for id in ids)
+    _.compact(models)
+
+Backbone.Collection.prototype.syncDestroyed = ->
+  Backbone.storageAdapter.getItem("#{getStoreName(@)}_destroyed").then (store) =>
+    ids = (store and store.split(',')) or []
+    models = for id in ids
+      model = new @model
+      model.set model.idAttribute, id
+      model.collection = @
+      model
     $.when (model.destroy() for model in models)...
+
+Backbone.Collection.prototype.destroyedModelIds = ->
+  Backbone.storageAdapter.getItem("#{getStoreName(@)}_destroyed").then (store) =>
+    ids = (store and store.split(',')) or []
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
   @syncDirty().then => @syncDestroyed()
@@ -38,7 +61,7 @@ Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
 S4 = ->
   (((1 + Math.random()) * 0x10000) | 0).toString(16).substring 1
 
-# Our Store is represented by a single JS object in *localStorage*. Create it
+# Our Store is represented by a single JS object in local storage. Create it
 # with a meaningful name, like the name you'd give a table.
 class window.Store
   sep: '' # previously '-'
@@ -53,7 +76,7 @@ class window.Store
     @recordsOn(@name).done (result) =>
       @records = result || []
 
-  # Generates an unique id to use when saving new instances into localstorage
+  # Generates an unique id to use when saving new instances into local storage
   # by default generates a pseudo-GUID by concatenating random hexadecimal.
   # you can overwrite this function to use another strategy
   generateId: ->
@@ -63,7 +86,7 @@ class window.Store
     if _.isObject model then model = model.id
     @name + @sep + model
 
-  # Save the current state of the **Store** to *localStorage*.
+  # Save the current state of the **Store** to local storage.
   save: ->
     Backbone.storageAdapter.setItem @name, @records.join(',')
 
@@ -97,8 +120,7 @@ class window.Store
   create: (model) ->
     if not _.isObject(model) then return $.Deferred().resolve model
     if not model.id
-      model.id = @generateId()
-      model.set model.idAttribute, model.id
+      model.set model.idAttribute, @generateId()
     Backbone.storageAdapter.setItem(@getStorageKey(model), JSON.stringify(model)).then =>
       @records.push model.id.toString()
       @save().then => model
@@ -137,6 +159,9 @@ class window.Store
       @records = _.without @records, model.id.toString()
       @save().then -> model
 
+  @exists: (storeName) ->
+    Backbone.storageAdapter.getItem(storeName).then (value) -> value isnt null
+
 callbackTranslator =
   needsTranslation: Backbone.VERSION == '0.9.10'
 
@@ -153,7 +178,7 @@ callbackTranslator =
       callback
 
 # Override `Backbone.sync` to use delegate to the model or collection's
-# *localStorage* property, which should be an instance of `Store`.
+# local storage property, which should be an instance of `Store`.
 localSync = (method, model, options) ->
   isValidModel = (method is 'clear') or (method is 'hasDirtyOrDestroyed')
   isValidModel ||= model instanceof Backbone.Model
@@ -167,7 +192,7 @@ localSync = (method, model, options) ->
 
     promise = switch method
       when 'read'
-        if model.id
+        if model instanceof Backbone.Model
           store.find(model)
         else
           store.findAll()
@@ -177,14 +202,14 @@ localSync = (method, model, options) ->
         store.clear()
       when 'create'
         store.find(model).then (preExisting) ->
-          unless options.add and not options.merge and preExisting
+          if options.add and not options.merge and preExisting
+            preExisting
+          else
             store.create(model).then (model) ->
               if options.dirty
                 return store.dirty(model).then ->
                   model
               model
-          else
-            preExisting
       when 'update'
         store.update(model).then (model) ->
           if options.dirty
@@ -212,14 +237,6 @@ localSync = (method, model, options) ->
 
       response
 
-# If the value of the named property is a function then invoke it;
-# otherwise, return it.
-# based on _.result from underscore github
-result = (object, property) ->
-  return null unless object
-  value = object[property]
-  if _.isFunction(value) then value.call(object) else value
-
 # Helper function to run parseBeforeLocalSave() in order to
 # parse a remote JSON response before caching locally
 parseRemoteResponse = (object, response) ->
@@ -230,7 +247,7 @@ modelUpdatedWithResponse = (model, response) ->
   modelClone = new Backbone.Model
   modelClone.idAttribute = model.idAttribute
   modelClone.set model.attributes
-  modelClone.set modelClone.parse response
+  modelClone.set model.parse response
   modelClone
 
 backboneSync = Backbone.sync
@@ -240,16 +257,15 @@ onlineSync = (method, model, options) ->
   backboneSync(method, model, options)
 
 dualSync = (method, model, options) ->
-  options.storeName = result(model.collection, 'storeName') || result(model, 'storeName') ||
-                      result(model.collection, 'url')       || result(model, 'urlRoot')   || result(model, 'url')
+  options.storeName = getStoreName(model.collection, model)
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options)
   options.error   = callbackTranslator.forDualstorageCaller(options.error, model, options)
 
   # execute only online sync
-  return onlineSync(method, model, options) if result(model, 'remote') or result(model.collection, 'remote')
+  return onlineSync(method, model, options) if _.result(model, 'remote') or _.result(model.collection, 'remote')
 
   # execute only local sync
-  local = result(model, 'local') or result(model.collection, 'local')
+  local = _.result(model, 'local') or _.result(model.collection, 'local')
   options.dirty = options.remote is false and not local
   return localSync(method, model, options) if options.remote is false or local
 
@@ -258,20 +274,39 @@ dualSync = (method, model, options) ->
 
   success = options.success
   error = options.error
+  storeExistsPromise = Store.exists(options.storeName)
+
+  relayErrorCallback = (response) ->
+    offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes
+    offlineStatusCodes = offlineStatusCodes(response) if _.isFunction(offlineStatusCodes)
+    offline = response.status == 0 or response.status in offlineStatusCodes
+    storeExistsPromise.always (storeExists) ->
+      options.storeExists = storeExists
+      if offline and storeExists
+        options.dirty = true
+        localSync(method, model, options).then (result) ->
+          success result
+      else
+        error response
 
   switch method
     when 'read'
       localSync('hasDirtyOrDestroyed', model, options).then (hasDirtyOrDestroyed) ->
         if hasDirtyOrDestroyed
+          options.dirty = true
           success localSync(method, model, options)
         else
           options.success = (resp, status, xhr) ->
             resp = parseRemoteResponse(model, resp)
 
-            go = ->
-              if _.isArray resp
-                collection = model
-                idAttribute = collection.model.prototype.idAttribute
+            if model instanceof Backbone.Collection
+              collection = model
+              idAttribute = collection.model.prototype.idAttribute
+              clearIfNeeded = if options.add
+                $.Deferred().resolve() # not needed
+              else
+                localSync('clear', model, options)
+              clearIfNeeded.done ->
                 models = []
                 for modelAttributes in resp
                   model = collection.get(modelAttributes[idAttribute])
@@ -280,21 +315,15 @@ dualSync = (method, model, options) ->
                   else
                     responseModel = new collection.model(modelAttributes)
                   models.push responseModel
-                $.when((localSync('create', m, options) for m in models)...).then ->
+                $.when((localSync('update', m, options) for m in models)...).then ->
                   success(resp, status, xhr)
-              else
-                responseModel = modelUpdatedWithResponse(model, resp)
-                localSync('create', responseModel, options).then ->
-                  success(resp, status, xhr)
-
-            if not options.add
-              localSync('clear', model, options).then go
             else
-              go()
+              responseModel = modelUpdatedWithResponse(model, resp)
+              localSync('update', responseModel, options).then ->
+                success(resp, status, xhr)
 
           options.error = (resp) ->
-            localSync(method, model, options).then (result) ->
-              success result
+            relayErrorCallback resp
 
           onlineSync(method, model, options)
 
@@ -304,14 +333,12 @@ dualSync = (method, model, options) ->
         localSync(method, updatedModel, options).then ->
           success(resp, status, xhr)
       options.error = (resp) ->
-        options.dirty = true
-        localSync(method, model, options).then (result) ->
-          success result
+        relayErrorCallback resp
 
       onlineSync(method, model, options)
 
     when 'update'
-      if _.isString(model.id) and model.id.length == 36
+      if model.hasTempId()
         temporaryId = model.id
 
         options.success = (resp, status, xhr) ->
@@ -321,10 +348,8 @@ dualSync = (method, model, options) ->
             localSync('create', updatedModel, options).then ->
               success(resp, status, xhr)
         options.error = (resp) ->
-          options.dirty = true
           model.set model.idAttribute, temporaryId, silent: true
-          localSync(method, model, options).then (result) ->
-            success result
+          relayErrorCallback resp
 
         model.set model.idAttribute, null, silent: true
         onlineSync('create', model, options)
@@ -334,23 +359,19 @@ dualSync = (method, model, options) ->
           localSync(method, updatedModel, options).then ->
             success(resp, status, xhr)
         options.error = (resp) ->
-          options.dirty = true
-          localSync(method, model, options).then (result) ->
-            success
+          relayErrorCallback resp
 
         onlineSync(method, model, options)
 
     when 'delete'
-      if _.isString(model.id) and model.id.length == 36
+      if model.hasTempId()
         localSync(method, model, options)
       else
         options.success = (resp, status, xhr) ->
           localSync(method, model, options).then ->
             success(resp, status, xhr)
         options.error = (resp) ->
-          options.dirty = true
-          localSync(method, model, options).then (result) ->
-            success result
+          relayErrorCallback resp
 
         onlineSync(method, model, options)
 

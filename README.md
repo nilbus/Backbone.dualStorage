@@ -1,4 +1,4 @@
-Backbone dualStorage Adapter v1.1.0
+Backbone dualStorage Adapter v1.3.0
 ===================================
 
 A dualStorage adapter for Backbone. It's a drop-in replacement for Backbone.Sync() to handle saving to a localStorage database as a cache for the remote models.
@@ -32,17 +32,54 @@ Data synchronization
 When the client goes offline, dualStorage allows you to keep changing and destroying records. All changes will be sent when the client goes online again.
 
     // server online. Go!
-    People.fetch();       // load cars models and save them into localstorage
+    people.fetch();       // load cars models and save them into localstorage
 
     // server offline!
-    People.create({name: "Turing"});   // you still can create new cars...
-    People.models[0].save({age: 41});  // update existing ones...
-    People.models[1].destroy();        // and destroy as well
+    people.create({name: "Turing"});   // you still can create new cars...
+    people.models[0].save({age: 41});  // update existing ones...
+    people.models[1].destroy();        // and destroy as well
+
+    // collections track what is dirty and destroyed
+    people.dirtyModels()               // => Array of dirty models
+    people.destroyedModelIds()         // => Array of destroyed model ids
 
     // server online again!
-    People.syncDirtyAndDestroyed();    // all changes are sent to the server and localStorage is updated
+    people.syncDirtyAndDestroyed();    // all changes are sent to the server and localStorage is updated
 
 Keep in mind that if you try to fetch() a collection that has dirty data, only data currently in the localStorage will be loaded. collection.syncDirtyAndDestroyed() needs to be executed before trying to download new data from the server.
+
+It is possible to tell whether the operation succeeded remotely or locally by examining `options.dirty` in the `success` callback:
+
+	model.save({
+		name: "Turing"
+	}, {
+		success: function(model, response, options) {
+			if (options.dirty) {
+				// saved locally
+			} else {
+				// saved remotely
+			}
+		}
+	});
+
+Offline state detection
+-----------------------
+dualStorage **always** treats an Ajax status code of `0` as an indication it is working offline. Additional status codes can be added by setting `offlineStatusCodes` to either an array:
+
+    Backbone.DualStorage.offlineStatusCodes = [408];
+
+or a function that accepts the `response` object and returns an array:
+
+    Backbone.DualStorage.offlineStatusCodes = function(response) {
+        var codes = [];
+
+        if (...) {
+            codes.push(response.status);
+        }
+
+        return codes;
+    }
+
 
 Data parsing
 ------------
@@ -73,6 +110,8 @@ Compile the coffeescript into javascript with `make`. This requires that node.js
 
     make
 
+During development, use `make watch` to compile as you make changes.
+
 Testing
 -------
 
@@ -82,7 +121,7 @@ Note that the tests run against **spec/backbone.dualstorage.js**, not the copy i
 The spec version needs to be unwrapped to allow mocking components for testing.
 This version is compiled automatically when running `make`.
 
-dualStorage has been tested against Backbone versions 0.9.2 - 1.1.0.
+dualStorage has been tested against Backbone versions 0.9.2 - 1.1.2.
 Test with other versions by altering the version included in `SpecRunner.html`.
 
 Authors

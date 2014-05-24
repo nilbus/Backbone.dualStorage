@@ -1,5 +1,23 @@
 ### master / unreleased
 
+* Make syncDestroyed compatible with backbone >= 1.1.1
+* Fix #94: Call the error callback when offline if the collection has never been fetched (Dave Taylor)
+* Fix #99: Restore compatibility with lodash; incompatible since 1.2.0 (Aleksandr Motsjonov)
+
+### 1.3.0 / 2014-05-10
+
+* Fix #104, #67: Instead of treating ajax errors as offline, use the error callback (Elad Efrat)
+* Fix #106: Restore proper call to a model's parse method; broken since 1.0.2 (Eduardo Matos)
+* Fix #105: Always set options.dirty in callbacks when offline (Elad Efrat)
+* Fix #93: syncDirty works when models use a custom idAttribute (Ben Salinas)
+* Fix #78: Do not clear local collection cache when a model is fetched
+* Add `make watch` for continual coffeescript compilation during development
+* `make` compiles sourcemaps between coffeescript and javascript
+* Prevent id duplication in the internal list of model ids for a collection when a model is fetched
+
+### 1.2.0 / 2014-01-31
+
+* Add dirty/destroyed querying via `Collection.dirtyModels` and `Collection.destroyedModelIds`
 * Allow the default url-based storeName to be overriden with a `storeName` property on the model or collection
 * Use `model.urlRoot` as the storeName, when available, before `model.url`.
   This fixes the issue described in #80 where models with the same `urlRoot`
