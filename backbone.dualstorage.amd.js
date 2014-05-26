@@ -35,6 +35,11 @@
       return $.Deferred().resolve();
     };
 
+    LocalStorageAdapter.prototype.clear = function() {
+      localStorage.clear();
+      return $.Deferred().resolve();
+    };
+
     return LocalStorageAdapter;
 
   })();
@@ -45,12 +50,14 @@
     }
 
     StickyStorageAdapter.prototype.initialize = function() {
-      var promise;
+      var promise,
+        _this = this;
       promise = $.Deferred();
       this.store = new StickyStore({
         name: this.name,
         adapters: ['indexedDB', 'webSQL', 'localStorage'],
         ready: function() {
+          console.log("Initialized " + _this.name);
           return promise.resolve();
         }
       });
@@ -58,27 +65,44 @@
     };
 
     StickyStorageAdapter.prototype.setItem = function(key, value) {
-      var promise;
+      var promise,
+        _this = this;
       promise = $.Deferred();
       this.store.set(key, value, function(storedValue) {
+        console.log("setItem in " + _this.name + " > " + key + ":", value);
         return promise.resolve(storedValue);
       });
       return promise;
     };
 
     StickyStorageAdapter.prototype.getItem = function(key) {
-      var promise;
+      var promise,
+        _this = this;
       promise = $.Deferred();
       this.store.get(key, function(storedValue) {
+        console.log("getItem in " + _this.name + " > " + key + ":", storedValue);
         return promise.resolve(storedValue);
       });
       return promise;
     };
 
     StickyStorageAdapter.prototype.removeItem = function(key) {
-      var promise;
+      var promise,
+        _this = this;
       promise = $.Deferred();
       this.store.remove(key, function() {
+        console.log("removeItem in " + _this.name + " > " + key);
+        return promise.resolve();
+      });
+      return promise;
+    };
+
+    StickyStorageAdapter.prototype.clear = function() {
+      var promise,
+        _this = this;
+      promise = $.Deferred();
+      this.store.removeAll(function() {
+        console.log("clear " + _this.name);
         return promise.resolve();
       });
       return promise;
@@ -522,7 +546,9 @@
       case 'read':
         return localSync('hasDirtyOrDestroyed', model, options).then(function(hasDirtyOrDestroyed) {
           if (hasDirtyOrDestroyed) {
-            return success(localSync(method, model, options));
+            return localSync(method, model, options).then(function(response) {
+              return success(response);
+            });
           } else {
             options.success = function(resp, status, xhr) {
               var go;

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Backbone.dualStorage Tests</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../lib/mocha/mocha.css" />
+  </head>
+  <body>
+    <div id="mocha"></div>
+    <script src="../lib/mocha/mocha.js"></script>
+    <script src="../lib/chai/chai.js"></script>
+    <script src="../lib/jquery-1.9.1.min.js"></script>
+    <script src="../lib/sticky-2.9.js"></script>
+    <script src="../lib/lawnchair/src/Lawnchair.js"></script>
+    <script src="../lib/lawnchair/src/adapters/dom.js"></script>
+    <script src="../lib/lawnchair/src/adapters/indexed-db.js"></script>
+    <script src="../lib/underscore.js"></script>
+    <script src="../lib/backbone-1.1.0.js"></script>
+    <script src="../src/adapters.js"></script>
+    <script src="../src/store.js"></script>
+    <script>mocha.setup('bdd')</script>
+    <script src="test.adapters.js"></script>
+    <script src="test.store.js"></script>
+    <script>
+      var expect = chai.expect;
+      mocha.checkLeaks();
+      mocha.globals(['jQuery', 'Backbone']);
+      mocha.run();
+    </script>
+  </body>
+</html>

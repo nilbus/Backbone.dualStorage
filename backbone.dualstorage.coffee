@@ -14,6 +14,9 @@ Backbone.storageAdapter = new Backbone.storageAdapters.LocalStorageAdapter
 # wait for initialize() to resolve before trying to do any sync operation.
 Backbone.storageAdapter.initialize()
 
+# Use default Store class provided by this library.
+# Backbone.Store = Store
+
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
 Backbone.Collection.prototype.syncDirty = ->
@@ -263,7 +266,8 @@ dualSync = (method, model, options) ->
     when 'read'
       localSync('hasDirtyOrDestroyed', model, options).then (hasDirtyOrDestroyed) ->
         if hasDirtyOrDestroyed
-          success localSync(method, model, options)
+          localSync(method, model, options).then (response) ->
+            success response
         else
           options.success = (resp, status, xhr) ->
             resp = parseRemoteResponse(model, resp)

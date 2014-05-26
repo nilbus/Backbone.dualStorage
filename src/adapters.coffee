@@ -1,6 +1,7 @@
-# Async storage adapters classes.
+# Async storage adapter classes.
+Backbone.storageAdapters = {}
 
-class LocalStorageAdapter
+class Backbone.storageAdapters.LocalStorageAdapter
   # Reference implementation with LocalStorage.
   constructor: (name) ->
     @name = name || 'Backbone.dualStorage.LocalStorage'
@@ -25,7 +26,7 @@ class LocalStorageAdapter
     $.Deferred().resolve()
 
 
-class LawnchairStorageAdapter
+class Backbone.storageAdapters.LawnchairStorageAdapter
   constructor: (name) ->
     @name = name || 'Backbone.dualStorage.Lawnchair'
 
@@ -57,7 +58,8 @@ class LawnchairStorageAdapter
     return promise
 
 
-class StickyStorageAdapter
+# IndexedDB store is currently not working with Sticky.
+class Backbone.storageAdapters.StickyStorageAdapter
   constructor: (name) ->
     @name = name || 'Backbone.dualStorage.Sticky'
 
@@ -88,10 +90,3 @@ class StickyStorageAdapter
     promise = $.Deferred()
     @store.removeAll -> promise.resolve()
     return promise
-
-
-Backbone.storageAdapters =
-  LocalStorageAdapter: LocalStorageAdapter
-  LawnchairStorageAdapter: LawnchairStorageAdapter
-  # IndexedDB store is not working with Sticky.
-  # StickyStorageAdapter: StickyStorageAdapter

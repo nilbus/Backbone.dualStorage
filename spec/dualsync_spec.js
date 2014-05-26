@@ -3,7 +3,7 @@
   var Backbone, ModelWithAlternateIdAttribute, backboneSync, collection, localStorage, localSync, model, spyOnLocalsync, _ref,
     __slice = [].slice;
 
-  Backbone = window.Backbone, backboneSync = window.backboneSync, localSync = window.localSync, localStorage = window.localStorage;
+  Backbone = window.Backbone, backboneSync = Backbone.onlineSync, localSync = window.localSync, localStorage = window.localStorage;
 
   _ref = {}, collection = _ref.collection, model = _ref.model, ModelWithAlternateIdAttribute = _ref.ModelWithAlternateIdAttribute;
 

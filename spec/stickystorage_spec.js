@@ -5,6 +5,22 @@
   StickyStorageAdapter = window.Backbone.storageAdapters.StickyStorageAdapter;
 
   describe('StickyStorageAdapter', function() {
+    beforeEach(function() {
+      var done;
+      done = false;
+      runs(function() {
+        var storage;
+        storage = new StickyStorageAdapter;
+        return storage.initialize().done(function() {
+          return storage.clear().done(function() {
+            return done = true;
+          });
+        });
+      });
+      return waitsFor(function() {
+        return done;
+      });
+    });
     describe('creation', function() {
       it('takes a name in its constructor', function() {
         var storage;
@@ -21,33 +37,53 @@
     });
     return describe('methods', function() {
       it('sets and gets a record', function() {
-        var storage;
-        storage = new StickyStorageAdapter;
-        return storage.initialize().done(function() {
-          return storage.setItem('key', {
-            foo: 'bar'
-          }).done(function() {
-            return storage.getItem('key').done(function(item) {
-              return expect(item).toEqual({
-                foo: 'bar'
+        var result;
+        result = {}.result;
+        runs(function() {
+          var storage;
+          storage = new StickyStorageAdapter;
+          return storage.initialize().done(function() {
+            return storage.setItem('test', {
+              foo: 'bar'
+            }).done(function() {
+              return storage.getItem('test').done(function(item) {
+                return result = item;
               });
             });
           });
         });
+        waitsFor(function() {
+          return result != null;
+        });
+        return runs(function() {
+          return expect(result).toEqual({
+            foo: 'bar'
+          });
+        });
       });
       return it('deletes a record', function() {
-        var storage;
-        storage = new StickyStorageAdapter;
-        return storage.initialize().done(function() {
-          return storage.setItem('key', {
-            foo: 'bar'
-          }).done(function() {
-            return storage.removeItem('key').done(function() {
-              return storage.getItem('key').done(function(item) {
-                return expect(item).toBeNull();
+        var result;
+        result = {}.result;
+        runs(function() {
+          var storage;
+          storage = new StickyStorageAdapter;
+          return storage.initialize().done(function() {
+            return storage.setItem('test', {
+              foo: 'bar'
+            }).done(function() {
+              return storage.removeItem('test').done(function() {
+                return storage.getItem('test').done(function(item) {
+                  return result = item;
+                });
               });
             });
           });
+        });
+        waitsFor(function() {
+          return result != null;
+        });
+        return runs(function() {
+          return expect(result).toBeNull();
         });
       });
     });
