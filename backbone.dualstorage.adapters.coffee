@@ -21,6 +21,7 @@ class LocalStorageAdapter
 
 class StickyStorageAdapter
   constructor: (name) ->
+    @initialize = _.memoize @initialize
     @name = name || 'Backbone.dualStorage'
 
   initialize: ->
@@ -29,24 +30,27 @@ class StickyStorageAdapter
       name: @name
       adapters: ['indexedDB', 'webSQL', 'localStorage']
       ready: -> deferred.resolve()
-    return deferred.promise()
+    deferred.promise()
 
   setItem: (key, value) ->
-    deferred = $.Deferred()
-    @store.set key, value, (storedValue) ->
-      deferred.resolve storedValue
-    return deferred.promise()
+    @initialize().then =>
+      deferred = $.Deferred()
+      @store.set key, value, (storedValue) ->
+        deferred.resolve storedValue
+      deferred.promise()
 
   getItem: (key) ->
-    deferred = $.Deferred()
-    @store.get key, (storedValue) ->
-      deferred.resolve storedValue
-    return deferred.promise()
+    @initialize().then =>
+      deferred = $.Deferred()
+      @store.get key, (storedValue) ->
+        deferred.resolve storedValue
+      deferred.promise()
 
   removeItem: (key) ->
-    deferred = $.Deferred()
-    @store.remove key, -> deferred.resolve()
-    return deferred.promise()
+    @initialize().then =>
+      deferred = $.Deferred()
+      @store.remove key, -> deferred.resolve()
+      deferred.promise()
 
 
 Backbone.storageAdapters =

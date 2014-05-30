@@ -32,6 +32,7 @@ LocalStorageAdapter = (function() {
 
 StickyStorageAdapter = (function() {
   function StickyStorageAdapter(name) {
+    this.initialize = _.memoize(this.initialize);
     this.name = name || 'Backbone.dualStorage';
   }
 
@@ -49,30 +50,42 @@ StickyStorageAdapter = (function() {
   };
 
   StickyStorageAdapter.prototype.setItem = function(key, value) {
-    var deferred;
-    deferred = $.Deferred();
-    this.store.set(key, value, function(storedValue) {
-      return deferred.resolve(storedValue);
-    });
-    return deferred.promise();
+    return this.initialize().then((function(_this) {
+      return function() {
+        var deferred;
+        deferred = $.Deferred();
+        _this.store.set(key, value, function(storedValue) {
+          return deferred.resolve(storedValue);
+        });
+        return deferred.promise();
+      };
+    })(this));
   };
 
   StickyStorageAdapter.prototype.getItem = function(key) {
-    var deferred;
-    deferred = $.Deferred();
-    this.store.get(key, function(storedValue) {
-      return deferred.resolve(storedValue);
-    });
-    return deferred.promise();
+    return this.initialize().then((function(_this) {
+      return function() {
+        var deferred;
+        deferred = $.Deferred();
+        _this.store.get(key, function(storedValue) {
+          return deferred.resolve(storedValue);
+        });
+        return deferred.promise();
+      };
+    })(this));
   };
 
   StickyStorageAdapter.prototype.removeItem = function(key) {
-    var deferred;
-    deferred = $.Deferred();
-    this.store.remove(key, function() {
-      return deferred.resolve();
-    });
-    return deferred.promise();
+    return this.initialize().then((function(_this) {
+      return function() {
+        var deferred;
+        deferred = $.Deferred();
+        _this.store.remove(key, function() {
+          return deferred.resolve();
+        });
+        return deferred.promise();
+      };
+    })(this));
   };
 
   return StickyStorageAdapter;
