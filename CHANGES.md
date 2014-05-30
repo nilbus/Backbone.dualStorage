@@ -1,4 +1,4 @@
-### master / unreleased
+### 1.3.1 / 2014-15-30
 
 * Make syncDestroyed compatible with backbone >= 1.1.1
 * Fix #94: Call the error callback when offline if the collection has never been fetched (Dave Taylor)
