@@ -1,4 +1,4 @@
-window.Backbone.sync = jasmine.createSpy('sync').andCallFake (method, model, options) ->
+sinon.stub window.Backbone, 'sync', (method, model, options) ->
   model.updatedByRemoteSync = true
   resp = options.serverResponse || model.toJSON()
   status = 200
