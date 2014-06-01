@@ -48,88 +48,90 @@
       });
       return model = collection.models[0];
     });
-    describe('using backbone models and retrieving from local storage', function() {
-      return it("fetches a model offline after saving it online", function(done) {
-        var saved;
-        saved = $.Deferred();
-        model.save({}, {
-          success: function() {
-            return saved.resolve();
-          }
-        });
-        return saved.done(function() {
-          var fetched, retrievedModel;
-          fetched = $.Deferred();
-          retrievedModel = new Model({
-            _id: 123
-          });
-          retrievedModel.fetch({
-            remote: false,
+    return describe('legacy examples', function() {
+      describe('using backbone models and retrieving from local storage', function() {
+        return it("fetches a model offline after saving it online", function(done) {
+          var saved;
+          saved = $.Deferred();
+          model.save({}, {
             success: function() {
-              return fetched.resolve();
+              return saved.resolve();
             }
           });
-          return fetched.done(function() {
-            expect(retrievedModel.get('vision')).to.equal('crystal');
-            return done();
-          });
-        });
-      });
-    });
-    describe('using backbone collections and retrieving from local storage', function() {
-      return it('loads a collection after adding several models to it', function(done) {
-        var allSaved, id, newModel, saved;
-        allSaved = (function() {
-          var _i, _results;
-          _results = [];
-          for (id = _i = 1; _i <= 3; id = ++_i) {
-            saved = $.Deferred();
-            newModel = new Model({
-              _id: id
+          return saved.done(function() {
+            var fetched, retrievedModel;
+            fetched = $.Deferred();
+            retrievedModel = new Model({
+              _id: 123
             });
-            newModel.save({}, {
+            retrievedModel.fetch({
+              remote: false,
               success: function() {
-                return saved.resolve();
+                return fetched.resolve();
               }
             });
-            _results.push(saved);
-          }
-          return _results;
-        })();
-        return $.when(allSaved).done(function() {
-          var fetched;
-          fetched = $.Deferred();
-          collection.fetch({
-            remote: false,
-            success: function() {
-              return fetched.resolve();
-            }
-          });
-          return fetched.done(function() {
-            expect(collection.length).to.equal(3);
-            expect(collection.map(function(model) {
-              return model.id;
-            })).to.eql([1, 2, 3]);
-            return done();
+            return fetched.done(function() {
+              expect(retrievedModel.get('vision')).to.equal('crystal');
+              return done();
+            });
           });
         });
       });
-    });
-    return describe('success and error callback parameters', function() {
-      return it("passes back the response into the remote method's callback", function() {
-        var fetched;
-        fetched = $.Deferred();
-        model.remote = true;
-        model.fetch({
-          success: function() {
-            var args;
-            args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-            return fetched.resolve(args);
-          }
+      describe('using backbone collections and retrieving from local storage', function() {
+        return it('loads a collection after adding several models to it', function(done) {
+          var allSaved, id, newModel, saved;
+          allSaved = (function() {
+            var _i, _results;
+            _results = [];
+            for (id = _i = 1; _i <= 3; id = ++_i) {
+              saved = $.Deferred();
+              newModel = new Model({
+                _id: id
+              });
+              newModel.save({}, {
+                success: function() {
+                  return saved.resolve();
+                }
+              });
+              _results.push(saved);
+            }
+            return _results;
+          })();
+          return $.when(allSaved).done(function() {
+            var fetched;
+            fetched = $.Deferred();
+            collection.fetch({
+              remote: false,
+              success: function() {
+                return fetched.resolve();
+              }
+            });
+            return fetched.done(function() {
+              expect(collection.length).to.equal(3);
+              expect(collection.map(function(model) {
+                return model.id;
+              })).to.eql([1, 2, 3]);
+              return done();
+            });
+          });
         });
-        return fetched.done(function(callbackResponse) {
-          expect(callbackResponse[0]).to.equal(model);
-          return expect(callbackResponse[1]).to.eql(model.attributes);
+      });
+      return describe('success and error callback parameters', function() {
+        return it("passes back the response into the remote method's callback", function() {
+          var fetched;
+          fetched = $.Deferred();
+          model.remote = true;
+          model.fetch({
+            success: function() {
+              var args;
+              args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+              return fetched.resolve(args);
+            }
+          });
+          return fetched.done(function(callbackResponse) {
+            expect(callbackResponse[0]).to.equal(model);
+            return expect(callbackResponse[1]).to.eql(model.attributes);
+          });
         });
       });
     });
