@@ -286,7 +286,7 @@ as that.
       }
     })();
     if (response != null ? response.attributes : void 0) {
-      response = response.attributes;
+      response = response.toJSON();
     }
     if (!options.ignoreCallbacks) {
       if (response) {
@@ -299,17 +299,16 @@ as that.
   };
 
   parseRemoteResponse = function(object, response) {
-    if (!(object && object.parseBeforeLocalSave)) {
-      return response;
-    }
     if (_.isFunction(object.parseBeforeLocalSave)) {
       return object.parseBeforeLocalSave(response);
+    } else {
+      return response;
     }
   };
 
   modelUpdatedWithResponse = function(model, response) {
     var modelClone;
-    modelClone = new Backbone.Model;
+    modelClone = new model.constructor;
     modelClone.idAttribute = model.idAttribute;
     modelClone.set(model.attributes);
     modelClone.set(model.parse(response));
@@ -362,21 +361,24 @@ as that.
           return success(localsync(method, model, options));
         } else {
           options.success = function(resp, status, xhr) {
-            var collection, idAttribute, modelAttributes, responseModel, _i, _len;
+            var collection, idAttribute, modelAttributes, responseModel, workingRespone, _i, _len;
             resp = parseRemoteResponse(model, resp);
             if (model instanceof Backbone.Collection) {
               collection = model;
+              workingRespone = collection.parse(resp);
               idAttribute = collection.model.prototype.idAttribute;
               if (!options.add) {
                 localsync('clear', collection, options);
               }
-              for (_i = 0, _len = resp.length; _i < _len; _i++) {
-                modelAttributes = resp[_i];
+              for (_i = 0, _len = workingRespone.length; _i < _len; _i++) {
+                modelAttributes = workingRespone[_i];
                 model = collection.get(modelAttributes[idAttribute]);
                 if (model) {
                   responseModel = modelUpdatedWithResponse(model, modelAttributes);
                 } else {
-                  responseModel = new collection.model(modelAttributes);
+                  responseModel = new collection.model(modelAttributes, {
+                    parse: true
+                  });
                 }
                 localsync('update', responseModel, options);
               }
