@@ -233,10 +233,13 @@ parseRemoteResponse = (object, response) ->
     response
 
 modelUpdatedWithResponse = (model, response) ->
-  modelClone = new model.constructor
+  modelClone = new Backbone.Model
+  # Use the methods from the model to support "inheritance"
+  modelClone.toJSON = _.bind(model.toJSON, model);
+  modelClone.parse = _.bind(model.parse, model);
   modelClone.idAttribute = model.idAttribute
   modelClone.set model.attributes
-  modelClone.set model.parse response
+  modelClone.set modelClone.parse response
   modelClone
 
 backboneSync = Backbone.sync

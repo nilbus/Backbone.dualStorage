@@ -308,10 +308,12 @@ as that.
 
   modelUpdatedWithResponse = function(model, response) {
     var modelClone;
-    modelClone = new model.constructor;
+    modelClone = new Backbone.Model;
+    modelClone.toJSON = _.bind(model.toJSON, model);
+    modelClone.parse = _.bind(model.parse, model);
     modelClone.idAttribute = model.idAttribute;
     modelClone.set(model.attributes);
-    modelClone.set(model.parse(response));
+    modelClone.set(modelClone.parse(response));
     return modelClone;
   };
 
