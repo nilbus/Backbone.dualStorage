@@ -212,7 +212,9 @@ localsync = (method, model, options) ->
           store.clean(model, 'dirty')
         else
           store.clean(model, 'destroyed')
-  response = response.attributes if response?.attributes
+
+  # Returne the serialized form of the model, this form is passed to parse
+  response = response.toJSON() if response?.attributes
 
   unless options.ignoreCallbacks
     if response
@@ -225,14 +227,19 @@ localsync = (method, model, options) ->
 # Helper function to run parseBeforeLocalSave() in order to
 # parse a remote JSON response before caching locally
 parseRemoteResponse = (object, response) ->
-  if not (object and object.parseBeforeLocalSave) then return response
-  if _.isFunction(object.parseBeforeLocalSave) then object.parseBeforeLocalSave(response)
+  if _.isFunction(object.parseBeforeLocalSave)
+    object.parseBeforeLocalSave response
+  else
+    response
 
 modelUpdatedWithResponse = (model, response) ->
   modelClone = new Backbone.Model
+  # Use the methods from the model to support "inheritance"
+  modelClone.toJSON = _.bind(model.toJSON, model);
+  modelClone.parse = _.bind(model.parse, model);
   modelClone.idAttribute = model.idAttribute
   modelClone.set model.attributes
-  modelClone.set model.parse response
+  modelClone.set modelClone.parse response
   modelClone
 
 backboneSync = Backbone.sync
@@ -278,18 +285,23 @@ dualsync = (method, model, options) ->
         success localsync(method, model, options)
       else
         options.success = (resp, status, xhr) ->
+          # for backwards compatiblity, should not be needed anymore
           resp = parseRemoteResponse(model, resp)
 
           if model instanceof Backbone.Collection
             collection = model
+
+            # parse the model using the parse method of the collection
+            # can be used to adjust the schema of collection elements (not for a single element)
+            workingResponse = collection.parse(resp)
             idAttribute = collection.model.prototype.idAttribute
             localsync('clear', collection, options) unless options.add
-            for modelAttributes in resp
+            for modelAttributes in workingResponse
               model = collection.get(modelAttributes[idAttribute])
               if model
                 responseModel = modelUpdatedWithResponse(model, modelAttributes)
               else
-                responseModel = new collection.model(modelAttributes)
+                responseModel = new collection.model(modelAttributes, { parse: true })
               localsync('update', responseModel, options)
           else
             responseModel = modelUpdatedWithResponse(model, resp)

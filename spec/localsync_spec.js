@@ -316,7 +316,7 @@
           return response;
         }), "A callback should have been called with a response", 100);
         return runs(function() {
-          return expect(response).toBe(model.attributes);
+          return expect(response).toEqual(model.attributes);
         });
       });
       return it('ignores callbacks when the ignoreCallbacks option is set', function() {
