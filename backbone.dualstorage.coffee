@@ -293,10 +293,10 @@ dualsync = (method, model, options) ->
 
             # parse the model using the parse method of the collection
             # can be used to adjust the schema of collection elements (not for a single element)
-            workingRespone = collection.parse(resp)
+            workingResponse = collection.parse(resp)
             idAttribute = collection.model.prototype.idAttribute
             localsync('clear', collection, options) unless options.add
-            for modelAttributes in workingRespone
+            for modelAttributes in workingResponse
               model = collection.get(modelAttributes[idAttribute])
               if model
                 responseModel = modelUpdatedWithResponse(model, modelAttributes)
