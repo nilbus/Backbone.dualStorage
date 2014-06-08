@@ -346,11 +346,11 @@ dualsync = function(method, model, options) {
       offlineStatusCodes = offlineStatusCodes(response);
     }
     offline = response.status === 0 || (_ref = response.status, __indexOf.call(offlineStatusCodes, _ref) >= 0);
-    if (offline && options.storeExists) {
+    if (!offline || method === 'read' && !options.storeExists) {
+      return error(response);
+    } else {
       options.dirty = true;
       return success(localsync(method, model, options));
-    } else {
-      return error(response);
     }
   };
   switch (method) {
