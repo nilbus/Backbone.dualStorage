@@ -107,7 +107,7 @@ class window.Store
   create: (model) ->
     if not _.isObject(model) then return model
     if not model.id
-      model.set model.idAttribute, @generateId(), { silent: true }
+      model.set model.idAttribute, @generateId()
     localStorage.setItem @name + @sep + model.id, JSON.stringify(model)
     @records.push model.id.toString()
     @save()

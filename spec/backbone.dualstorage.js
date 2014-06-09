@@ -139,9 +139,7 @@ as that.
         return model;
       }
       if (!model.id) {
-        model.set(model.idAttribute, this.generateId(), {
-          silent: true
-        });
+        model.set(model.idAttribute, this.generateId());
       }
       localStorage.setItem(this.name + this.sep + model.id, JSON.stringify(model));
       this.records.push(model.id.toString());
@@ -364,17 +362,17 @@ as that.
           return success(localsync(method, model, options));
         } else {
           options.success = function(resp, status, xhr) {
-            var collection, idAttribute, modelAttributes, responseModel, workingResponse, _i, _len;
+            var collection, idAttribute, modelAttributes, responseModel, workingRespone, _i, _len;
             resp = parseRemoteResponse(model, resp);
             if (model instanceof Backbone.Collection) {
               collection = model;
-              workingResponse = collection.parse(resp);
+              workingRespone = collection.parse(resp);
               idAttribute = collection.model.prototype.idAttribute;
               if (!options.add) {
                 localsync('clear', collection, options);
               }
-              for (_i = 0, _len = workingResponse.length; _i < _len; _i++) {
-                modelAttributes = workingResponse[_i];
+              for (_i = 0, _len = workingRespone.length; _i < _len; _i++) {
+                modelAttributes = workingRespone[_i];
                 model = collection.get(modelAttributes[idAttribute]);
                 if (model) {
                   responseModel = modelUpdatedWithResponse(model, modelAttributes);

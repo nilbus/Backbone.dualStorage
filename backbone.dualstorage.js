@@ -140,9 +140,7 @@ as that.
         return model;
       }
       if (!model.id) {
-        model.set(model.idAttribute, this.generateId(), {
-          silent: true
-        });
+        model.set(model.idAttribute, this.generateId());
       }
       localStorage.setItem(this.name + this.sep + model.id, JSON.stringify(model));
       this.records.push(model.id.toString());
