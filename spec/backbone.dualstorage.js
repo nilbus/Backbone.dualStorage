@@ -439,6 +439,7 @@ dualsync = function(method, model, options) {
       break;
     case 'delete':
       if (model.hasTempId()) {
+        options.ignoreCallbacks = false;
         return localsync(method, model, options);
       } else {
         options.success = function(resp, status, xhr) {

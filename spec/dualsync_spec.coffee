@@ -344,6 +344,21 @@ describe 'when to call user-specified success and error callbacks', ->
       dualsync('create', model, error: (-> ready = true), errorStatus: 500)
     waitsFor (-> ready), "The error callback should have been called", 100
 
+
+
+  it 'when a model with a temp id has been destroyed', ->
+      modelWithTempId = new collection.model();
+      modelWithTempId.url = "http://test.ch/";
+
+      modelWithTempId.save({}, { remote: false });
+      spyOnLocalsync();
+
+      successSpy = jasmine.createSpy("successHandler");
+
+      modelWithTempId.destroy({ success: successSpy });
+
+      expect(successSpy).toHaveBeenCalled();
+
   describe 'when offline', ->
     it 'uses the error callback if no existing local store is found', ->
       ready = false

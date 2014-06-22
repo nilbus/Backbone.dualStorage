@@ -340,6 +340,7 @@ dualsync = (method, model, options) ->
 
     when 'delete'
       if model.hasTempId()
+        options.ignoreCallbacks = false
         localsync(method, model, options)
       else
         options.success = (resp, status, xhr) ->
