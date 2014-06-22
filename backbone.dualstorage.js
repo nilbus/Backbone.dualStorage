@@ -445,6 +445,7 @@ as that.
         break;
       case 'delete':
         if (model.hasTempId()) {
+          options.ignoreCallbacks = false;
           return localsync(method, model, options);
         } else {
           options.success = function(resp, status, xhr) {
