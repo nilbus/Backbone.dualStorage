@@ -109,6 +109,21 @@ describe 'localsync', ->
           expect(destroy).toHaveBeenCalledWith model
           expect(destroyed).toHaveBeenCalledWith model
 
+      it "doesn't mark a model with a temp id as destroyed", ->
+        {destroy, destroyed, model, success} = {}
+        runs ->
+          model = new Backbone.Model
+          model.id = Store.prototype.generateId()
+
+          destroy = spyOn(Store.prototype, 'destroy')
+          destroyed = spyOn(Store.prototype, 'destroyed')
+          success = jasmine.createSpy("success")
+          localsync 'delete', model, { dirty: true, success: success }
+        runs ->
+          expect(destroy).toHaveBeenCalledWith model
+          expect(destroyed).not.toHaveBeenCalled
+          expect(success).toHaveBeenCalled()
+
   describe 'extra methods', ->
     it 'clears out all records from the store', ->
       runs ->

@@ -675,6 +675,20 @@
         return ready;
       }), "The error callback should have been called", 100);
     });
+    it('when a model with a temp id has been destroyed', function() {
+      var modelWithTempId, successSpy;
+      modelWithTempId = new collection.model();
+      modelWithTempId.url = "http://test.ch/";
+      modelWithTempId.save({}, {
+        remote: false
+      });
+      spyOnLocalsync();
+      successSpy = jasmine.createSpy("successHandler");
+      modelWithTempId.destroy({
+        success: successSpy
+      });
+      return expect(successSpy).toHaveBeenCalled();
+    });
     return describe('when offline', function() {
       it('uses the error callback if no existing local store is found', function() {
         var ready;

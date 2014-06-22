@@ -205,7 +205,7 @@ localsync = (method, model, options) ->
         store.clean(model, 'dirty')
     when 'delete'
       store.destroy(model)
-      if options.dirty
+      if options.dirty && !model.hasTempId()
         store.destroyed(model)
       else
         if model.id.toString().length == 36
@@ -340,6 +340,7 @@ dualsync = (method, model, options) ->
 
     when 'delete'
       if model.hasTempId()
+        options.ignoreCallbacks = false
         localsync(method, model, options)
       else
         options.success = (resp, status, xhr) ->
