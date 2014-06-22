@@ -273,7 +273,7 @@ as that.
           break;
         case 'delete':
           store.destroy(model);
-          if (options.dirty) {
+          if (options.dirty && !model.hasTempId()) {
             return store.destroyed(model);
           } else {
             if (model.id.toString().length === 36) {
