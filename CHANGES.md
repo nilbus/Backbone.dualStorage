@@ -1,3 +1,7 @@
+### master / unreleased
+
+* Fix #115: Don't attempt to delete models from the server that were only local, and call the callback in this case (Micha Reiser)
+
 ### 1.3.1 / 2014-15-30
 
 * Make syncDestroyed compatible with backbone >= 1.1.1
