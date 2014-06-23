@@ -274,10 +274,10 @@ as that.
           break;
         case 'delete':
           store.destroy(model);
-          if (options.dirty) {
+          if (options.dirty && !model.hasTempId()) {
             return store.destroyed(model);
           } else {
-            if (model.id.toString().length === 36) {
+            if (model.hasTempId()) {
               return store.clean(model, 'dirty');
             } else {
               return store.clean(model, 'destroyed');
@@ -441,6 +441,7 @@ as that.
         break;
       case 'delete':
         if (model.hasTempId()) {
+          options.ignoreCallbacks = false;
           return localsync(method, model, options);
         } else {
           options.success = function(resp, status, xhr) {
