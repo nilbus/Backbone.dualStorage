@@ -208,7 +208,7 @@ localsync = (method, model, options) ->
       if options.dirty && !model.hasTempId()
         store.destroyed(model)
       else
-        if model.id.toString().length == 36
+        if model.hasTempId()
           store.clean(model, 'dirty')
         else
           store.clean(model, 'destroyed')

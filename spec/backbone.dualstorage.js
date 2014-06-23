@@ -275,7 +275,7 @@ localsync = function(method, model, options) {
         if (options.dirty && !model.hasTempId()) {
           return store.destroyed(model);
         } else {
-          if (model.id.toString().length === 36) {
+          if (model.hasTempId()) {
             return store.clean(model, 'dirty');
           } else {
             return store.clean(model, 'destroyed');
