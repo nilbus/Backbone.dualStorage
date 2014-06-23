@@ -822,6 +822,28 @@
           return expect(this.collection.destroyedModelIds()).to.eql([]);
         });
       });
+      describe('Model.destroy', function() {
+        return it('does not mark models for deletion that were created and destroyed offline', function(done) {
+          var model;
+          model = new Model({
+            name: 'transient'
+          });
+          this.collection.add(model);
+          model.save(null, {
+            errorStatus: 0
+          });
+          model.destroy({
+            errorStatus: 0,
+            success: function() {
+              return done();
+            }
+          });
+          backboneSync.reset();
+          this.collection.syncDestroyed();
+          expect(backboneSync.callCount).to.equal(1);
+          return expect(backboneSync.firstCall.args[1].id).not.to.equal(model.id);
+        });
+      });
       return describe('Model.id', function() {
         return it('for new records with a temporary id is replaced by the id returned by the server', function(done) {
           var model, saved;

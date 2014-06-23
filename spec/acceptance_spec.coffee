@@ -394,6 +394,17 @@ describe 'Backbone.dualStorage', ->
         expect(@collection.dirtyModels()).to.eql []
         expect(@collection.destroyedModelIds()).to.eql []
 
+    describe 'Model.destroy', ->
+      it 'does not mark models for deletion that were created and destroyed offline', (done) ->
+        model = new Model name: 'transient'
+        @collection.add model
+        model.save null, errorStatus: 0
+        model.destroy errorStatus: 0, success: -> done()
+        backboneSync.reset()
+        @collection.syncDestroyed()
+        expect(backboneSync.callCount).to.equal 1
+        expect(backboneSync.firstCall.args[1].id).not.to.equal model.id
+
     describe 'Model.id', ->
       it 'for new records with a temporary id is replaced by the id returned by the server', (done) ->
         saved = $.Deferred()
