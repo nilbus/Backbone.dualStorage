@@ -143,7 +143,6 @@ describe 'Backbone.dualStorage', ->
             model.destroy success: ->
               destroyed.resolve()
             destroyed.done ->
-              fetchedLocally = $.Deferred()
               model = new Model _id: 1
               model.fetch remote: false, error: -> done()
 

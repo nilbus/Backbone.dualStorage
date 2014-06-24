@@ -335,8 +335,6 @@
                 }
               });
               return destroyed.done(function() {
-                var fetchedLocally;
-                fetchedLocally = $.Deferred();
                 model = new Model({
                   _id: 1
                 });
