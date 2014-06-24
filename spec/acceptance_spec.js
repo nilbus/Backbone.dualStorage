@@ -1259,7 +1259,50 @@
             return expect(Backbone.DualStorage.offlineStatusCodes).to.eql([408, 502]);
           });
         });
-        describe('as an array returned by a method', function() {});
+        describe('as an array returned by a method', function() {
+          return it('acts as offline when a server response code is in included in the array', function(done) {
+            var model, saved, serverReportsToBeOffline;
+            serverReportsToBeOffline = function(xhr) {
+              var _ref1;
+              if ((xhr != null ? (_ref1 = xhr.response) != null ? _ref1['error_message'] : void 0 : void 0) === 'Offline for maintenance') {
+                return [200];
+              } else {
+                return [];
+              }
+            };
+            Backbone.DualStorage.offlineStatusCodes = serverReportsToBeOffline;
+            model = new Model({
+              _id: 1
+            });
+            saved = $.Deferred();
+            model.save('name', 'original name saved locally', {
+              success: function() {
+                return saved.resolve();
+              }
+            });
+            return saved.done(function() {
+              var fetchedLocally;
+              model = new Model({
+                _id: 1
+              });
+              fetchedLocally = $.Deferred();
+              model.fetch({
+                serverResponse: {
+                  _id: 1,
+                  name: 'unknown',
+                  error_message: 'Offline for maintenance'
+                },
+                success: function() {
+                  return fetchedLocally.resolve();
+                }
+              });
+              return fetchedLocally.done(function() {
+                expect(model.get('name')).to.equal('original name saved locally');
+                return done();
+              });
+            });
+          });
+        });
         return it('treats an ajax response status code 0 as offline, regardless of offlineStatusCodes', function(done) {
           var model, saved;
           model = new Model({
