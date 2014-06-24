@@ -696,7 +696,7 @@
         });
       });
     });
-    return describe('syncing offline changes when there are dirty or destroyed records', function() {
+    describe('syncing offline changes when there are dirty or destroyed records', function() {
       beforeEach(function(done) {
         var allModified, allSaved;
         this.collection = new Collection([
@@ -868,6 +868,349 @@
               return done();
             };
           })(this));
+        });
+      });
+    });
+    return describe('mode overrides', function() {
+      describe('via properties', function() {
+        describe('Model.local', function() {
+          it('uses only local storage when true', function(done) {
+            var LocalModel, model, saved;
+            LocalModel = (function(_super) {
+              __extends(LocalModel, _super);
+
+              function LocalModel() {
+                return LocalModel.__super__.constructor.apply(this, arguments);
+              }
+
+              LocalModel.prototype.local = true;
+
+              return LocalModel;
+
+            })(Model);
+            model = new LocalModel;
+            backboneSync.reset();
+            saved = $.Deferred();
+            model.save(null, {
+              success: function() {
+                return saved.resolve();
+              }
+            });
+            return saved.done(function() {
+              expect(backboneSync.callCount).to.equal(0);
+              return done();
+            });
+          });
+          return it('does not mark local changes dirty and will not sync them (deprecated; will sync after 2.0)', function(done) {
+            var LocalModel, collection, model, saved;
+            LocalModel = (function(_super) {
+              __extends(LocalModel, _super);
+
+              function LocalModel() {
+                return LocalModel.__super__.constructor.apply(this, arguments);
+              }
+
+              LocalModel.prototype.local = true;
+
+              return LocalModel;
+
+            })(Model);
+            model = new LocalModel;
+            collection = new Collection([model]);
+            backboneSync.reset();
+            saved = $.Deferred();
+            model.save(null, {
+              success: function() {
+                return saved.resolve();
+              }
+            });
+            return saved.done(function() {
+              expect(backboneSync.callCount).to.equal(0);
+              collection.syncDirtyAndDestroyed();
+              expect(backboneSync.callCount).to.equal(0);
+              return done();
+            });
+          });
+        });
+        describe('Model.remote', function() {
+          return it('uses only remote storage when true', function(done) {
+            var RemoteModel, model, saved;
+            RemoteModel = (function(_super) {
+              __extends(RemoteModel, _super);
+
+              function RemoteModel() {
+                return RemoteModel.__super__.constructor.apply(this, arguments);
+              }
+
+              RemoteModel.prototype.remote = true;
+
+              return RemoteModel;
+
+            })(Model);
+            model = new RemoteModel({
+              _id: 1
+            });
+            backboneSync.reset();
+            saved = $.Deferred();
+            model.save(null, {
+              success: function() {
+                return saved.resolve();
+              }
+            });
+            return saved.done(function() {
+              expect(backboneSync.callCount).to.equal(1);
+              return model.fetch({
+                errorStatus: 0,
+                error: function() {
+                  return done();
+                }
+              });
+            });
+          });
+        });
+        describe('Collection.local', function() {
+          return it('uses only local storage when true', function(done) {
+            var LocalCollection, collection, fetched;
+            LocalCollection = (function(_super) {
+              __extends(LocalCollection, _super);
+
+              function LocalCollection() {
+                return LocalCollection.__super__.constructor.apply(this, arguments);
+              }
+
+              LocalCollection.prototype.local = true;
+
+              return LocalCollection;
+
+            })(Collection);
+            collection = new LocalCollection;
+            backboneSync.reset();
+            fetched = $.Deferred();
+            collection.fetch({
+              success: function() {
+                return fetched.resolve();
+              }
+            });
+            return fetched.done(function() {
+              expect(backboneSync.callCount).to.equal(0);
+              return done();
+            });
+          });
+        });
+        return describe('Collection.remote', function() {
+          return it('uses only remote storage when true', function(done) {
+            var RemoteCollection, collection, fetched;
+            RemoteCollection = (function(_super) {
+              __extends(RemoteCollection, _super);
+
+              function RemoteCollection() {
+                return RemoteCollection.__super__.constructor.apply(this, arguments);
+              }
+
+              RemoteCollection.prototype.remote = true;
+
+              return RemoteCollection;
+
+            })(Collection);
+            collection = new RemoteCollection({
+              _id: 1
+            });
+            backboneSync.reset();
+            fetched = $.Deferred();
+            collection.fetch({
+              success: function() {
+                return fetched.resolve();
+              }
+            });
+            return fetched.done(function() {
+              expect(backboneSync.callCount).to.equal(1);
+              return collection.fetch({
+                errorStatus: 0,
+                error: function() {
+                  return done();
+                }
+              });
+            });
+          });
+        });
+      });
+      describe('via methods, dynamically', function() {
+        describe('Model.local', function() {
+          return it('uses only local storage when the function returns true', function(done) {
+            var LocalModel, model, saved;
+            LocalModel = (function(_super) {
+              __extends(LocalModel, _super);
+
+              function LocalModel() {
+                return LocalModel.__super__.constructor.apply(this, arguments);
+              }
+
+              LocalModel.prototype.local = function() {
+                return true;
+              };
+
+              return LocalModel;
+
+            })(Model);
+            model = new LocalModel;
+            backboneSync.reset();
+            saved = $.Deferred();
+            model.save(null, {
+              success: function() {
+                return saved.resolve();
+              }
+            });
+            return saved.done(function() {
+              expect(backboneSync.callCount).to.equal(0);
+              return done();
+            });
+          });
+        });
+        describe('Model.remote', function() {
+          return it('uses only remote storage when the function returns true', function(done) {
+            var RemoteModel, model, saved;
+            RemoteModel = (function(_super) {
+              __extends(RemoteModel, _super);
+
+              function RemoteModel() {
+                return RemoteModel.__super__.constructor.apply(this, arguments);
+              }
+
+              RemoteModel.prototype.remote = function() {
+                return true;
+              };
+
+              return RemoteModel;
+
+            })(Model);
+            model = new RemoteModel({
+              _id: 1
+            });
+            backboneSync.reset();
+            saved = $.Deferred();
+            model.save(null, {
+              success: function() {
+                return saved.resolve();
+              }
+            });
+            return saved.done(function() {
+              expect(backboneSync.callCount).to.equal(1);
+              return model.fetch({
+                errorStatus: 0,
+                error: function() {
+                  return done();
+                }
+              });
+            });
+          });
+        });
+        describe('Collection.local', function() {
+          return it('uses only local storage when the function returns true', function(done) {
+            var LocalCollection, collection, fetched;
+            LocalCollection = (function(_super) {
+              __extends(LocalCollection, _super);
+
+              function LocalCollection() {
+                return LocalCollection.__super__.constructor.apply(this, arguments);
+              }
+
+              LocalCollection.prototype.local = function() {
+                return true;
+              };
+
+              return LocalCollection;
+
+            })(Collection);
+            collection = new LocalCollection;
+            backboneSync.reset();
+            fetched = $.Deferred();
+            collection.fetch({
+              success: function() {
+                return fetched.resolve();
+              }
+            });
+            return fetched.done(function() {
+              expect(backboneSync.callCount).to.equal(0);
+              return done();
+            });
+          });
+        });
+        return describe('Collection.remote', function() {
+          return it('uses only remote storage when the function returns true', function(done) {
+            var RemoteCollection, collection, fetched;
+            RemoteCollection = (function(_super) {
+              __extends(RemoteCollection, _super);
+
+              function RemoteCollection() {
+                return RemoteCollection.__super__.constructor.apply(this, arguments);
+              }
+
+              RemoteCollection.prototype.remote = function() {
+                return true;
+              };
+
+              return RemoteCollection;
+
+            })(Collection);
+            collection = new RemoteCollection({
+              _id: 1
+            });
+            backboneSync.reset();
+            fetched = $.Deferred();
+            collection.fetch({
+              success: function() {
+                return fetched.resolve();
+              }
+            });
+            return fetched.done(function() {
+              expect(backboneSync.callCount).to.equal(1);
+              return collection.fetch({
+                errorStatus: 0,
+                error: function() {
+                  return done();
+                }
+              });
+            });
+          });
+        });
+      });
+      return describe('via options', function() {
+        return describe('{remote: false}', function() {
+          it('uses local storage as if offline', function(done) {
+            var model, saved;
+            model = new Model;
+            backboneSync.reset();
+            saved = $.Deferred();
+            model.save(null, {
+              remote: false,
+              success: function() {
+                return saved.resolve();
+              }
+            });
+            return saved.done(function() {
+              expect(backboneSync.callCount).to.equal(0);
+              return done();
+            });
+          });
+          return it('marks records dirty, to be synced when online', function(done) {
+            var collection, model, saved;
+            model = new Model;
+            collection = new Collection([model]);
+            backboneSync.reset();
+            saved = $.Deferred();
+            model.save(null, {
+              remote: false,
+              success: function() {
+                return saved.resolve();
+              }
+            });
+            return saved.done(function() {
+              expect(backboneSync.callCount).to.equal(0);
+              collection.syncDirtyAndDestroyed();
+              expect(backboneSync.callCount).to.equal(1);
+              return done();
+            });
+          });
         });
       });
     });
