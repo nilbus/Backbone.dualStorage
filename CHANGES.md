@@ -1,6 +1,7 @@
 ### master / unreleased
 
 * Fix #115: Don't attempt to delete models from the server that were only local, and call the callback in this case (Micha Reiser)
+* Allow Backbone.DualStorage.offlineStatusCodes to include 200 OK as an offline status
 
 ### 1.3.1 / 2014-15-30
 

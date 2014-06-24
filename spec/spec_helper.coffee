@@ -9,4 +9,4 @@ sinon.stub window.Backbone, 'sync', (method, model, options) ->
   if Backbone.VERSION == '0.9.10'
     callback(model, resp, options)
   else
-    callback(resp, status, {})
+    callback(resp, status, {status: status, response: resp})
