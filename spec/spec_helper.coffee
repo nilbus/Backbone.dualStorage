@@ -9,4 +9,4 @@ window.Backbone.sync = jasmine.createSpy('sync').andCallFake (method, model, opt
   if Backbone.VERSION == '0.9.10'
     callback(model, resp, options)
   else
-    callback(resp, status, {})
+    callback(resp, status, {status: status, response: resp})

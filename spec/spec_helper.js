@@ -13,7 +13,10 @@
     if (Backbone.VERSION === '0.9.10') {
       return callback(model, resp, options);
     } else {
-      return callback(resp, status, {});
+      return callback(resp, status, {
+        status: status,
+        response: resp
+      });
     }
   });
 

@@ -261,23 +261,29 @@ dualsync = (method, model, options) ->
   success = options.success
   error = options.error
 
-  relayErrorCallback = (response) ->
+  useOfflineStorage = ->
+    options.dirty = true
+    success localsync(method, model, options)
+
+  hasOfflineStatusCode = (xhr) ->
     offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes
-    offlineStatusCodes = offlineStatusCodes(response) if _.isFunction(offlineStatusCodes)
-    offline = response.status == 0 or response.status in offlineStatusCodes
-    if not offline or method == 'read' and not options.storeExists
-      error response
+    offlineStatusCodes = offlineStatusCodes(xhr) if _.isFunction(offlineStatusCodes)
+    xhr.status == 0 or xhr.status in offlineStatusCodes
+
+  relayErrorCallback = (xhr) ->
+    online = not hasOfflineStatusCode xhr
+    if online or method == 'read' and not options.storeExists
+      error xhr
     else
-      options.dirty = true
-      success localsync(method, model, options)
+      useOfflineStorage()
 
   switch method
     when 'read'
       if localsync('hasDirtyOrDestroyed', model, options)
-        options.dirty = true
-        success localsync(method, model, options)
+        useOfflineStorage()
       else
         options.success = (resp, status, xhr) ->
+          return useOfflineStorage() if hasOfflineStatusCode xhr
           resp = parseRemoteResponse(model, resp)
 
           if model instanceof Backbone.Collection
@@ -297,18 +303,19 @@ dualsync = (method, model, options) ->
 
           success(resp, status, xhr)
 
-        options.error = (resp) ->
-          relayErrorCallback resp
+        options.error = (xhr) ->
+          relayErrorCallback xhr
 
         onlineSync(method, model, options)
 
     when 'create'
       options.success = (resp, status, xhr) ->
+        return useOfflineStorage() if hasOfflineStatusCode xhr
         updatedModel = modelUpdatedWithResponse model, resp
         localsync(method, updatedModel, options)
         success(resp, status, xhr)
-      options.error = (resp) ->
-        relayErrorCallback resp
+      options.error = (xhr) ->
+        relayErrorCallback xhr
 
       onlineSync(method, model, options)
 
@@ -317,24 +324,26 @@ dualsync = (method, model, options) ->
         temporaryId = model.id
 
         options.success = (resp, status, xhr) ->
+          return useOfflineStorage() if hasOfflineStatusCode xhr
           updatedModel = modelUpdatedWithResponse model, resp
           model.set model.idAttribute, temporaryId, silent: true
           localsync('delete', model, options)
           localsync('create', updatedModel, options)
           success(resp, status, xhr)
-        options.error = (resp) ->
+        options.error = (xhr) ->
           model.set model.idAttribute, temporaryId, silent: true
-          relayErrorCallback resp
+          relayErrorCallback xhr
 
         model.set model.idAttribute, null, silent: true
         onlineSync('create', model, options)
       else
         options.success = (resp, status, xhr) ->
+          return useOfflineStorage() if hasOfflineStatusCode xhr
           updatedModel = modelUpdatedWithResponse model, resp
           localsync(method, updatedModel, options)
           success(resp, status, xhr)
-        options.error = (resp) ->
-          relayErrorCallback resp
+        options.error = (xhr) ->
+          relayErrorCallback xhr
 
         onlineSync(method, model, options)
 
@@ -344,10 +353,11 @@ dualsync = (method, model, options) ->
         localsync(method, model, options)
       else
         options.success = (resp, status, xhr) ->
+          return useOfflineStorage() if hasOfflineStatusCode xhr
           localsync(method, model, options)
           success(resp, status, xhr)
-        options.error = (resp) ->
-          relayErrorCallback resp
+        options.error = (xhr) ->
+          relayErrorCallback xhr
 
         onlineSync(method, model, options)
 
