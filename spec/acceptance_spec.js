@@ -869,7 +869,7 @@
         });
       });
     });
-    return describe('mode overrides', function() {
+    describe('mode overrides', function() {
       describe('via properties', function() {
         describe('Model.local', function() {
           it('uses only local storage when true', function(done) {
@@ -1206,6 +1206,89 @@
               expect(backboneSync.callCount).to.equal(0);
               collection.syncDirtyAndDestroyed();
               expect(backboneSync.callCount).to.equal(1);
+              return done();
+            });
+          });
+        });
+      });
+    });
+    return describe('offline detection', function() {
+      return describe('Backbone.DualStorage.offlineStatusCodes', function() {
+        beforeEach(function() {
+          return this.originalOfflineStatusCodes = Backbone.DualStorage.offlineStatusCodes;
+        });
+        afterEach(function() {
+          return Backbone.DualStorage.offlineStatusCodes = this.originalOfflineStatusCodes;
+        });
+        describe('as an array property', function() {
+          it('acts as offline when a server response code is in included in the array', function(done) {
+            var model, saved;
+            Backbone.DualStorage.offlineStatusCodes = [500, 502];
+            model = new Model({
+              _id: 1
+            });
+            saved = $.Deferred();
+            model.save('name', 'original name saved locally', {
+              success: function() {
+                return saved.resolve();
+              }
+            });
+            return saved.done(function() {
+              var fetchedLocally, response;
+              model = new Model({
+                _id: 1
+              });
+              fetchedLocally = $.Deferred();
+              response = 'response ignored because of the "offline" status code';
+              model.fetch({
+                errorStatus: 500,
+                serverResponse: {
+                  name: response
+                },
+                success: function() {
+                  return fetchedLocally.resolve();
+                }
+              });
+              return fetchedLocally.done(function() {
+                expect(model.get('name')).to.equal('original name saved locally');
+                return done();
+              });
+            });
+          });
+          return it('defaults to [408, 502] (Request Timeout, Bad Gateway)', function() {
+            return expect(Backbone.DualStorage.offlineStatusCodes).to.eql([408, 502]);
+          });
+        });
+        describe('as an array returned by a method', function() {});
+        return it('treats an ajax response status code 0 as offline, regardless of offlineStatusCodes', function(done) {
+          var model, saved;
+          model = new Model({
+            _id: 1
+          });
+          saved = $.Deferred();
+          model.save('name', 'original name saved locally', {
+            success: function() {
+              return saved.resolve();
+            }
+          });
+          return saved.done(function() {
+            var fetchedLocally, response;
+            model = new Model({
+              _id: 1
+            });
+            fetchedLocally = $.Deferred();
+            response = 'response ignored because of the "offline" status code';
+            model.fetch({
+              errorStatus: 0,
+              serverResponse: {
+                name: response
+              },
+              success: function() {
+                return fetchedLocally.resolve();
+              }
+            });
+            return fetchedLocally.done(function() {
+              expect(model.get('name')).to.equal('original name saved locally');
               return done();
             });
           });
