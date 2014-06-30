@@ -16,6 +16,7 @@
 * Fix #105: Always set options.dirty in callbacks when offline (Elad Efrat)
 * Fix #93: syncDirty works when models use a custom idAttribute (Ben Salinas)
 * Fix #78: Do not clear local collection cache when a model is fetched
+* Add Backbone.DualStorage.offlineStatusCodes for configuring what to consider as offline
 * Add `make watch` for continual coffeescript compilation during development
 * `make` compiles sourcemaps between coffeescript and javascript
 * Prevent id duplication in the internal list of model ids for a collection when a model is fetched
