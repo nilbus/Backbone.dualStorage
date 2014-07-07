@@ -2,6 +2,7 @@
 
 * Fix #115: Don't attempt to delete models from the server that were only local, and call the callback in this case (Micha Reiser)
 * Allow Backbone.DualStorage.offlineStatusCodes to include 200 OK as an offline status
+* syncDirty, syncDestroyed, and syncDirtyAndDestroyed accept options (and therefore callbacks) which are passed to save and destroy
 
 ### 1.3.1 / 2014-15-30
 

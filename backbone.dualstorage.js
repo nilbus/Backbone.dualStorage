@@ -25,14 +25,14 @@ as that.
     return _.result(collection, 'storeName') || _.result(model, 'storeName') || _.result(collection, 'url') || _.result(model, 'urlRoot') || _.result(model, 'url');
   };
 
-  Backbone.Collection.prototype.syncDirty = function() {
+  Backbone.Collection.prototype.syncDirty = function(options) {
     var id, ids, store, _i, _len, _ref, _results;
     store = localStorage.getItem("" + (getStoreName(this)) + "_dirty");
     ids = (store && store.split(',')) || [];
     _results = [];
     for (_i = 0, _len = ids.length; _i < _len; _i++) {
       id = ids[_i];
-      _results.push((_ref = this.get(id)) != null ? _ref.save() : void 0);
+      _results.push((_ref = this.get(id)) != null ? _ref.save(null, options) : void 0);
     }
     return _results;
   };
@@ -53,7 +53,7 @@ as that.
     return _.compact(models);
   };
 
-  Backbone.Collection.prototype.syncDestroyed = function() {
+  Backbone.Collection.prototype.syncDestroyed = function(options) {
     var id, ids, model, store, _i, _len, _results;
     store = localStorage.getItem("" + (getStoreName(this)) + "_destroyed");
     ids = (store && store.split(',')) || [];
@@ -63,7 +63,7 @@ as that.
       model = new this.model;
       model.set(model.idAttribute, id);
       model.collection = this;
-      _results.push(model.destroy());
+      _results.push(model.destroy(options));
     }
     return _results;
   };
@@ -74,9 +74,9 @@ as that.
     return ids = (store && store.split(',')) || [];
   };
 
-  Backbone.Collection.prototype.syncDirtyAndDestroyed = function() {
-    this.syncDirty();
-    return this.syncDestroyed();
+  Backbone.Collection.prototype.syncDirtyAndDestroyed = function(options) {
+    this.syncDirty(options);
+    return this.syncDestroyed(options);
   };
 
   S4 = function() {

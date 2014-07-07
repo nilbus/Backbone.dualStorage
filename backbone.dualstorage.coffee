@@ -20,12 +20,12 @@ getStoreName = (collection, model) ->
 
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
-Backbone.Collection.prototype.syncDirty = ->
+Backbone.Collection.prototype.syncDirty = (options) ->
   store = localStorage.getItem("#{getStoreName(@)}_dirty")
   ids = (store and store.split(',')) or []
 
   for id in ids
-    @get(id)?.save()
+    @get(id)?.save(null, options)
 
 Backbone.Collection.prototype.dirtyModels = ->
   store = localStorage.getItem("#{getStoreName(@)}_dirty")
@@ -35,7 +35,7 @@ Backbone.Collection.prototype.dirtyModels = ->
 
   _.compact(models)
 
-Backbone.Collection.prototype.syncDestroyed = ->
+Backbone.Collection.prototype.syncDestroyed = (options) ->
   store = localStorage.getItem("#{getStoreName(@)}_destroyed")
   ids = (store and store.split(',')) or []
 
@@ -43,16 +43,16 @@ Backbone.Collection.prototype.syncDestroyed = ->
     model = new @model
     model.set model.idAttribute, id
     model.collection = @
-    model.destroy()
+    model.destroy(options)
 
 Backbone.Collection.prototype.destroyedModelIds = ->
   store = localStorage.getItem("#{getStoreName(@)}_destroyed")
 
   ids = (store and store.split(',')) or []
 
-Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
-  @syncDirty()
-  @syncDestroyed()
+Backbone.Collection.prototype.syncDirtyAndDestroyed = (options) ->
+  @syncDirty(options)
+  @syncDestroyed(options)
 
 # Generate four random hex digits.
 S4 = ->
