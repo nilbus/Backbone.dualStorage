@@ -20,12 +20,12 @@ getStoreName = (collection, model) ->
 
 # Make it easy for collections to sync dirty and destroyed records
 # Simply call collection.syncDirtyAndDestroyed()
-Backbone.Collection.prototype.syncDirty = ->
+Backbone.Collection.prototype.syncDirty = (options) ->
   store = localStorage.getItem("#{getStoreName(@)}_dirty")
   ids = (store and store.split(',')) or []
 
   for id in ids
-    @get(id)?.save()
+    @get(id)?.save(null, options)
 
 Backbone.Collection.prototype.dirtyModels = ->
   store = localStorage.getItem("#{getStoreName(@)}_dirty")
@@ -35,7 +35,7 @@ Backbone.Collection.prototype.dirtyModels = ->
 
   _.compact(models)
 
-Backbone.Collection.prototype.syncDestroyed = ->
+Backbone.Collection.prototype.syncDestroyed = (options) ->
   store = localStorage.getItem("#{getStoreName(@)}_destroyed")
   ids = (store and store.split(',')) or []
 
@@ -43,16 +43,16 @@ Backbone.Collection.prototype.syncDestroyed = ->
     model = new @model
     model.set model.idAttribute, id
     model.collection = @
-    model.destroy()
+    model.destroy(options)
 
 Backbone.Collection.prototype.destroyedModelIds = ->
   store = localStorage.getItem("#{getStoreName(@)}_destroyed")
 
   ids = (store and store.split(',')) or []
 
-Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
-  @syncDirty()
-  @syncDestroyed()
+Backbone.Collection.prototype.syncDirtyAndDestroyed = (options) ->
+  @syncDirty(options)
+  @syncDestroyed(options)
 
 # Generate four random hex digits.
 S4 = ->
@@ -282,8 +282,8 @@ dualsync = (method, model, options) ->
       if localsync('hasDirtyOrDestroyed', model, options)
         useOfflineStorage()
       else
-        options.success = (resp, status, xhr) ->
-          return useOfflineStorage() if hasOfflineStatusCode xhr
+        options.success = (resp, _status, _xhr) ->
+          return useOfflineStorage() if hasOfflineStatusCode options.xhr
           resp = parseRemoteResponse(model, resp)
 
           if model instanceof Backbone.Collection
@@ -301,64 +301,64 @@ dualsync = (method, model, options) ->
             responseModel = modelUpdatedWithResponse(model, resp)
             localsync('update', responseModel, options)
 
-          success(resp, status, xhr)
+          success(resp, _status, _xhr)
 
         options.error = (xhr) ->
           relayErrorCallback xhr
 
-        onlineSync(method, model, options)
+        options.xhr = onlineSync(method, model, options)
 
     when 'create'
-      options.success = (resp, status, xhr) ->
-        return useOfflineStorage() if hasOfflineStatusCode xhr
+      options.success = (resp, _status, _xhr) ->
+        return useOfflineStorage() if hasOfflineStatusCode options.xhr
         updatedModel = modelUpdatedWithResponse model, resp
         localsync(method, updatedModel, options)
-        success(resp, status, xhr)
+        success(resp, _status, _xhr)
       options.error = (xhr) ->
         relayErrorCallback xhr
 
-      onlineSync(method, model, options)
+      options.xhr = onlineSync(method, model, options)
 
     when 'update'
       if model.hasTempId()
         temporaryId = model.id
 
-        options.success = (resp, status, xhr) ->
-          return useOfflineStorage() if hasOfflineStatusCode xhr
+        options.success = (resp, _status, _xhr) ->
+          return useOfflineStorage() if hasOfflineStatusCode options.xhr
           updatedModel = modelUpdatedWithResponse model, resp
           model.set model.idAttribute, temporaryId, silent: true
           localsync('delete', model, options)
           localsync('create', updatedModel, options)
-          success(resp, status, xhr)
+          success(resp, _status, _xhr)
         options.error = (xhr) ->
           model.set model.idAttribute, temporaryId, silent: true
           relayErrorCallback xhr
 
         model.set model.idAttribute, null, silent: true
-        onlineSync('create', model, options)
+        options.xhr = onlineSync('create', model, options)
       else
-        options.success = (resp, status, xhr) ->
-          return useOfflineStorage() if hasOfflineStatusCode xhr
+        options.success = (resp, _status, _xhr) ->
+          return useOfflineStorage() if hasOfflineStatusCode options.xhr
           updatedModel = modelUpdatedWithResponse model, resp
           localsync(method, updatedModel, options)
-          success(resp, status, xhr)
+          success(resp, _status, _xhr)
         options.error = (xhr) ->
           relayErrorCallback xhr
 
-        onlineSync(method, model, options)
+        options.xhr = onlineSync(method, model, options)
 
     when 'delete'
       if model.hasTempId()
         options.ignoreCallbacks = false
         localsync(method, model, options)
       else
-        options.success = (resp, status, xhr) ->
-          return useOfflineStorage() if hasOfflineStatusCode xhr
+        options.success = (resp, _status, _xhr) ->
+          return useOfflineStorage() if hasOfflineStatusCode options.xhr
           localsync(method, model, options)
-          success(resp, status, xhr)
+          success(resp, _status, _xhr)
         options.error = (xhr) ->
           relayErrorCallback xhr
 
-        onlineSync(method, model, options)
+        options.xhr = onlineSync(method, model, options)
 
 Backbone.sync = dualsync

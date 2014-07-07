@@ -70,11 +70,11 @@ dualStorage **always** treats an Ajax status code of `0` as an indication it is 
 
 or a function that accepts the `response` object and returns an array:
 
-    Backbone.DualStorage.offlineStatusCodes = function(response) {
+    Backbone.DualStorage.offlineStatusCodes = function(xhr) {
         var codes = [];
 
         if (...) {
-            codes.push(response.status);
+            codes.push(xhr.status);
         }
 
         return codes;
