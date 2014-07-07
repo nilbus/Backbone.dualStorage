@@ -2,7 +2,7 @@
 {Collection, Model} = {}
 
 describe 'Backbone.dualStorage', ->
-  @timeout 10
+  @timeout 50
 
   beforeEach ->
     localStorage.clear()
@@ -374,21 +374,21 @@ describe 'Backbone.dualStorage', ->
     describe 'Collection.syncDirty', ->
       it 'attempts to save online all records that were created/updated while offline', ->
         backboneSync.reset()
-        @collection.syncDirty()
+        @collection.syncDirty(async: false)
         expect(backboneSync.callCount).to.equal 1
         expect(@collection.dirtyModels()).to.eql []
 
     describe 'Collection.syncDestroyed', ->
       it 'attempts to destroy online all records that were destroyed while offline', ->
         backboneSync.reset()
-        @collection.syncDestroyed()
+        @collection.syncDestroyed(async: false)
         expect(backboneSync.callCount).to.equal 1
         expect(@collection.destroyedModelIds()).to.eql []
 
     describe 'Collection.syncDirtyAndDestroyed', ->
       it 'attempts to sync online all records that were modified while offline', ->
         backboneSync.reset()
-        @collection.syncDirtyAndDestroyed()
+        @collection.syncDirtyAndDestroyed(async: false)
         expect(backboneSync.callCount).to.equal 2
         expect(@collection.dirtyModels()).to.eql []
         expect(@collection.destroyedModelIds()).to.eql []
@@ -398,11 +398,14 @@ describe 'Backbone.dualStorage', ->
         model = new Model name: 'transient'
         @collection.add model
         model.save null, errorStatus: 0
-        model.destroy errorStatus: 0, success: -> done()
-        backboneSync.reset()
-        @collection.syncDestroyed()
-        expect(backboneSync.callCount).to.equal 1
-        expect(backboneSync.firstCall.args[1].id).not.to.equal model.id
+        destroyed = $.Deferred()
+        model.destroy errorStatus: 0, success: -> destroyed.resolve()
+        destroyed.done =>
+          backboneSync.reset()
+          @collection.syncDestroyed()
+          expect(backboneSync.callCount).to.equal 1
+          expect(backboneSync.firstCall.args[1].id).not.to.equal model.id
+          done()
 
     describe 'Model.id', ->
       it 'for new records with a temporary id is replaced by the id returned by the server', (done) ->

@@ -9,7 +9,7 @@
   _ref = {}, Collection = _ref.Collection, Model = _ref.Model;
 
   describe('Backbone.dualStorage', function() {
-    this.timeout(10);
+    this.timeout(50);
     beforeEach(function() {
       localStorage.clear();
       Model = (function(_super) {
@@ -798,7 +798,9 @@
       describe('Collection.syncDirty', function() {
         return it('attempts to save online all records that were created/updated while offline', function() {
           backboneSync.reset();
-          this.collection.syncDirty();
+          this.collection.syncDirty({
+            async: false
+          });
           expect(backboneSync.callCount).to.equal(1);
           return expect(this.collection.dirtyModels()).to.eql([]);
         });
@@ -806,7 +808,9 @@
       describe('Collection.syncDestroyed', function() {
         return it('attempts to destroy online all records that were destroyed while offline', function() {
           backboneSync.reset();
-          this.collection.syncDestroyed();
+          this.collection.syncDestroyed({
+            async: false
+          });
           expect(backboneSync.callCount).to.equal(1);
           return expect(this.collection.destroyedModelIds()).to.eql([]);
         });
@@ -814,7 +818,9 @@
       describe('Collection.syncDirtyAndDestroyed', function() {
         return it('attempts to sync online all records that were modified while offline', function() {
           backboneSync.reset();
-          this.collection.syncDirtyAndDestroyed();
+          this.collection.syncDirtyAndDestroyed({
+            async: false
+          });
           expect(backboneSync.callCount).to.equal(2);
           expect(this.collection.dirtyModels()).to.eql([]);
           return expect(this.collection.destroyedModelIds()).to.eql([]);
@@ -822,7 +828,7 @@
       });
       describe('Model.destroy', function() {
         return it('does not mark models for deletion that were created and destroyed offline', function(done) {
-          var model;
+          var destroyed, model;
           model = new Model({
             name: 'transient'
           });
@@ -830,16 +836,22 @@
           model.save(null, {
             errorStatus: 0
           });
+          destroyed = $.Deferred();
           model.destroy({
             errorStatus: 0,
             success: function() {
-              return done();
+              return destroyed.resolve();
             }
           });
-          backboneSync.reset();
-          this.collection.syncDestroyed();
-          expect(backboneSync.callCount).to.equal(1);
-          return expect(backboneSync.firstCall.args[1].id).not.to.equal(model.id);
+          return destroyed.done((function(_this) {
+            return function() {
+              backboneSync.reset();
+              _this.collection.syncDestroyed();
+              expect(backboneSync.callCount).to.equal(1);
+              expect(backboneSync.firstCall.args[1].id).not.to.equal(model.id);
+              return done();
+            };
+          })(this));
         });
       });
       return describe('Model.id', function() {
