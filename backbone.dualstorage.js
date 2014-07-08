@@ -17,7 +17,7 @@ as that.
   };
 
   Backbone.Model.prototype.hasTempId = function() {
-    return _.isString(this.id) && this.id.length === 36;
+    return _.isString(this.id) && this.id.length === 36 && this.id.indexOf('t') === 0;
   };
 
   getStoreName = function(collection, model) {
@@ -92,7 +92,7 @@ as that.
     }
 
     Store.prototype.generateId = function() {
-      return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
+      return 't' + S4().substring(1) + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
     };
 
     Store.prototype.save = function() {
