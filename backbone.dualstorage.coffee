@@ -11,7 +11,7 @@ Backbone.DualStorage = {
 }
 
 Backbone.Model.prototype.hasTempId = ->
-  _.isString(@id) and @id.length is 36
+  _.isString(@id) and @id.length is 36 and @id.indexOf('t') == 0
 
 getStoreName = (collection, model) ->
   model ||= collection.model.prototype
@@ -71,7 +71,7 @@ class window.Store
   # by default generates a pseudo-GUID by concatenating random hexadecimal.
   # you can overwrite this function to use another strategy
   generateId: ->
-    S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4()
+    't' + S4().substring(1) + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4()
 
   # Save the current state of the **Store** to *localStorage*.
   save: ->
