@@ -1,5 +1,6 @@
 ### master / unreleased
 
+* Fix #117: Don't generate temporary IDs that conflict with UUIDs
 * Fix #115: Don't attempt to delete models from the server that were only local, and call the callback in this case (Micha Reiser)
 * Allow Backbone.DualStorage.offlineStatusCodes to include 200 OK as an offline status
 
