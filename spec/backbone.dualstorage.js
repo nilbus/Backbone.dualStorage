@@ -15,7 +15,7 @@ Backbone.DualStorage = {
 };
 
 Backbone.Model.prototype.hasTempId = function() {
-  return _.isString(this.id) && this.id.length === 36;
+  return _.isString(this.id) && this.id.length === 36 && this.id.indexOf('t') === 0;
 };
 
 getStoreName = function(collection, model) {
@@ -90,7 +90,7 @@ window.Store = (function() {
   }
 
   Store.prototype.generateId = function() {
-    return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
+    return 't' + S4().substring(1) + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
   };
 
   Store.prototype.save = function() {
@@ -341,7 +341,10 @@ dualsync = function(method, model, options) {
   error = options.error;
   useOfflineStorage = function() {
     options.dirty = true;
-    return success(localsync(method, model, options));
+    options.ignoreCallbacks = false;
+    options.success = success;
+    options.error = error;
+    return localsync(method, model, options);
   };
   hasOfflineStatusCode = function(xhr) {
     var offlineStatusCodes, _ref;
