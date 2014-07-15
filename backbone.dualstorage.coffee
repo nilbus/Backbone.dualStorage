@@ -263,7 +263,10 @@ dualsync = (method, model, options) ->
 
   useOfflineStorage = ->
     options.dirty = true
-    success localsync(method, model, options)
+    options.ignoreCallbacks = false
+    options.success = success
+    options.error = error
+    localsync(method, model, options)
 
   hasOfflineStatusCode = (xhr) ->
     offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes

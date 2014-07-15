@@ -341,7 +341,10 @@ dualsync = function(method, model, options) {
   error = options.error;
   useOfflineStorage = function() {
     options.dirty = true;
-    return success(localsync(method, model, options));
+    options.ignoreCallbacks = false;
+    options.success = success;
+    options.error = error;
+    return localsync(method, model, options);
   };
   hasOfflineStatusCode = function(xhr) {
     var offlineStatusCodes, _ref;
