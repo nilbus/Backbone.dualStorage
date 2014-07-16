@@ -1,5 +1,13 @@
 ### master / unreleased
 
+* Fix #117: Don't generate temporary IDs that conflict with UUIDs (David Almilli)
+* Fix #115: Don't attempt to delete models from the server that were only local, and call the callback in this case (Micha Reiser)
+* Allow Backbone.DualStorage.offlineStatusCodes to include 200 OK as an offline status
+* syncDirty, syncDestroyed, and syncDirtyAndDestroyed accept options (and therefore callbacks) which are passed to save and destroy
+* Call the error callback when offline and fetching a model that was never cached
+
+### 1.3.1 / 2014-15-30
+
 * Make syncDestroyed compatible with backbone >= 1.1.1
 * Fix #94: Call the error callback when offline if the collection has never been fetched (Dave Taylor)
 * Fix #99: Restore compatibility with lodash; incompatible since 1.2.0 (Aleksandr Motsjonov)
@@ -11,6 +19,7 @@
 * Fix #105: Always set options.dirty in callbacks when offline (Elad Efrat)
 * Fix #93: syncDirty works when models use a custom idAttribute (Ben Salinas)
 * Fix #78: Do not clear local collection cache when a model is fetched
+* Add Backbone.DualStorage.offlineStatusCodes for configuring what to consider as offline
 * Add `make watch` for continual coffeescript compilation during development
 * `make` compiles sourcemaps between coffeescript and javascript
 * Prevent id duplication in the internal list of model ids for a collection when a model is fetched

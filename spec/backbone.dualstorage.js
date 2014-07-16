@@ -99,7 +99,7 @@ Backbone.storageAdapters = {
 
 
 /*
-Backbone dualStorage Adapter v1.3.0
+Backbone dualStorage Adapter v1.3.1
 
 A simple module to replace `Backbone.sync` with local storage based
 persistence. Models are given GUIDS, and saved into a JSON object. Simple
@@ -117,7 +117,7 @@ Backbone.DualStorage = {
 };
 
 Backbone.Model.prototype.hasTempId = function() {
-  return _.isString(this.id) && this.id.length === 36;
+  return _.isString(this.id) && this.id.length === 36 && this.id.indexOf('t') === 0;
 };
 
 getStoreName = function(collection, model) {
@@ -125,7 +125,7 @@ getStoreName = function(collection, model) {
   return _.result(collection, 'storeName') || _.result(model, 'storeName') || _.result(collection, 'url') || _.result(model, 'urlRoot') || _.result(model, 'url');
 };
 
-Backbone.Collection.prototype.syncDirty = function() {
+Backbone.Collection.prototype.syncDirty = function(options) {
   return Backbone.storageAdapter.getItem("" + (getStoreName(this)) + "_dirty").then((function(_this) {
     return function(store) {
       var id, ids, model, models;
@@ -145,7 +145,7 @@ Backbone.Collection.prototype.syncDirty = function() {
         for (_i = 0, _len = models.length; _i < _len; _i++) {
           model = models[_i];
           if (model) {
-            _results.push(model.save());
+            _results.push(model.save(null, options));
           }
         }
         return _results;
@@ -173,7 +173,7 @@ Backbone.Collection.prototype.dirtyModels = function() {
   })(this));
 };
 
-Backbone.Collection.prototype.syncDestroyed = function() {
+Backbone.Collection.prototype.syncDestroyed = function(options) {
   return Backbone.storageAdapter.getItem("" + (getStoreName(this)) + "_destroyed").then((function(_this) {
     return function(store) {
       var id, ids, model, models;
@@ -195,7 +195,7 @@ Backbone.Collection.prototype.syncDestroyed = function() {
         _results = [];
         for (_i = 0, _len = models.length; _i < _len; _i++) {
           model = models[_i];
-          _results.push(model.destroy());
+          _results.push(model.destroy(options));
         }
         return _results;
       })());
@@ -213,7 +213,7 @@ Backbone.Collection.prototype.destroyedModelIds = function() {
 };
 
 Backbone.Collection.prototype.syncDirtyAndDestroyed = function() {
-  return $.when(this.syncDirty(), this.syncDestroyed());
+  return $.when(this.syncDirty(options), this.syncDestroyed(options));
 };
 
 S4 = function() {
@@ -239,7 +239,7 @@ window.Store = (function() {
   };
 
   Store.prototype.generateId = function() {
-    return S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
+    return 't' + S4().substring(1) + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4();
   };
 
   Store.prototype.getStorageKey = function(id) {
@@ -486,10 +486,10 @@ localSync = function(method, model, options) {
           });
         case 'delete':
           return store.destroy(model).then(function() {
-            if (options.dirty) {
+            if (options.dirty && !model.hasTempId()) {
               return store.destroyed(model);
             } else {
-              if (model.id.toString().length === 36) {
+              if (model.hasTempId()) {
                 return store.clean(model, 'dirty');
               } else {
                 return store.clean(model, 'destroyed');
@@ -541,7 +541,7 @@ onlineSync = function(method, model, options) {
 };
 
 dualSync = function(method, model, options) {
-  var error, local, relayErrorCallback, storeExistsPromise, success, temporaryId;
+  var error, hasOfflineStatusCode, local, relayErrorCallback, storeExistsPromise, success, temporaryId, useOfflineStorage;
   options.storeName = getStoreName(model.collection, model);
   options.success = callbackTranslator.forDualstorageCaller(options.success, model, options);
   options.error = callbackTranslator.forDualstorageCaller(options.error, model, options);
@@ -557,22 +557,32 @@ dualSync = function(method, model, options) {
   success = options.success;
   error = options.error;
   storeExistsPromise = Store.exists(options.storeName);
-  relayErrorCallback = function(response) {
-    var offline, offlineStatusCodes, _ref;
+  useOfflineStorage = function() {
+    options.dirty = true;
+    options.ignoreCallbacks = false;
+    options.success = success;
+    options.error = error;
+    return localSync(method, model, options).then(function(result) {
+      return success(result);
+    });
+  };
+  hasOfflineStatusCode = function(xhr) {
+    var offlineStatusCodes, _ref;
     offlineStatusCodes = Backbone.DualStorage.offlineStatusCodes;
     if (_.isFunction(offlineStatusCodes)) {
-      offlineStatusCodes = offlineStatusCodes(response);
+      offlineStatusCodes = offlineStatusCodes(xhr);
     }
-    offline = response.status === 0 || (_ref = response.status, __indexOf.call(offlineStatusCodes, _ref) >= 0);
+    return xhr.status === 0 || (_ref = xhr.status, __indexOf.call(offlineStatusCodes, _ref) >= 0);
+  };
+  relayErrorCallback = function(xhr) {
+    var online;
+    online = !hasOfflineStatusCode(xhr);
     return storeExistsPromise.always(function(storeExists) {
       options.storeExists = storeExists;
-      if (offline && storeExists) {
-        options.dirty = true;
-        return localSync(method, model, options).then(function(result) {
-          return success(result);
-        });
+      if (online || method === 'read' && !storeExists) {
+        return error(xhr);
       } else {
-        return error(response);
+        return useOfflineStorage();
       }
     });
   };
@@ -580,10 +590,9 @@ dualSync = function(method, model, options) {
     case 'read':
       return localSync('hasDirtyOrDestroyed', model, options).then(function(hasDirtyOrDestroyed) {
         if (hasDirtyOrDestroyed) {
-          options.dirty = true;
-          return success(localSync(method, model, options));
+          return useOfflineStorage();
         } else {
-          options.success = function(resp, status, xhr) {
+          options.success = function(resp, _status, _xhr) {
             var clearIfNeeded, collection, idAttribute, responseModel;
             resp = parseRemoteResponse(model, resp);
             if (model instanceof Backbone.Collection) {
@@ -612,86 +621,99 @@ dualSync = function(method, model, options) {
                   }
                   return _results;
                 })())).then(function() {
-                  return success(resp, status, xhr);
+                  return success(resp, _status, _xhr);
                 });
               });
             } else {
               responseModel = modelUpdatedWithResponse(model, resp);
               return localSync('update', responseModel, options).then(function() {
-                return success(resp, status, xhr);
+                return success(resp, _status, _xhr);
               });
             }
           };
-          options.error = function(resp) {
-            return relayErrorCallback(resp);
+          options.error = function(xhr) {
+            return relayErrorCallback(xhr);
           };
-          return onlineSync(method, model, options);
+          return options.xhr = onlineSync(method, model, options);
         }
       });
     case 'create':
-      options.success = function(resp, status, xhr) {
+      options.success = function(resp, _status, _xhr) {
         var updatedModel;
+        if (hasOfflineStatusCode(options.xhr)) {
+          return useOfflineStorage();
+        }
         updatedModel = modelUpdatedWithResponse(model, resp);
         return localSync(method, updatedModel, options).then(function() {
-          return success(resp, status, xhr);
+          return success(resp, _status, _xhr);
         });
       };
-      options.error = function(resp) {
-        return relayErrorCallback(resp);
+      options.error = function(xhr) {
+        return relayErrorCallback(xhr);
       };
-      return onlineSync(method, model, options);
+      return options.xhr = onlineSync(method, model, options);
     case 'update':
       if (model.hasTempId()) {
         temporaryId = model.id;
-        options.success = function(resp, status, xhr) {
+        options.success = function(resp, _status, _xhr) {
           var updatedModel;
+          if (hasOfflineStatusCode(options.xhr)) {
+            return useOfflineStorage();
+          }
           updatedModel = modelUpdatedWithResponse(model, resp);
           model.set(model.idAttribute, temporaryId, {
             silent: true
           });
           return localSync('delete', model, options).then(function() {
             return localSync('create', updatedModel, options).then(function() {
-              return success(resp, status, xhr);
+              return success(resp, _status, _xhr);
             });
           });
         };
-        options.error = function(resp) {
+        options.error = function(xhr) {
           model.set(model.idAttribute, temporaryId, {
             silent: true
           });
-          return relayErrorCallback(resp);
+          return relayErrorCallback(xhr);
         };
         model.set(model.idAttribute, null, {
           silent: true
         });
-        return onlineSync('create', model, options);
+        return options.xhr = onlineSync('create', model, options);
       } else {
-        options.success = function(resp, status, xhr) {
+        options.success = function(resp, _status, _xhr) {
           var updatedModel;
+          if (hasOfflineStatusCode(options.xhr)) {
+            return useOfflineStorage();
+          }
           updatedModel = modelUpdatedWithResponse(model, resp);
           return localSync(method, updatedModel, options).then(function() {
-            return success(resp, status, xhr);
+            return success(resp, _status, _xhr);
           });
         };
-        options.error = function(resp) {
-          return relayErrorCallback(resp);
+        options.error = function(xhr) {
+          return relayErrorCallback(xhr);
         };
-        return onlineSync(method, model, options);
+        return options.xhr = onlineSync(method, model, options);
       }
       break;
     case 'delete':
       if (model.hasTempId()) {
+        options.ignoreCallbacks = false;
         return localSync(method, model, options);
       } else {
-        options.success = function(resp, status, xhr) {
+        options.success = function(resp, _status, _xhr) {
+          if (hasOfflineStatusCode(options.xhr)) {
+            return useOfflineStorage();
+          }
           return localSync(method, model, options).then(function() {
-            return success(resp, status, xhr);
+            return success(resp, _status, _xhr);
           });
         };
-        options.error = function(resp) {
-          return relayErrorCallback(resp);
+        options.error = function(xhr) {
+          return relayErrorCallback(xhr);
         };
-        return onlineSync(method, model, options);
+        return options.xhr = onlineSync(method, model, options);
       }
   }
 };

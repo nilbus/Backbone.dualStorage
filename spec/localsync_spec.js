@@ -235,7 +235,7 @@
             return expect(destroy).toHaveBeenCalledWith(model);
           });
         });
-        return it('supports marking a dirty record destroyed', function() {
+        it('supports marking a dirty record destroyed', function() {
           var destroy, destroyed, model, ready, _ref;
           _ref = {}, ready = _ref.ready, destroy = _ref.destroy, destroyed = _ref.destroyed, model = _ref.model;
           runs(function() {
@@ -260,6 +260,26 @@
           return runs(function() {
             expect(destroy).toHaveBeenCalledWith(model);
             return expect(destroyed).toHaveBeenCalledWith(model);
+          });
+        });
+        return it("doesn't mark a model with a temp id as destroyed", function() {
+          var destroy, destroyed, model, success, _ref;
+          _ref = {}, destroy = _ref.destroy, destroyed = _ref.destroyed, model = _ref.model, success = _ref.success;
+          runs(function() {
+            model = new Backbone.Model;
+            model.id = Store.prototype.generateId();
+            destroy = spyOn(Store.prototype, 'destroy');
+            destroyed = spyOn(Store.prototype, 'destroyed');
+            success = jasmine.createSpy("success");
+            return localsync('delete', model, {
+              dirty: true,
+              success: success
+            });
+          });
+          return runs(function() {
+            expect(destroy).toHaveBeenCalledWith(model);
+            expect(destroyed).not.toHaveBeenCalled;
+            return expect(success).toHaveBeenCalled();
           });
         });
       });
