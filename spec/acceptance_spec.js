@@ -9,7 +9,7 @@
   _ref = {}, Collection = _ref.Collection, Model = _ref.Model;
 
   describe('Backbone.dualStorage', function() {
-    this.timeout(50);
+    this.timeout(100);
     beforeEach(function() {
       localStorage.clear();
       Model = (function(_super) {
@@ -1224,7 +1224,7 @@
         });
       });
     });
-    return describe('offline detection', function() {
+    describe('offline detection', function() {
       return describe('Backbone.DualStorage.offlineStatusCodes', function() {
         beforeEach(function() {
           return this.originalOfflineStatusCodes = Backbone.DualStorage.offlineStatusCodes;
@@ -1346,6 +1346,200 @@
               expect(model.get('name')).to.equal('original name saved locally');
               return done();
             });
+          });
+        });
+      });
+    });
+    return describe('callbacks', function() {
+      describe('when offline', function() {
+        describe('with no local store initialized for the model/collection', function() {
+          beforeEach(function() {
+            return this.model = new Model;
+          });
+          it('calls the error callback', function(done) {
+            return this.model.fetch({
+              errorStatus: 0,
+              error: function() {
+                return done();
+              }
+            });
+          });
+          it('fails the deferred promise');
+          return it('triggers the error event', function(done) {
+            this.model.on('error', function() {
+              return done();
+            });
+            return this.model.fetch({
+              errorStatus: 0
+            });
+          });
+        });
+        describe('with a local store initialized', function() {
+          beforeEach(function(done) {
+            this.model = new Model;
+            return this.model.save(null, {
+              errorStatus: 0,
+              success: function() {
+                return done();
+              }
+            });
+          });
+          it('calls the success callback', function(done) {
+            return this.model.fetch({
+              errorStatus: 0,
+              success: function() {
+                return done();
+              }
+            });
+          });
+          it('resolves the deferred promise');
+          return it('triggers the sync event', function(done) {
+            this.model.on('sync', function() {
+              return done();
+            });
+            return this.model.fetch({
+              errorStatus: 0
+            });
+          });
+        });
+        describe('when fetching an id that is not cached', function() {
+          beforeEach(function(done) {
+            var model;
+            model = new Model({
+              _id: 1
+            });
+            return model.save(null, {
+              errorStatus: 0,
+              success: function() {
+                return done();
+              }
+            });
+          });
+          it('calls the error callback', function(done) {
+            var model;
+            model = new Model({
+              _id: 999
+            });
+            return model.fetch({
+              errorStatus: 0,
+              error: function() {
+                return done();
+              }
+            });
+          });
+          it('fails the deferred promise');
+          return it('triggers the error event', function(done) {
+            var model;
+            model = new Model({
+              _id: 999
+            });
+            model.on('error', function() {
+              return done();
+            });
+            return model.fetch({
+              errorStatus: 0
+            });
+          });
+        });
+        return describe('the dirty attribute', function() {
+          beforeEach(function(done) {
+            this.model = new Model;
+            return this.model.save(null, {
+              errorStatus: 0,
+              success: function() {
+                return done();
+              }
+            });
+          });
+          it('is set in the callback options', function(done) {
+            return this.model.fetch({
+              errorStatus: 0,
+              success: function(model, reponse, options) {
+                expect(options.dirty).to.be["true"];
+                return done();
+              }
+            });
+          });
+          it('is set in the promise doneCallback options');
+          return it('is set in the sync event options', function(done) {
+            this.model.on('sync', function(model, response, options) {
+              expect(options.dirty).to.be["true"];
+              return done();
+            });
+            return this.model.fetch({
+              errorStatus: 0
+            });
+          });
+        });
+      });
+      return describe('when online', function() {
+        describe('receiving an error response', function() {
+          beforeEach(function() {
+            return this.model = new Model;
+          });
+          it('calls the error callback', function(done) {
+            return this.model.fetch({
+              errorStatus: 500,
+              error: function() {
+                return done();
+              }
+            });
+          });
+          it('fails the deferred promise');
+          return it('triggers the error event', function(done) {
+            this.model.on('error', function() {
+              return done();
+            });
+            return this.model.fetch({
+              errorStatus: 500
+            });
+          });
+        });
+        describe('receiving a successful response', function() {
+          beforeEach(function() {
+            return this.model = new Model({
+              _id: 1
+            });
+          });
+          it('calls the success callback', function(done) {
+            return this.model.fetch({
+              success: function() {
+                return done();
+              }
+            });
+          });
+          it('resolves the deferred promise');
+          return it('triggers the sync event', function(done) {
+            this.model.on('sync', function() {
+              return done();
+            });
+            return this.model.fetch();
+          });
+        });
+        return describe('the dirty attribute', function() {
+          beforeEach(function(done) {
+            this.model = new Model;
+            return this.model.save('_id', '1', {
+              success: function() {
+                return done();
+              }
+            });
+          });
+          it('is set in the callback options', function(done) {
+            return this.model.fetch({
+              success: function(model, reponse, options) {
+                expect(options.dirty).not.to.be["true"];
+                return done();
+              }
+            });
+          });
+          it('is set in the promise doneCallback options');
+          return it('is set in the sync event options', function(done) {
+            this.model.on('sync', function(model, response, options) {
+              expect(options.dirty).not.to.be["true"];
+              return done();
+            });
+            return this.model.fetch();
           });
         });
       });
