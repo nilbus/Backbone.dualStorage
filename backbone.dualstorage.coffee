@@ -37,7 +37,7 @@ Backbone.Collection.prototype.syncDirty = (options) ->
     models = (@get(id) for id in ids)
     $.when (model.save(null, options) for model in models when model)...
 
-Backbone.Collection.prototype.dirtyModels = ->
+Backbone.Collection.prototype.dirtyModels = (options) ->
   Backbone.storageAdapter.getItem("#{getStoreName(@)}_dirty").then (store) =>
     ids = (store and store.split(',')) or []
     models = (@get(id) for id in ids)
@@ -57,7 +57,7 @@ Backbone.Collection.prototype.destroyedModelIds = ->
   Backbone.storageAdapter.getItem("#{getStoreName(@)}_destroyed").then (store) =>
     ids = (store and store.split(',')) or []
 
-Backbone.Collection.prototype.syncDirtyAndDestroyed = ->
+Backbone.Collection.prototype.syncDirtyAndDestroyed = (options) ->
   $.when @syncDirty(options), @syncDestroyed(options)
 
 # Generate four random hex digits.

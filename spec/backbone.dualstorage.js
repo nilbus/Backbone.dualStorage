@@ -154,7 +154,7 @@ Backbone.Collection.prototype.syncDirty = function(options) {
   })(this));
 };
 
-Backbone.Collection.prototype.dirtyModels = function() {
+Backbone.Collection.prototype.dirtyModels = function(options) {
   return Backbone.storageAdapter.getItem("" + (getStoreName(this)) + "_dirty").then((function(_this) {
     return function(store) {
       var id, ids, models;
@@ -212,7 +212,7 @@ Backbone.Collection.prototype.destroyedModelIds = function() {
   })(this));
 };
 
-Backbone.Collection.prototype.syncDirtyAndDestroyed = function() {
+Backbone.Collection.prototype.syncDirtyAndDestroyed = function(options) {
   return $.when(this.syncDirty(options), this.syncDestroyed(options));
 };
 
