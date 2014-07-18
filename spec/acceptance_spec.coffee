@@ -636,7 +636,7 @@ describe 'Backbone.dualStorage', ->
       describe 'with a local store initialized', ->
         beforeEach (done) ->
           @model = new Model
-          @model.save null, errorStatus: 0, success: -> done() # works if saved while offline, but not online
+          @model.save null, errorStatus: 0, success: -> done()
 
         it 'calls the success callback', (done) ->
           @model.fetch errorStatus: 0, success: -> done()
@@ -666,7 +666,7 @@ describe 'Backbone.dualStorage', ->
       describe 'the dirty attribute', ->
         beforeEach (done) ->
           @model = new Model
-          @model.save null, errorStatus: 0, success: -> done() # works if saved while offline, but not online
+          @model.save null, errorStatus: 0, success: -> done()
 
         it 'is set in the callback options', (done) ->
           @model.fetch errorStatus: 0, success: (model, reponse, options) ->
@@ -711,7 +711,7 @@ describe 'Backbone.dualStorage', ->
       describe 'the dirty attribute', ->
         beforeEach (done) ->
           @model = new Model
-          @model.save '_id', '1', success: -> done() # works if saved while offline, but not online
+          @model.save '_id', '1', success: -> done()
 
         it 'is set in the callback options', (done) ->
           @model.fetch success: (model, reponse, options) ->
