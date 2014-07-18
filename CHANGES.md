@@ -5,6 +5,7 @@
 * Allow Backbone.DualStorage.offlineStatusCodes to include 200 OK as an offline status
 * syncDirty, syncDestroyed, and syncDirtyAndDestroyed accept options (and therefore callbacks) which are passed to save and destroy
 * Call the error callback when offline and fetching a model that was never cached
+* Rewrite all tests in Mocha, using Backbone models and collections
 
 ### 1.3.1 / 2014-15-30
 
