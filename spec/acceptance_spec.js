@@ -1350,7 +1350,7 @@
         });
       });
     });
-    return describe('callbacks', function() {
+    describe('callbacks', function() {
       describe('when offline', function() {
         describe('with no local store initialized for the model/collection', function() {
           beforeEach(function() {
@@ -1540,6 +1540,336 @@
               return done();
             });
             return this.model.fetch();
+          });
+        });
+      });
+    });
+    return describe('storeName', function() {
+      it('uses the same store for models with the same storeName', function(done) {
+        var AnotherModel, OneModel, model, saved;
+        OneModel = (function(_super) {
+          __extends(OneModel, _super);
+
+          function OneModel() {
+            return OneModel.__super__.constructor.apply(this, arguments);
+          }
+
+          OneModel.prototype.storeName = '/samePlace';
+
+          return OneModel;
+
+        })(Backbone.Model);
+        AnotherModel = (function(_super) {
+          __extends(AnotherModel, _super);
+
+          function AnotherModel() {
+            return AnotherModel.__super__.constructor.apply(this, arguments);
+          }
+
+          AnotherModel.prototype.storeName = '/samePlace';
+
+          return AnotherModel;
+
+        })(Backbone.Model);
+        saved = $.Deferred();
+        model = new OneModel;
+        model.save('paper', 'oragami', {
+          errorStatus: 0,
+          success: function() {
+            return saved.resolve();
+          }
+        });
+        return saved.done(function() {
+          var fetchedLocally;
+          fetchedLocally = $.Deferred();
+          model = new AnotherModel({
+            id: model.id
+          });
+          model.fetch({
+            errorStatus: 0,
+            success: function() {
+              return fetchedLocally.resolve();
+            }
+          });
+          return fetchedLocally.done(function() {
+            expect(model.get('paper')).to.equal('oragami');
+            return done();
+          });
+        });
+      });
+      describe('Model.url', function() {
+        return it('is used as the store name, lacking anything below', function(done) {
+          var AnotherModel, OneModel, model, saved;
+          OneModel = (function(_super) {
+            __extends(OneModel, _super);
+
+            function OneModel() {
+              return OneModel.__super__.constructor.apply(this, arguments);
+            }
+
+            OneModel.prototype.url = '/someplace';
+
+            return OneModel;
+
+          })(Backbone.Model);
+          AnotherModel = (function(_super) {
+            __extends(AnotherModel, _super);
+
+            function AnotherModel() {
+              return AnotherModel.__super__.constructor.apply(this, arguments);
+            }
+
+            AnotherModel.prototype.url = '/anotherPlace';
+
+            return AnotherModel;
+
+          })(Backbone.Model);
+          saved = $.Deferred();
+          model = new OneModel;
+          model.save('paper', 'oragami', {
+            errorStatus: 0,
+            success: function() {
+              return saved.resolve();
+            }
+          });
+          return saved.done(function() {
+            model = new AnotherModel({
+              id: model.id
+            });
+            return model.fetch({
+              errorStatus: 0,
+              error: function() {
+                return done();
+              }
+            });
+          });
+        });
+      });
+      describe('Model.urlRoot', function() {
+        return it('is used as the store name, lacking anything below', function(done) {
+          var AnotherModel, OneModel, model, saved;
+          OneModel = (function(_super) {
+            __extends(OneModel, _super);
+
+            function OneModel() {
+              return OneModel.__super__.constructor.apply(this, arguments);
+            }
+
+            OneModel.prototype.url = '/samePlace';
+
+            OneModel.prototype.urlRoot = '/onePlace';
+
+            return OneModel;
+
+          })(Backbone.Model);
+          AnotherModel = (function(_super) {
+            __extends(AnotherModel, _super);
+
+            function AnotherModel() {
+              return AnotherModel.__super__.constructor.apply(this, arguments);
+            }
+
+            AnotherModel.prototype.url = '/samePlace';
+
+            AnotherModel.prototype.urlRoot = '/anotherPlce';
+
+            return AnotherModel;
+
+          })(Backbone.Model);
+          saved = $.Deferred();
+          model = new OneModel;
+          model.save('paper', 'oragami', {
+            errorStatus: 0,
+            success: function() {
+              return saved.resolve();
+            }
+          });
+          return saved.done(function() {
+            model = new AnotherModel({
+              id: model.id
+            });
+            return model.fetch({
+              errorStatus: 0,
+              error: function() {
+                return done();
+              }
+            });
+          });
+        });
+      });
+      describe('Collection.url', function() {
+        return it('is used as the store name, lacking anything below', function(done) {
+          var DisconnectedCollection, MatchingCollection, model, saved;
+          MatchingCollection = (function(_super) {
+            __extends(MatchingCollection, _super);
+
+            function MatchingCollection() {
+              return MatchingCollection.__super__.constructor.apply(this, arguments);
+            }
+
+            MatchingCollection.prototype.model = Model;
+
+            MatchingCollection.prototype.url = 'things/';
+
+            return MatchingCollection;
+
+          })(Backbone.Collection);
+          DisconnectedCollection = (function(_super) {
+            __extends(DisconnectedCollection, _super);
+
+            function DisconnectedCollection() {
+              return DisconnectedCollection.__super__.constructor.apply(this, arguments);
+            }
+
+            DisconnectedCollection.prototype.model = Model;
+
+            DisconnectedCollection.prototype.url = 'does_not_match_the_model/';
+
+            return DisconnectedCollection;
+
+          })(Backbone.Collection);
+          saved = $.Deferred();
+          model = new Model;
+          model.save('paper', 'oragami', {
+            errorStatus: 0,
+            success: function() {
+              return saved.resolve();
+            }
+          });
+          return saved.done(function() {
+            var collection;
+            collection = new MatchingCollection;
+            return collection.fetch({
+              errorStatus: 0,
+              success: function() {
+                expect(collection.size()).to.eql(1);
+                collection = new DisconnectedCollection;
+                return collection.fetch({
+                  errorStatus: 0,
+                  error: function() {
+                    return done();
+                  }
+                });
+              }
+            });
+          });
+        });
+      });
+      describe('Model.storeName', function() {
+        return it('is used as the store name, lacking anything below', function(done) {
+          var AnotherModel, OneModel, model, saved;
+          OneModel = (function(_super) {
+            __extends(OneModel, _super);
+
+            function OneModel() {
+              return OneModel.__super__.constructor.apply(this, arguments);
+            }
+
+            OneModel.prototype.urlRoot = 'commonURL/';
+
+            OneModel.prototype.storeName = 'someName';
+
+            return OneModel;
+
+          })(Backbone.Model);
+          AnotherModel = (function(_super) {
+            __extends(AnotherModel, _super);
+
+            function AnotherModel() {
+              return AnotherModel.__super__.constructor.apply(this, arguments);
+            }
+
+            AnotherModel.prototype.urlRoot = 'commonURL/';
+
+            AnotherModel.prototype.storeName = 'anotherName';
+
+            return AnotherModel;
+
+          })(Backbone.Model);
+          saved = $.Deferred();
+          model = new OneModel;
+          model.save('paper', 'oragami', {
+            errorStatus: 0,
+            success: function() {
+              return saved.resolve();
+            }
+          });
+          return saved.done(function() {
+            model = new AnotherModel({
+              id: model.id
+            });
+            return model.fetch({
+              errorStatus: 0,
+              error: function() {
+                return done();
+              }
+            });
+          });
+        });
+      });
+      return describe('Collection.storeName', function() {
+        return it('is used as the store name if given', function(done) {
+          var DisconnectedCollection, MatchingCollection, model, saved;
+          MatchingCollection = (function(_super) {
+            __extends(MatchingCollection, _super);
+
+            function MatchingCollection() {
+              return MatchingCollection.__super__.constructor.apply(this, arguments);
+            }
+
+            MatchingCollection.prototype.model = Model;
+
+            MatchingCollection.prototype.url = 'commonURL/';
+
+            MatchingCollection.prototype.storeName = 'things/';
+
+            return MatchingCollection;
+
+          })(Backbone.Collection);
+          DisconnectedCollection = (function(_super) {
+            __extends(DisconnectedCollection, _super);
+
+            function DisconnectedCollection() {
+              return DisconnectedCollection.__super__.constructor.apply(this, arguments);
+            }
+
+            DisconnectedCollection.prototype.model = Model;
+
+            DisconnectedCollection.prototype.url = 'commonURL/';
+
+            DisconnectedCollection.prototype.storeName = 'does_not_match_the_model/';
+
+            return DisconnectedCollection;
+
+          })(Backbone.Collection);
+          saved = $.Deferred();
+          model = new Model;
+          model.save('paper', 'oragami', {
+            errorStatus: 0,
+            success: function() {
+              return saved.resolve();
+            }
+          });
+          return saved.done(function() {
+            var collection, fetchedMatching;
+            collection = new MatchingCollection;
+            fetchedMatching = $.Deferred();
+            collection.fetch({
+              errorStatus: 0,
+              success: function() {
+                return fetchedMatching.resolve();
+              }
+            });
+            return fetchedMatching.done(function() {
+              expect(collection.size()).to.eql(1);
+              collection = new DisconnectedCollection;
+              return collection.fetch({
+                errorStatus: 0,
+                error: function() {
+                  return done();
+                }
+              });
+            });
           });
         });
       });
