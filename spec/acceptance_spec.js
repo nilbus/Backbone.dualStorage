@@ -1544,6 +1544,121 @@
         });
       });
     });
+    describe('pre-parsing', function() {
+      beforeEach(function() {
+        Model.prototype.parse = function(response) {
+          var _ref1;
+          response.phrase = (_ref1 = response.phrase) != null ? _ref1.replace(/!/, ' parseWasHere') : void 0;
+          return response;
+        };
+        Model.prototype.parseBeforeLocalSave = function(unformattedReponse) {
+          return {
+            _id: 1,
+            phrase: unformattedReponse
+          };
+        };
+        Collection.prototype.parse = function(response) {
+          var i, item, _i, _len, _results;
+          i = 0;
+          _results = [];
+          for (_i = 0, _len = response.length; _i < _len; _i++) {
+            item = response[_i];
+            _.extend(item, {
+              order: i++
+            });
+            _results.push(item);
+          }
+          return _results;
+        };
+        return Collection.prototype.parseBeforeLocalSave = function(response) {
+          return _.map(response, function(item) {
+            return {
+              _id: item
+            };
+          });
+        };
+      });
+      describe('Model.parseBeforeLocalSave', function() {
+        return describe('on fetch', function() {
+          return it('transforms the response into a hash of attributes with an id', function(done) {
+            var fetched, model;
+            model = new Model;
+            fetched = $.Deferred();
+            model.fetch({
+              serverResponse: 'Hi!!',
+              success: function() {
+                return fetched.resolve();
+              }
+            });
+            return fetched.done(function() {
+              expect(model.id).to.equal(1);
+              expect(model.get('phrase')).not.to.be["null"];
+              return done();
+            });
+          });
+        });
+      });
+      describe('Model.parse', function() {
+        return describe('when used alongside parseBeforeLocalSave', function() {
+          it('modifies attributes in the response to fit an API response to the backbone model', function(done) {
+            var fetched, model;
+            model = new Model;
+            fetched = $.Deferred();
+            model.fetch({
+              serverResponse: 'Hi!',
+              success: function() {
+                return fetched.resolve();
+              }
+            });
+            return fetched.done(function() {
+              expect(model.get('phrase')).to.equal('Hi parseWasHere');
+              return done();
+            });
+          });
+          return it('bug: parse should not be called twice on the response');
+        });
+      });
+      describe('Collection.parseBeforeLocalSave', function() {
+        return describe('on fetch', function() {
+          return it('transforms the response into an array of hash attributes with an id', function(done) {
+            var collection, fetched;
+            collection = new Collection;
+            fetched = $.Deferred();
+            collection.fetch({
+              serverResponse: ['a', 'b'],
+              success: function() {
+                return fetched.resolve();
+              }
+            });
+            return fetched.done(function() {
+              expect(collection.get('a')).not.to.be["null"];
+              expect(collection.get('b')).not.to.be["null"];
+              return done();
+            });
+          });
+        });
+      });
+      return describe('Collection.parse', function() {
+        return describe('when used alongside parseBeforeLocalSave', function() {
+          return it('modifies objects in the response to fit an API response to the backbone model', function(done) {
+            var collection, fetched;
+            collection = new Collection;
+            fetched = $.Deferred();
+            collection.fetch({
+              serverResponse: ['a', 'b'],
+              success: function() {
+                return fetched.resolve();
+              }
+            });
+            return fetched.done(function() {
+              expect(collection.get('a').get('order')).to.equal(0);
+              expect(collection.get('b').get('order')).to.equal(1);
+              return done();
+            });
+          });
+        });
+      });
+    });
     return describe('storeName', function() {
       it('uses the same store for models with the same storeName', function(done) {
         var AnotherModel, OneModel, model, saved;
