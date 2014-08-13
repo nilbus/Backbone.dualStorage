@@ -1,5 +1,6 @@
 ### master / unreleased
 
+* Fix #123: Expose original BackboneSync as Backbone.DualStorage.originalSync to allow custom online sync methods (Richard Tibbles)
 * Fix #117: Don't generate temporary IDs that conflict with UUIDs (David Almilli)
 * Fix #115: Don't attempt to delete models from the server that were only local, and call the callback in this case (Micha Reiser)
 * Allow Backbone.DualStorage.offlineStatusCodes to include 200 OK as an offline status

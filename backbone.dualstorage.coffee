@@ -235,11 +235,11 @@ modelUpdatedWithResponse = (model, response) ->
   modelClone.set model.parse response
   modelClone
 
-backboneSync = Backbone.sync
+backboneSync = Backbone.DualStorage.originalSync = Backbone.sync
 onlineSync = (method, model, options) ->
   options.success = callbackTranslator.forBackboneCaller(options.success)
   options.error   = callbackTranslator.forBackboneCaller(options.error)
-  backboneSync(method, model, options)
+  Backbone.DualStorage.originalSync(method, model, options)
 
 dualsync = (method, model, options) ->
   options.storeName = getStoreName(model.collection, model)
