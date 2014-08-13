@@ -316,12 +316,12 @@ as that.
     return modelClone;
   };
 
-  backboneSync = Backbone.sync;
+  backboneSync = Backbone.DualStorage.backboneSync = Backbone.sync;
 
   onlineSync = function(method, model, options) {
     options.success = callbackTranslator.forBackboneCaller(options.success);
     options.error = callbackTranslator.forBackboneCaller(options.error);
-    return backboneSync(method, model, options);
+    return Backbone.DualStorage.backboneSync(method, model, options);
   };
 
   dualsync = function(method, model, options) {
