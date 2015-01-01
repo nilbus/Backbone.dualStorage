@@ -32,10 +32,10 @@ Data synchronization
 When the client goes offline, dualStorage allows you to keep changing and destroying records. All changes will be sent when the client goes online again.
 
     // server online. Go!
-    people.fetch();       // load cars models and save them into localstorage
+    people.fetch();       // load people models and save them into localstorage
 
     // server offline!
-    people.create({name: "Turing"});   // you still can create new cars...
+    people.create({name: "Turing"});   // you still can create new people...
     people.models[0].save({age: 41});  // update existing ones...
     people.models[1].destroy();        // and destroy as well
 
