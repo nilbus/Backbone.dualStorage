@@ -104,18 +104,18 @@ class window.Store
 
   # Add a model, giving it a unique GUID, if it doesn't already
   # have an id of it's own.
-  create: (model) ->
+  create: (model, options) ->
     if not _.isObject(model) then return model
     if not model.id
       model.set model.idAttribute, @generateId()
-    localStorage.setItem @name + @sep + model.id, JSON.stringify(model)
+    localStorage.setItem @name + @sep + model.id, JSON.stringify(if model.toJSON then model.toJSON(options) else model)
     @records.push model.id.toString()
     @save()
     model
 
   # Update a model by replacing its copy in `this.data`.
-  update: (model) ->
-    localStorage.setItem @name + @sep + model.id, JSON.stringify(model)
+  update: (model, options) ->
+    localStorage.setItem @name + @sep + model.id, JSON.stringify(if model.toJSON then model.toJSON(options) else model)
     if not _.include(@records, model.id.toString())
       @records.push model.id.toString()
     @save()
@@ -194,11 +194,11 @@ localsync = (method, model, options) ->
       if options.add and not options.merge and (preExisting = store.find(model))
         preExisting
       else
-        model = store.create(model)
+        model = store.create(model, options)
         store.dirty(model) if options.dirty
         model
     when 'update'
-      store.update(model)
+      store.update(model, options)
       if options.dirty
         store.dirty(model)
       else
