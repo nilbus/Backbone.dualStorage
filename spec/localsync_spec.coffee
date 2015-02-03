@@ -4,14 +4,15 @@ describe 'localsync', ->
   describe 'standard Backbone.sync methods', ->
     describe 'creating records', ->
       it 'creates records', ->
-        {ready, create, model} = {}
+        {ready, create, model, options} = {}
         runs ->
           create = spyOn(Store.prototype, 'create')
           model = new Backbone.Model id: 1
-          localsync 'create', model, {success: (-> ready = true), error: (-> ready = true)}
+          options = {success: (-> ready = true), error: (-> ready = true)}
+          localsync 'create', model, options
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
-          expect(create).toHaveBeenCalledWith model
+          expect(create).toHaveBeenCalledWith model, options
 
       it 'does not overwrite existing models with fetch(add: true) unless passed merge: true', ->
         {ready, create} = {}
@@ -32,15 +33,16 @@ describe 'localsync', ->
           expect(create).toHaveBeenCalled()
 
       it 'supports marking a new record dirty', ->
-        {ready, create, model, dirty} = {}
+        {ready, create, model, dirty, options} = {}
         runs ->
           model = new Backbone.Model id: 1
           create = spyOn(Store.prototype, 'create').andReturn model
           dirty = spyOn(Store.prototype, 'dirty')
-          localsync 'create', model, {success: (-> ready = true), error: (-> ready = true), dirty: true}
+          options = {success: (-> ready = true), error: (-> ready = true), dirty: true}
+          localsync 'create', model, options
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
-          expect(create).toHaveBeenCalledWith model
+          expect(create).toHaveBeenCalledWith model, options
           expect(dirty).toHaveBeenCalledWith model
 
     describe 'reading records', ->
@@ -65,25 +67,27 @@ describe 'localsync', ->
 
     describe 'updating records', ->
       it 'updates records', ->
-        {ready, update, model} = {}
+        {ready, update, model, options} = {}
         runs ->
           update = spyOn(Store.prototype, 'update')
           model = new Backbone.Model id: 1
-          localsync 'update', model, {success: (-> ready = true), error: (-> ready = true)}
+          options = {success: (-> ready = true), error: (-> ready = true)}
+          localsync 'update', model, options
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
-          expect(update).toHaveBeenCalledWith model
+          expect(update).toHaveBeenCalledWith model, options
 
       it 'supports marking an updated record dirty', ->
-        {ready, update, model, dirty} = {}
+        {ready, update, model, dirty, options} = {}
         runs ->
           model = new Backbone.Model id: 1
           update = spyOn(Store.prototype, 'update')
           dirty = spyOn(Store.prototype, 'dirty')
-          localsync 'update', model, {success: (-> ready = true), error: (-> ready = true), dirty: true}
+          options = {success: (-> ready = true), error: (-> ready = true), dirty: true}
+          localsync 'update', model, options
         waitsFor (-> ready), "A callback should have been called", 100
         runs ->
-          expect(update).toHaveBeenCalledWith model
+          expect(update).toHaveBeenCalledWith model, options
           expect(dirty).toHaveBeenCalledWith model
 
     describe 'deleting records', ->
