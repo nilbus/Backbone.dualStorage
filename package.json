@@ -1,0 +1,27 @@
+{
+  "name": "backbone.dualstorage",
+  "main": "./backbone.dualstorage.amd.js",
+  "version": "1.3.1",
+  "description": "A dualStorage adapter for Backbone. It's a drop-in replacement for Backbone.Sync() to handle saving to a localStorage database as a cache for the remote models.",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nilbus/Backbone.dualStorage.git"
+  },
+  "keywords": [
+    "backbone",
+    "storage",
+    "adapter",
+    "localcache",
+    "sync"
+  ],
+  "devDependencies": {
+    "backbone": "~1.x.x",
+    "underscore": ">=1.4.0"
+  },
+  "peerDependencies": {
+    "backbone": "~1.x.x"
+  },
+  "engines": {
+    "node": "*"
+  }
+}
