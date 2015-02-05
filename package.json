@@ -14,9 +14,11 @@
     "localcache",
     "sync"
   ],
-  "devDependencies": {
-    "backbone": "~1.x.x",
+  "dependencies": {
     "underscore": ">=1.4.0"
+  },
+  "devDependencies": {
+    "backbone": "~1.x.x"
   },
   "peerDependencies": {
     "backbone": "~1.x.x"
