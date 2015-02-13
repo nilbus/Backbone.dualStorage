@@ -285,8 +285,13 @@ as that.
           }
       }
     })();
-    if (response != null ? response.attributes : void 0) {
-      response = response.attributes;
+    if (response) {
+      if (response.toJSON) {
+        response = response.toJSON(options);
+      }
+      if (response.attributes) {
+        response = response.attributes;
+      }
     }
     if (!options.ignoreCallbacks) {
       if (response) {

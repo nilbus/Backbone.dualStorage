@@ -147,7 +147,7 @@ describe 'localsync', ->
         localsync 'create', model, {success: ((resp) -> response = resp)}
       waitsFor (-> response), "A callback should have been called with a response", 100
       runs ->
-        expect(response).toBe model.attributes
+        expect(response).toEqual model.attributes
 
     it 'ignores callbacks when the ignoreCallbacks option is set', ->
       {start, callback} = {start: new Date().getTime()}
