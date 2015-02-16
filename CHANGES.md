@@ -1,8 +1,11 @@
-### master / unreleased
+### 1.4.0 / 2015-02-16
 
 * Fix #123: Expose original BackboneSync as Backbone.DualStorage.originalSync to allow custom online sync methods (Richard Tibbles)
 * Fix #117: Don't generate temporary IDs that conflict with UUIDs (David Almilli)
 * Fix #115: Don't attempt to delete models from the server that were only local, and call the callback in this case (Micha Reiser)
+* Fix bug introduced by #94 in 1.3.1: Allow records to be created when offline and no store exists
+* Merge #123: Expose original Backbone Sync to allow for customization of online sync method (Richard Tibbles)
+* Merge #132, #133: Allow options to be passed to toJSON (Pavel Karoukin)
 * Allow Backbone.DualStorage.offlineStatusCodes to include 200 OK as an offline status
 * syncDirty, syncDestroyed, and syncDirtyAndDestroyed accept options (and therefore callbacks) which are passed to save and destroy
 * Call the error callback when offline and fetching a model that was never cached

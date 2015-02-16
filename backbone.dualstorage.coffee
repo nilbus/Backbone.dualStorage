@@ -1,5 +1,5 @@
 ###
-Backbone dualStorage Adapter v1.3.1
+Backbone dualStorage Adapter v1.4.0
 
 A simple module to replace `Backbone.sync` with *localStorage*-based
 persistence. Models are given GUIDS, and saved into a JSON object. Simple
