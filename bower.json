@@ -1,6 +1,6 @@
 {
   "name": "Backbone.dualStorage",
-  "main": "Backbone.dualStorage.js",
+  "main": "backbone.dualstorage.js",
   "version": "1.4.0",
   "homepage": "https://github.com/nilbus/Backbone.dualStorage",
   "authors": [
