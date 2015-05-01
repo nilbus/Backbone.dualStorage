@@ -101,28 +101,10 @@ Each collection's (or model's) `url` property is used as the storage namespace t
 This can be overridden by defining a `storeName` property on your model or collection.
 Defining storeName can be useful when your url is dynamic or when your models do not have the collection set but should be treated as part of that collection in the local cache.
 
-Compiling
----------
+Contributing
+------------
 
-Compile the coffeescript into javascript with `make`. This requires that node.js and coffee-script are installed.
-
-    npm install -g coffee-script
-
-    make
-
-During development, use `make watch` to compile as you make changes.
-
-Testing
--------
-
-To run the test suite, clone the project and open **SpecRunner.html** in a browser.
-
-Note that the tests run against **spec/backbone.dualstorage.js**, not the copy in the project root.
-The spec version needs to be unwrapped to allow mocking components for testing.
-This version is compiled automatically when running `make`.
-
-dualStorage has been tested against Backbone versions 0.9.2 - 1.1.2.
-Test with other versions by altering the version included in `SpecRunner.html`.
+See CONTRIBUTING.md
 
 Authors
 -------
