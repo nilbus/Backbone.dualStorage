@@ -3,7 +3,7 @@ var $, LocalStorageAdapter, S4, StickyStorageAdapter, backboneSync, callbackTran
   slice = [].slice,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-$ = Backbone.$;
+$ = Backbone.$ || window.$;
 
 LocalStorageAdapter = (function() {
   function LocalStorageAdapter() {}
@@ -106,7 +106,7 @@ persistence. Models are given GUIDS, and saved into a JSON object. Simple
 as that.
  */
 
-$ = Backbone.$;
+$ = Backbone.$ || window.$;
 
 Backbone.storageAdapter = new Backbone.storageAdapters.LocalStorageAdapter;
 

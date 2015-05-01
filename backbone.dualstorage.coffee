@@ -7,7 +7,7 @@ as that.
 ###
 
 # Use Backbone's $ in case it is different than window.$
-$ = Backbone.$
+$ = Backbone.$ or window.$
 
 # Use LocalStorageAdapter as default adapter.
 Backbone.storageAdapter = new Backbone.storageAdapters.LocalStorageAdapter

@@ -1,6 +1,6 @@
 # Async storage adapters classes.
 
-$ = Backbone.$
+$ = Backbone.$ or window.$
 
 class LocalStorageAdapter
   # Simple implementation with LocalStorage for reference.
