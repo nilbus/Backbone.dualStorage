@@ -706,10 +706,12 @@
         }), "The error callback should have been called", 100);
       });
       it('uses the success callback if the store exists with data', function() {
-        var ready, storeModel;
+        var modelId, ready, storeModel;
         storeModel = model.clone();
         storeModel.storeName = 'store-exists';
-        localStorage.setItem(storeModel.storeName, "1,2,3");
+        modelId = storeModel.id;
+        localStorage.setItem(storeModel.storeName, modelId);
+        localStorage.setItem("" + storeModel.storeName + modelId, "{\"id\": " + modelId + "}");
         ready = false;
         return runs(function() {
           dualsync('read', storeModel, {
@@ -723,7 +725,7 @@
           }), "The success callback should have been called", 100);
         });
       });
-      return it('success if server errors and Store exists with no entries', function() {
+      return it('errors if the model has not been cached locally', function() {
         var ready, storeModel;
         storeModel = model.clone();
         storeModel.storeName = 'store-exists';
@@ -731,7 +733,7 @@
         ready = false;
         return runs(function() {
           dualsync('read', storeModel, {
-            success: (function() {
+            error: (function() {
               return ready = true;
             }),
             errorStatus: 0

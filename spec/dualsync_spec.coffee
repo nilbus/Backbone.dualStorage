@@ -366,7 +366,9 @@ describe 'when to call user-specified success and error callbacks', ->
     it 'uses the success callback if the store exists with data', ->
       storeModel = model.clone()
       storeModel.storeName = 'store-exists'
-      localStorage.setItem storeModel.storeName, "1,2,3"
+      modelId = storeModel.id
+      localStorage.setItem storeModel.storeName, modelId
+      localStorage.setItem "#{storeModel.storeName}#{modelId}", "{\"id\": #{modelId}}"
       ready = false
       runs ->
         dualsync('read', storeModel,
@@ -375,14 +377,14 @@ describe 'when to call user-specified success and error callbacks', ->
         )
         waitsFor (-> ready), "The success callback should have been called", 100
 
-    it 'success if server errors and Store exists with no entries', ->
+    it 'errors if the model has not been cached locally', ->
       storeModel = model.clone()
       storeModel.storeName = 'store-exists'
       localStorage.setItem storeModel.storeName, ""
       ready = false
       runs ->
         dualsync('read', storeModel,
-          success: (-> ready = true)
+          error: (-> ready = true)
           errorStatus: 0
         )
         waitsFor (-> ready), "The success callback should have been called", 100
