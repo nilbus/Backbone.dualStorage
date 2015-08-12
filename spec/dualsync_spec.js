@@ -486,7 +486,7 @@
   });
 
   describe('offline storage', function() {
-    return it('marks records dirty when options.remote is false, except if the model/collection is marked as local', function() {
+    it('marks records dirty when options.remote is false, except if the model/collection is marked as local', function() {
       var ready;
       spyOnLocalsync();
       ready = void 0;
@@ -526,6 +526,27 @@
         expect(localsync).toHaveBeenCalled();
         expect(localsync.calls.length).toEqual(1);
         return expect(localsync.calls[0].args[2].dirty).toBeTruthy();
+      });
+    });
+    return it("preserves an offline-saved model's temporary id when updated offline", function() {
+      var ready, temporaryId;
+      ready = void 0;
+      temporaryId = 'tttttttttttttttttttttttttttttttttttt';
+      runs(function() {
+        ready = false;
+        model.set(model.idAttribute, temporaryId);
+        return dualsync('update', model, {
+          success: (function() {
+            return ready = true;
+          }),
+          successStatus: 0
+        });
+      });
+      waitsFor((function() {
+        return ready;
+      }), "The success callback should have been called", 100);
+      return runs(function() {
+        return expect(model.id).toEqual(temporaryId);
       });
     });
   });

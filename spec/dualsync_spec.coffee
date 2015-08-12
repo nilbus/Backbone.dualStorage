@@ -251,6 +251,17 @@ describe 'offline storage', ->
       expect(localsync.calls.length).toEqual 1
       expect(localsync.calls[0].args[2].dirty).toBeTruthy()
 
+  it "preserves an offline-saved model's temporary id when updated offline", ->
+    ready = undefined
+    temporaryId = 'tttttttttttttttttttttttttttttttttttt'
+    runs ->
+      ready = false
+      model.set model.idAttribute, temporaryId
+      dualsync('update', model, success: (-> ready = true), successStatus: 0)
+    waitsFor (-> ready), "The success callback should have been called", 100
+    runs ->
+      expect(model.id).toEqual temporaryId
+
 describe 'dualStorage hooks', ->
   beforeEach ->
     model.parseBeforeLocalSave = ->

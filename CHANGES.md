@@ -1,3 +1,7 @@
+### master / unreleased
+
+* Fix #145: Prevent model's id from being nulled (and saved locally with that id) when an offlineStatusCode is returned; broken since 1.4.0
+
 ### 1.4.0 / 2015-02-16
 
 * Fix #123: Expose original BackboneSync as Backbone.DualStorage.originalSync to allow custom online sync methods (Richard Tibbles)

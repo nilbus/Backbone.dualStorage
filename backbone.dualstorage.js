@@ -428,13 +428,13 @@ as that.
           temporaryId = model.id;
           options.success = function(resp, _status, _xhr) {
             var updatedModel;
+            model.set(model.idAttribute, temporaryId, {
+              silent: true
+            });
             if (hasOfflineStatusCode(options.xhr)) {
               return useOfflineStorage();
             }
             updatedModel = modelUpdatedWithResponse(model, resp);
-            model.set(model.idAttribute, temporaryId, {
-              silent: true
-            });
             localsync('delete', model, options);
             localsync('create', updatedModel, options);
             return success(resp, _status, _xhr);

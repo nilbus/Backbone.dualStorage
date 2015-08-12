@@ -332,9 +332,9 @@ dualsync = (method, model, options) ->
         temporaryId = model.id
 
         options.success = (resp, _status, _xhr) ->
+          model.set model.idAttribute, temporaryId, silent: true
           return useOfflineStorage() if hasOfflineStatusCode options.xhr
           updatedModel = modelUpdatedWithResponse model, resp
-          model.set model.idAttribute, temporaryId, silent: true
           localsync('delete', model, options)
           localsync('create', updatedModel, options)
           success(resp, _status, _xhr)

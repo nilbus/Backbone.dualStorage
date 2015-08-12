@@ -11,8 +11,11 @@
       response: resp
     };
     if (typeof options.errorStatus === 'number') {
-      resp.status = status = options.errorStatus;
+      resp.status = xhr.status = status = options.errorStatus;
       callback = options.error;
+    }
+    if (typeof options.successStatus === 'number') {
+      resp.status = xhr.status = status = options.successStatus;
     }
     if (Backbone.VERSION === '0.9.10') {
       callback(model, resp, options);
