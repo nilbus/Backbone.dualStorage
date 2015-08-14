@@ -595,6 +595,9 @@
           } else {
             options.success = function(resp, _status, _xhr) {
               var clearIfNeeded, collection, idAttribute, responseModel;
+              if (hasOfflineStatusCode(options.xhr)) {
+                return useOfflineStorage();
+              }
               resp = parseRemoteResponse(model, resp);
               if (model instanceof Backbone.Collection) {
                 collection = model;

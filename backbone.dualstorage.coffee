@@ -309,6 +309,7 @@ dualSync = (method, model, options) ->
           useOfflineStorage()
         else
           options.success = (resp, _status, _xhr) ->
+            return useOfflineStorage() if hasOfflineStatusCode options.xhr
             resp = parseRemoteResponse(model, resp)
 
             if model instanceof Backbone.Collection
