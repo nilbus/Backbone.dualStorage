@@ -562,9 +562,7 @@ dualSync = function(method, model, options) {
     options.ignoreCallbacks = false;
     options.success = success;
     options.error = error;
-    return localSync(method, model, options).then(function(result) {
-      return success(result);
-    });
+    return localSync(method, model, options);
   };
   hasOfflineStatusCode = function(xhr) {
     var offlineStatusCodes, ref;

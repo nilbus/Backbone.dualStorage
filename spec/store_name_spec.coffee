@@ -79,8 +79,8 @@ describe 'storeName', ->
         collection = new MatchingCollection
         collection.fetch errorStatus: 0, success: ->
           expect(collection.size()).to.eql 1
-          collection = new DisconnectedCollection
-          collection.fetch errorStatus: 0, error: ->
+          otherCollection = new DisconnectedCollection
+          otherCollection.fetch errorStatus: 0, error: ->
             done()
 
   describe 'Model.storeName', ->

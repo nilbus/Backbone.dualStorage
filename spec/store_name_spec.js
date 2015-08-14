@@ -238,9 +238,10 @@
           return collection.fetch({
             errorStatus: 0,
             success: function() {
+              var otherCollection;
               expect(collection.size()).to.eql(1);
-              collection = new DisconnectedCollection;
-              return collection.fetch({
+              otherCollection = new DisconnectedCollection;
+              return otherCollection.fetch({
                 errorStatus: 0,
                 error: function() {
                   return done();
