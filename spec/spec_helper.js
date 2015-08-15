@@ -24,11 +24,7 @@
         return callback(resp);
       }
     };
-    if (options.async === false) {
-      callbackWithVersionedArgs();
-    } else {
-      setTimeout(callbackWithVersionedArgs, 0);
-    }
+    setTimeout(callbackWithVersionedArgs, 0);
     return xhr;
   });
 

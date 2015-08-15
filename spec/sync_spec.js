@@ -132,44 +132,68 @@
       });
     });
     describe('Collection.dirtyModels', function() {
-      return it('returns an array of models that have been created or updated while offline', function() {
-        return expect(this.collection.dirtyModels()).to.eql([this.collection.get(1)]);
+      return it('returns an array of models that have been created or updated while offline', function(done) {
+        return this.collection.dirtyModels().then((function(_this) {
+          return function(dirtyModels) {
+            expect(dirtyModels).to.eql([_this.collection.get(1)]);
+            return done();
+          };
+        })(this));
       });
     });
     describe('Collection.destroyedModelIds', function() {
-      return it('returns an array of ids for models that have been destroyed while offline', function() {
-        return expect(this.collection.destroyedModelIds()).to.eql(['2']);
+      return it('returns an array of ids for models that have been destroyed while offline', function(done) {
+        return this.collection.destroyedModelIds().then((function(_this) {
+          return function(destroyedModelIds) {
+            expect(destroyedModelIds).to.eql(['2']);
+            return done();
+          };
+        })(this));
       });
     });
     describe('Collection.syncDirty', function() {
-      return it('attempts to save online all records that were created/updated while offline', function() {
+      return it('attempts to save online all records that were created/updated while offline', function(done) {
         backboneSync.reset();
-        this.collection.syncDirty({
-          async: false
-        });
-        expect(backboneSync.callCount).to.equal(1);
-        return expect(this.collection.dirtyModels()).to.eql([]);
+        return this.collection.syncDirty().then((function(_this) {
+          return function() {
+            expect(backboneSync.callCount).to.equal(1);
+            return _this.collection.dirtyModels().then(function(dirtyModels) {
+              expect(dirtyModels).to.eql([]);
+              return done();
+            });
+          };
+        })(this));
       });
     });
     describe('Collection.syncDestroyed', function() {
-      return it('attempts to destroy online all records that were destroyed while offline', function() {
+      return it('attempts to destroy online all records that were destroyed while offline', function(done) {
         backboneSync.reset();
-        this.collection.syncDestroyed({
-          async: false
-        });
-        expect(backboneSync.callCount).to.equal(1);
-        return expect(this.collection.destroyedModelIds()).to.eql([]);
+        return this.collection.syncDestroyed().then((function(_this) {
+          return function() {
+            expect(backboneSync.callCount).to.equal(1);
+            return _this.collection.destroyedModelIds().then(function(destroyedModelIds) {
+              expect(destroyedModelIds).to.eql([]);
+              return done();
+            });
+          };
+        })(this));
       });
     });
     describe('Collection.syncDirtyAndDestroyed', function() {
-      return it('attempts to sync online all records that were modified while offline', function() {
+      return it('attempts to sync online all records that were modified while offline', function(done) {
         backboneSync.reset();
-        this.collection.syncDirtyAndDestroyed({
-          async: false
-        });
-        expect(backboneSync.callCount).to.equal(2);
-        expect(this.collection.dirtyModels()).to.eql([]);
-        return expect(this.collection.destroyedModelIds()).to.eql([]);
+        return this.collection.syncDirtyAndDestroyed().then((function(_this) {
+          return function() {
+            expect(backboneSync.callCount).to.equal(2);
+            return _this.collection.dirtyModels().then(function(dirtyModels) {
+              expect(dirtyModels).to.eql([]);
+              return _this.collection.destroyedModelIds().then(function(destroyedModelIds) {
+                expect(destroyedModelIds).to.eql([]);
+                return done();
+              });
+            });
+          };
+        })(this));
       });
     });
     describe('Model.destroy', function() {

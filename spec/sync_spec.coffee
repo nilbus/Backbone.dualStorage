@@ -58,38 +58,45 @@ describe 'syncing offline changes when there are dirty or destroyed records', ->
         done()
 
   describe 'Collection.dirtyModels', ->
-    it 'returns an array of models that have been created or updated while offline', ->
-      expect(@collection.dirtyModels()).to.eql [@collection.get(1)]
+    it 'returns an array of models that have been created or updated while offline', (done) ->
+      @collection.dirtyModels().then (dirtyModels) =>
+        expect(dirtyModels).to.eql [@collection.get(1)]
+        done()
 
   describe 'Collection.destroyedModelIds', ->
-    it 'returns an array of ids for models that have been destroyed while offline', ->
-      expect(@collection.destroyedModelIds()).to.eql ['2']
-
-  # These sync methods are synchronous only in this test environment.
-  # The async branch will provide a promise that we can use to know when it completes.
-  # In the current version, there is no callback.
+    it 'returns an array of ids for models that have been destroyed while offline', (done) ->
+      @collection.destroyedModelIds().then (destroyedModelIds) =>
+        expect(destroyedModelIds).to.eql ['2']
+        done()
 
   describe 'Collection.syncDirty', ->
-    it 'attempts to save online all records that were created/updated while offline', ->
+    it 'attempts to save online all records that were created/updated while offline', (done) ->
       backboneSync.reset()
-      @collection.syncDirty(async: false)
-      expect(backboneSync.callCount).to.equal 1
-      expect(@collection.dirtyModels()).to.eql []
+      @collection.syncDirty().then =>
+        expect(backboneSync.callCount).to.equal 1
+        @collection.dirtyModels().then (dirtyModels) ->
+          expect(dirtyModels).to.eql []
+          done()
 
   describe 'Collection.syncDestroyed', ->
-    it 'attempts to destroy online all records that were destroyed while offline', ->
+    it 'attempts to destroy online all records that were destroyed while offline', (done) ->
       backboneSync.reset()
-      @collection.syncDestroyed(async: false)
-      expect(backboneSync.callCount).to.equal 1
-      expect(@collection.destroyedModelIds()).to.eql []
+      @collection.syncDestroyed().then =>
+        expect(backboneSync.callCount).to.equal 1
+        @collection.destroyedModelIds().then (destroyedModelIds) ->
+          expect(destroyedModelIds).to.eql []
+          done()
 
   describe 'Collection.syncDirtyAndDestroyed', ->
-    it 'attempts to sync online all records that were modified while offline', ->
+    it 'attempts to sync online all records that were modified while offline', (done) ->
       backboneSync.reset()
-      @collection.syncDirtyAndDestroyed(async: false)
-      expect(backboneSync.callCount).to.equal 2
-      expect(@collection.dirtyModels()).to.eql []
-      expect(@collection.destroyedModelIds()).to.eql []
+      @collection.syncDirtyAndDestroyed().then =>
+        expect(backboneSync.callCount).to.equal 2
+        @collection.dirtyModels().then (dirtyModels) =>
+          expect(dirtyModels).to.eql []
+          @collection.destroyedModelIds().then (destroyedModelIds) =>
+            expect(destroyedModelIds).to.eql []
+            done()
 
   describe 'Model.destroy', ->
     it 'does not mark models for deletion that were created and destroyed offline', (done) ->

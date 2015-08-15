@@ -15,8 +15,6 @@ sinon.stub window.Backbone, 'sync', (method, model, options) ->
     else
       options.xhr = xhr
       callback(resp)
-  if options.async == false
-    callbackWithVersionedArgs()
-  else
-    setTimeout callbackWithVersionedArgs, 0
+  # Force async response to simulate real ajax
+  setTimeout callbackWithVersionedArgs, 0
   xhr
