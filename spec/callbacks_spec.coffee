@@ -21,7 +21,8 @@ describe 'callbacks', ->
       it 'calls the error callback', (done) ->
         @model.fetch errorStatus: 0, error: -> done()
 
-      it 'fails the deferred promise'
+      it 'fails the deferred promise', (done) ->
+        @model.fetch(errorStatus: 0).fail -> done()
 
       it 'triggers the error event', (done) ->
         @model.on 'error', -> done()
@@ -35,7 +36,8 @@ describe 'callbacks', ->
       it 'calls the success callback', (done) ->
         @model.fetch errorStatus: 0, success: -> done()
 
-      it 'resolves the deferred promise'
+      it 'resolves the deferred promise', (done) ->
+        @model.fetch().then -> done()
 
       it 'triggers the sync event', (done) ->
         @model.on 'sync', -> done()
@@ -50,7 +52,9 @@ describe 'callbacks', ->
         model = new Model _id: 999
         model.fetch errorStatus: 0, error: -> done()
 
-      it 'fails the deferred promise'
+      it 'fails the deferred promise', (done) ->
+        model = new Model _id: 999
+        model.fetch(errorStatus: 0).fail -> done()
 
       it 'triggers the error event', (done) ->
         model = new Model _id: 999
@@ -67,7 +71,10 @@ describe 'callbacks', ->
           expect(options.dirty).to.be.true
           done()
 
-      it 'is set in the promise doneCallback options'
+      it 'is set in the promise callback options', (done) ->
+        @model.fetch(errorStatus: 0).then (model, reponse, options) ->
+          expect(options.dirty).to.be.true
+          done()
 
       it 'is set in the sync event options', (done) ->
         @model.on 'sync', (model, response, options) ->
@@ -83,7 +90,8 @@ describe 'callbacks', ->
       it 'calls the error callback', (done) ->
         @model.fetch errorStatus: 500, error: -> done()
 
-      it 'fails the deferred promise'
+      it 'fails the deferred promise', (done) ->
+        @model.fetch(errorStatus: 500).fail -> done()
 
       it 'triggers the error event', (done) ->
         @model.on 'error', -> done()
@@ -96,7 +104,8 @@ describe 'callbacks', ->
       it 'calls the success callback', (done) ->
         @model.fetch success: -> done()
 
-      it 'resolves the deferred promise'
+      it 'resolves the deferred promise', (done) ->
+        @model.fetch().then -> done()
 
       it 'triggers the sync event', (done) ->
         @model.on 'sync', -> done()
@@ -112,7 +121,10 @@ describe 'callbacks', ->
           expect(options.dirty).not.to.be.true
           done()
 
-      it 'is set in the promise doneCallback options'
+      it 'is set in the promise callback options', (done) ->
+        @model.fetch().then (model, reponse, options) ->
+          expect(options.dirty).not.to.be.true
+          done()
 
       it 'is set in the sync event options', (done) ->
         @model.on 'sync', (model, response, options) ->

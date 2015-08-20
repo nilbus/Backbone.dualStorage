@@ -54,7 +54,13 @@
             }
           });
         });
-        it('fails the deferred promise');
+        it('fails the deferred promise', function(done) {
+          return this.model.fetch({
+            errorStatus: 0
+          }).fail(function() {
+            return done();
+          });
+        });
         return it('triggers the error event', function(done) {
           this.model.on('error', function() {
             return done();
@@ -82,7 +88,11 @@
             }
           });
         });
-        it('resolves the deferred promise');
+        it('resolves the deferred promise', function(done) {
+          return this.model.fetch().then(function() {
+            return done();
+          });
+        });
         return it('triggers the sync event', function(done) {
           this.model.on('sync', function() {
             return done();
@@ -117,7 +127,17 @@
             }
           });
         });
-        it('fails the deferred promise');
+        it('fails the deferred promise', function(done) {
+          var model;
+          model = new Model({
+            _id: 999
+          });
+          return model.fetch({
+            errorStatus: 0
+          }).fail(function() {
+            return done();
+          });
+        });
         return it('triggers the error event', function(done) {
           var model;
           model = new Model({
@@ -150,7 +170,14 @@
             }
           });
         });
-        it('is set in the promise doneCallback options');
+        it('is set in the promise callback options', function(done) {
+          return this.model.fetch({
+            errorStatus: 0
+          }).then(function(model, reponse, options) {
+            expect(options.dirty).to.be["true"];
+            return done();
+          });
+        });
         return it('is set in the sync event options', function(done) {
           this.model.on('sync', function(model, response, options) {
             expect(options.dirty).to.be["true"];
@@ -175,7 +202,13 @@
             }
           });
         });
-        it('fails the deferred promise');
+        it('fails the deferred promise', function(done) {
+          return this.model.fetch({
+            errorStatus: 500
+          }).fail(function() {
+            return done();
+          });
+        });
         return it('triggers the error event', function(done) {
           this.model.on('error', function() {
             return done();
@@ -198,7 +231,11 @@
             }
           });
         });
-        it('resolves the deferred promise');
+        it('resolves the deferred promise', function(done) {
+          return this.model.fetch().then(function() {
+            return done();
+          });
+        });
         return it('triggers the sync event', function(done) {
           this.model.on('sync', function() {
             return done();
@@ -223,7 +260,12 @@
             }
           });
         });
-        it('is set in the promise doneCallback options');
+        it('is set in the promise callback options', function(done) {
+          return this.model.fetch().then(function(model, reponse, options) {
+            expect(options.dirty).not.to.be["true"];
+            return done();
+          });
+        });
         return it('is set in the sync event options', function(done) {
           this.model.on('sync', function(model, response, options) {
             expect(options.dirty).not.to.be["true"];
