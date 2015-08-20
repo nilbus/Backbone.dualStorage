@@ -3,8 +3,9 @@ sinon.stub window.Backbone, 'sync', (method, model, options) ->
   resp = options.serverResponse || model.toJSON()
   status = 200
   callback = options.success
-  xhr = {status: status, response: resp}
-  if typeof options.errorStatus is 'number'
+  xhr = $.extend($.Deferred(), status: status, response: resp)
+  isError = typeof options.errorStatus is 'number'
+  if isError
     resp.status = status = options.errorStatus
     callback = options.error
   callbackWithVersionedArgs = ->
@@ -15,6 +16,10 @@ sinon.stub window.Backbone, 'sync', (method, model, options) ->
     else
       options.xhr = xhr
       callback(resp)
+    if isError
+      xhr.reject()
+    else
+      xhr.resolve()
   # Force async response to simulate real ajax
   setTimeout callbackWithVersionedArgs, 0
   xhr
