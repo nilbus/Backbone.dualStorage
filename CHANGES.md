@@ -1,4 +1,4 @@
-### master / unreleased
+### 1.4.1 / 2016-04-18
 
 * Fix #145: Prevent model's id from being nulled (and saved locally with that id) when an offlineStatusCode is returned; broken since 1.4.0
 
