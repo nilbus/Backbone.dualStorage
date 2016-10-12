@@ -101,6 +101,11 @@ Each collection's (or model's) `url` property is used as the storage namespace t
 This can be overridden by defining a `storeName` property on your model or collection.
 Defining storeName can be useful when your url is dynamic or when your models do not have the collection set but should be treated as part of that collection in the local cache.
 
+Install
+-------
+
+Clone like usual or via npm `npm install nilbus/backbone.dualstorage --save`.
+
 Contributing
 ------------
 
