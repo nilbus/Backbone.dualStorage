@@ -11,6 +11,10 @@ Include Backbone.dualStorage after having included Backbone.js:
     <script type="text/javascript" src="backbone.js"></script>
     <script type="text/javascript" src="backbone.dualstorage.js"></script>
 
+or:
+
+    require("Backbone.dualStorage");
+
 Create your models and collections in the usual way.
 Feel free to use Backbone as you usually would; this is a drop-in replacement.
 
