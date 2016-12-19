@@ -1,3 +1,4 @@
+[![CDNJS](https://img.shields.io/cdnjs/v/Backbone.dualStorage.svg)](https://cdnjs.com/libraries/Backbone.dualStorage)
 Backbone dualStorage Adapter v1.4.1
 ===================================
 
