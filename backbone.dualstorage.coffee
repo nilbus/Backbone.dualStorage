@@ -1,5 +1,5 @@
 ###
-Backbone dualStorage Adapter v1.4.1
+Backbone dualStorage Adapter v1.4.2
 
 A simple module to replace `Backbone.sync` with *localStorage*-based
 persistence. Models are given GUIDS, and saved into a JSON object. Simple
@@ -303,7 +303,7 @@ dualsync = (method, model, options) ->
               if model
                 responseModel = modelUpdatedWithResponse(model, modelAttributes)
               else
-                responseModel = new collection.model(modelAttributes)
+                responseModel = new collection.model(modelAttributes, options)
               localsync('update', responseModel, options)
           else
             responseModel = modelUpdatedWithResponse(model, resp)
