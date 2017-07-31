@@ -1,6 +1,6 @@
-### 1.4.2 / 2017-07-28
+### 1.4.2 / 2017-07-30
 
-* Added options to model creation - supports integration in systems with custom backbone models
+* Merge #156: Pass options to model creation - supports integration in systems with custom backbone models (@paaddyy)
 
 ### 1.4.1 / 2016-04-18
 
