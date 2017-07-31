@@ -393,7 +393,7 @@ as that.
                 if (model) {
                   responseModel = modelUpdatedWithResponse(model, modelAttributes);
                 } else {
-                  responseModel = new collection.model(modelAttributes);
+                  responseModel = new collection.model(modelAttributes, options);
                 }
                 localsync('update', responseModel, options);
               }
