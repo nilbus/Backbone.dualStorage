@@ -13,6 +13,15 @@ Backbone.DualStorage = {
 Backbone.Model.prototype.hasTempId = ->
   _.isString(@id) and @id.length is 36 and @id.indexOf('t') == 0
 
+Backbone.Model.prototype.isDirtyOrDestroyed = ->
+  store = new Store(getStoreName(this.collection, this))
+  return 'dirty' if store.hasDirty()
+  return 'destroyed' if store.hasDestroyed()
+  false
+
+Backbone.Model.prototype.discard = (what) ->
+  new Store(getStoreName(this.collection, this)).discard(what)
+
 getStoreName = (collection, model) ->
   model ||= collection.model.prototype
   _.result(collection, 'storeName') || _.result(model, 'storeName') ||
@@ -54,6 +63,18 @@ Backbone.Collection.prototype.syncDirtyAndDestroyed = (options) ->
   @syncDirty(options)
   @syncDestroyed(options)
 
+Backbone.Collection.prototype.dirtyRecords = ->
+  new Store(getStoreName(this)).dirtyRecords()
+
+Backbone.Collection.prototype.destroyedRecords = ->
+  new Store(getStoreName(this)).destroyedRecords()
+
+Backbone.Collection.prototype.hasDirtyOrDestroyed = ->
+  new Store(getStoreName(this)).hasDirtyOrDestroyed()
+
+Backbone.Collection.prototype.discard = (what) ->
+  new Store(getStoreName(this)).discard(what)
+
 # Generate four random hex digits.
 S4 = ->
   (((1 + Math.random()) * 0x10000) | 0).toString(16).substring 1
@@ -80,6 +101,28 @@ class window.Store
   recordsOn: (key) ->
     store = localStorage.getItem(key)
     (store and store.split(',')) or []
+
+  # Return an array of dirty model ids.
+  dirtyRecords: ->
+    @recordsOn @name + '_dirty'
+
+  # Return an array of destroyed model ids.
+  destroyedRecords: ->
+    @recordsOn @name + '_destroyed'
+
+  # Discard dirty and/or destroyed models.
+  discard: (what) ->
+    if not what or what is 'dirty'
+      ids = @dirtyRecords()
+      for id in ids
+        localStorage.removeItem @name + @sep + id
+      localStorage.setItem @name + '_dirty', []
+    if not what or what is 'destroyed'
+      ids = @destroyedRecords()
+      for id in ids
+        localStorage.removeItem @name + @sep + id
+      localStorage.setItem @name + '_destroyed', []
+    @
 
   dirty: (model) ->
     dirtyRecords = @recordsOn @name + '_dirty'
@@ -127,11 +170,19 @@ class window.Store
     @records = []
     @save()
 
+  hasDirty: ->
+    not _.isEmpty(localStorage.getItem(@name + '_dirty'))
+
+  hasDestroyed: ->
+    not _.isEmpty(localStorage.getItem(@name + '_destroyed'))
+
   hasDirtyOrDestroyed: ->
-    not _.isEmpty(localStorage.getItem(@name + '_dirty')) or not _.isEmpty(localStorage.getItem(@name + '_destroyed'))
+    @hasDirty() or @hasDestroyed()
 
   # Retrieve a model from `this.data` by id.
   find: (model) ->
+    if not model.id and not model.collection and @records.length >= 1
+      model.set model.idAttribute, @records[0], silent: true
     modelAsJson = localStorage.getItem(@name + @sep + model.id)
     return null if modelAsJson == null
     JSON.parse modelAsJson
@@ -253,10 +304,10 @@ dualsync = (method, model, options) ->
   options.error   = callbackTranslator.forDualstorageCaller(options.error, model, options)
 
   # execute only online sync
-  return onlineSync(method, model, options) if _.result(model, 'remote') or _.result(model.collection, 'remote')
+  return onlineSync(method, model, options) if _.result(model, 'remote') or _.result(model.collection, 'remote') or options.remote
 
   # execute only local sync
-  local = _.result(model, 'local') or _.result(model.collection, 'local')
+  local = _.result(model, 'local') or _.result(model.collection, 'local') or options.local
   options.dirty = options.remote is false and not local
   return localsync(method, model, options) if options.remote is false or local
 
